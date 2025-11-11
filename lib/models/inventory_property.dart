@@ -1,7 +1,3 @@
-import 'package:hive/hive.dart';
-
-part 'inventory_property.g.dart';
-
 /// Estados posibles de un espacio
 enum SpaceCondition {
   excelente,
@@ -95,51 +91,21 @@ extension PropertyTypeExtension on PropertyType {
 }
 
 /// Modelo de propiedad en inventario
-@HiveType(typeId: 0)
-class InventoryProperty extends HiveObject {
-  @HiveField(0)
+class InventoryProperty {
   String id;
-
-  @HiveField(1)
   String direccion;
-
-  @HiveField(2)
   String? clienteNombre;
-
-  @HiveField(3)
   String? clienteTelefono;
-
-  @HiveField(4)
   String? clienteEmail;
-
-  @HiveField(5)
   PropertyType tipo;
-
-  @HiveField(6)
   String? descripcion;
-
-  @HiveField(7)
   List<String> fotos;
-
-  @HiveField(8)
   DateTime fechaCreacion;
-
-  @HiveField(9)
   DateTime? fechaActualizacion;
-
-  @HiveField(10)
   String? observaciones;
-
-  @HiveField(11)
   double? area; // en m²
-
-  @HiveField(12)
   int? numeroHabitaciones;
-
-  @HiveField(13)
   int? numeroBanos;
-
-  @HiveField(14)
   bool activa;
 
   InventoryProperty({

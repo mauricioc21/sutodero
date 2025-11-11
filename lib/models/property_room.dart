@@ -1,7 +1,4 @@
-import 'package:hive/hive.dart';
 import 'inventory_property.dart';
-
-part 'property_room.g.dart';
 
 /// Tipos de espacios/habitaciones
 enum RoomType {
@@ -95,51 +92,21 @@ extension RoomTypeExtension on RoomType {
 }
 
 /// Modelo de espacio/habitación
-@HiveType(typeId: 1)
-class PropertyRoom extends HiveObject {
-  @HiveField(0)
+class PropertyRoom {
   String id;
-
-  @HiveField(1)
   String propertyId;
-
-  @HiveField(2)
   String nombre;
-
-  @HiveField(3)
   RoomType tipo;
-
-  @HiveField(4)
   SpaceCondition estado;
-
-  @HiveField(5)
   String? descripcion;
-
-  @HiveField(6)
   List<String> fotos;
-
-  @HiveField(7)
   String? foto360Url;
-
-  @HiveField(8)
   DateTime fechaCreacion;
-
-  @HiveField(9)
   DateTime? fechaActualizacion;
-
-  @HiveField(10)
   double? ancho; // en metros
-
-  @HiveField(11)
   double? largo; // en metros
-
-  @HiveField(12)
   double? altura; // en metros
-
-  @HiveField(13)
   String? observaciones;
-
-  @HiveField(14)
   List<String> problemas; // Lista de problemas detectados
 
   PropertyRoom({
