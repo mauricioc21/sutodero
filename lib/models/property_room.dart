@@ -1,4 +1,5 @@
 import 'inventory_property.dart';
+import 'room_features.dart';
 
 /// Tipos de espacios/habitaciones
 enum RoomType {
@@ -108,6 +109,16 @@ class PropertyRoom {
   double? altura; // en metros
   String? observaciones;
   List<String> problemas; // Lista de problemas detectados
+  
+  // Campos adicionales de características (estilo MLS/Metrocuadrado/Fincaraiz)
+  FloorType? tipoPiso;
+  KitchenType? tipoCocina; // Solo para cocinas
+  CountertopMaterial? materialMeson; // Solo para cocinas
+  BathroomType? tipoBano; // Solo para baños
+  BathroomFinish? acabadoBano; // Solo para baños
+  ClosetType? tipoCloset; // Principalmente para dormitorios
+  ViewType? vista;
+  NaturalLighting? iluminacionNatural;
 
   PropertyRoom({
     required this.id,
@@ -125,6 +136,14 @@ class PropertyRoom {
     this.altura,
     this.observaciones,
     List<String>? problemas,
+    this.tipoPiso,
+    this.tipoCocina,
+    this.materialMeson,
+    this.tipoBano,
+    this.acabadoBano,
+    this.tipoCloset,
+    this.vista,
+    this.iluminacionNatural,
   })  : fotos = fotos ?? [],
         problemas = problemas ?? [],
         fechaCreacion = fechaCreacion ?? DateTime.now();
@@ -166,6 +185,14 @@ class PropertyRoom {
       'altura': altura,
       'observaciones': observaciones,
       'problemas': problemas,
+      'tipoPiso': tipoPiso?.name,
+      'tipoCocina': tipoCocina?.name,
+      'materialMeson': materialMeson?.name,
+      'tipoBano': tipoBano?.name,
+      'acabadoBano': acabadoBano?.name,
+      'tipoCloset': tipoCloset?.name,
+      'vista': vista?.name,
+      'iluminacionNatural': iluminacionNatural?.name,
     };
   }
 
@@ -195,6 +222,54 @@ class PropertyRoom {
       altura: map['altura']?.toDouble(),
       observaciones: map['observaciones'],
       problemas: List<String>.from(map['problemas'] ?? []),
+      tipoPiso: map['tipoPiso'] != null
+          ? FloorType.values.firstWhere(
+              (e) => e.name == map['tipoPiso'],
+              orElse: () => FloorType.otro,
+            )
+          : null,
+      tipoCocina: map['tipoCocina'] != null
+          ? KitchenType.values.firstWhere(
+              (e) => e.name == map['tipoCocina'],
+              orElse: () => KitchenType.basica,
+            )
+          : null,
+      materialMeson: map['materialMeson'] != null
+          ? CountertopMaterial.values.firstWhere(
+              (e) => e.name == map['materialMeson'],
+              orElse: () => CountertopMaterial.otro,
+            )
+          : null,
+      tipoBano: map['tipoBano'] != null
+          ? BathroomType.values.firstWhere(
+              (e) => e.name == map['tipoBano'],
+              orElse: () => BathroomType.completo,
+            )
+          : null,
+      acabadoBano: map['acabadoBano'] != null
+          ? BathroomFinish.values.firstWhere(
+              (e) => e.name == map['acabadoBano'],
+              orElse: () => BathroomFinish.otro,
+            )
+          : null,
+      tipoCloset: map['tipoCloset'] != null
+          ? ClosetType.values.firstWhere(
+              (e) => e.name == map['tipoCloset'],
+              orElse: () => ClosetType.sinCloset,
+            )
+          : null,
+      vista: map['vista'] != null
+          ? ViewType.values.firstWhere(
+              (e) => e.name == map['vista'],
+              orElse: () => ViewType.interior,
+            )
+          : null,
+      iluminacionNatural: map['iluminacionNatural'] != null
+          ? NaturalLighting.values.firstWhere(
+              (e) => e.name == map['iluminacionNatural'],
+              orElse: () => NaturalLighting.regular,
+            )
+          : null,
     );
   }
 
@@ -215,6 +290,14 @@ class PropertyRoom {
     double? altura,
     String? observaciones,
     List<String>? problemas,
+    FloorType? tipoPiso,
+    KitchenType? tipoCocina,
+    CountertopMaterial? materialMeson,
+    BathroomType? tipoBano,
+    BathroomFinish? acabadoBano,
+    ClosetType? tipoCloset,
+    ViewType? vista,
+    NaturalLighting? iluminacionNatural,
   }) {
     return PropertyRoom(
       id: id ?? this.id,
@@ -232,6 +315,14 @@ class PropertyRoom {
       altura: altura ?? this.altura,
       observaciones: observaciones ?? this.observaciones,
       problemas: problemas ?? this.problemas,
+      tipoPiso: tipoPiso ?? this.tipoPiso,
+      tipoCocina: tipoCocina ?? this.tipoCocina,
+      materialMeson: materialMeson ?? this.materialMeson,
+      tipoBano: tipoBano ?? this.tipoBano,
+      acabadoBano: acabadoBano ?? this.acabadoBano,
+      tipoCloset: tipoCloset ?? this.tipoCloset,
+      vista: vista ?? this.vista,
+      iluminacionNatural: iluminacionNatural ?? this.iluminacionNatural,
     );
   }
 }

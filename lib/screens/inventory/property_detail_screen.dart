@@ -3,8 +3,10 @@ import 'package:flutter/foundation.dart';
 import '../../models/inventory_property.dart';
 import '../../models/property_room.dart';
 import '../../services/inventory_service.dart';
+import '../../services/floor_plan_service.dart';
 import 'add_edit_property_screen.dart';
 import 'add_edit_room_screen.dart';
+import 'room_detail_screen.dart';
 
 class PropertyDetailScreen extends StatefulWidget {
   final InventoryProperty property;
@@ -17,8 +19,10 @@ class PropertyDetailScreen extends StatefulWidget {
 
 class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   final InventoryService _inventoryService = InventoryService();
+  final FloorPlanService _floorPlanService = FloorPlanService();
   List<PropertyRoom> _rooms = [];
   bool _isLoading = true;
+  bool _isGeneratingPropertyPlan = false;
 
   @override
   void initState() {
@@ -231,6 +235,35 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
             ],
           ),
           const SizedBox(height: 16),
+          
+          // Botón generar plano completo
+          if (_rooms.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: ElevatedButton.icon(
+                onPressed: _isGeneratingPropertyPlan ? null : _generatePropertyFloorPlan,
+                icon: _isGeneratingPropertyPlan
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Icon(Icons.maps_home_work),
+                label: Text(_isGeneratingPropertyPlan
+                    ? 'Generando Plano Completo...'
+                    : 'Generar Plano Completo de la Propiedad'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFD700),
+                  foregroundColor: const Color(0xFF2C2C2C),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  minimumSize: const Size(double.infinity, 50),
+                ),
+              ),
+            ),
+          
           _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _rooms.isEmpty
@@ -357,10 +390,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AddEditRoomScreen(
-          propertyId: widget.property.id,
-          room: room,
-        ),
+        builder: (context) => RoomDetailScreen(roomId: room.id),
       ),
     );
     if (result == true) {
@@ -394,6 +424,119 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
       await _inventoryService.deleteProperty(widget.property.id);
       if (mounted) {
         Navigator.pop(context, true);
+      }
+    }
+  }
+
+  Future<void> _generatePropertyFloorPlan() async {
+    // Verificar que haya espacios
+    if (_rooms.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Necesitas agregar al menos un espacio a la propiedad'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Verificar que al menos un espacio tenga fotos
+    final roomsWithPhotos = _rooms.where((room) => room.fotos.isNotEmpty).toList();
+    if (roomsWithPhotos.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Necesitas tomar fotos de al menos un espacio'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isGeneratingPropertyPlan = true);
+    try {
+      final floorPlan = await _floorPlanService.generatePropertyFloorPlan(widget.property.id);
+      
+      if (mounted) {
+        setState(() => _isGeneratingPropertyPlan = false);
+        
+        if (floorPlan != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Plano completo generado correctamente'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          // Calcular estadísticas
+          double totalArea = 0;
+          int totalPhotos = 0;
+          int rooms360 = 0;
+          
+          for (final room in _rooms) {
+            if (room.area != null) totalArea += room.area!;
+            totalPhotos += room.fotos.length;
+            if (room.tiene360) rooms360++;
+          }
+
+          // Mostrar mensaje de función en desarrollo
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Row(
+                children: [
+                  Icon(Icons.maps_home_work, color: Colors.blue),
+                  SizedBox(width: 8),
+                  Text('Plano Completo'),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Análisis de la propiedad:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text('🏠 Total espacios: ${_rooms.length}'),
+                  Text('📐 Área total: ${totalArea.toStringAsFixed(2)} m²'),
+                  Text('📷 Total fotos: $totalPhotos'),
+                  Text('🔄 Fotos 360°: $rooms360'),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Espacios incluidos:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  ..._rooms.map((room) => Padding(
+                    padding: const EdgeInsets.only(left: 8, top: 4),
+                    child: Text(
+                      '${room.tipo.icon} ${room.nombre} (${room.fotos.length} fotos)',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  )),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'La generación automática del plano completo con IA estará disponible en una próxima actualización.',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Entendido'),
+                ),
+              ],
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isGeneratingPropertyPlan = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
       }
     }
   }

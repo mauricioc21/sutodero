@@ -140,8 +140,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       children: [
                         // Imagen del maestro todero
                         Container(
-                          width: 250,
-                          height: 250,
+                          width: 280,
+                          height: 280,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             boxShadow: [
@@ -154,8 +154,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                           ),
                           child: ClipOval(
                             child: Image.asset(
-                              'assets/images/maestro_todero.png',
-                              fit: BoxFit.cover,
+                              'assets/images/maestro_todero_splash.png',
+                              fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) {
                                 return Container(
                                   color: const Color(0xFF2C2C2C),
@@ -290,8 +290,9 @@ class HomeScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         Image.asset(
-                          'assets/images/maestro_todero.png',
-                          height: 180,
+                          'assets/images/maestro_todero_home.png',
+                          height: 200,
+                          fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) {
                             return const Icon(
                               Icons.handyman,
