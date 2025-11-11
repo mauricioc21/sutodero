@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'screens/inventory/inventories_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -340,10 +341,10 @@ class HomeScreen extends StatelessWidget {
                       description: 'Gestiona propiedades y espacios',
                       color: const Color(0xFFFFD700),
                       onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Módulo de Inventarios - Próximamente'),
-                            backgroundColor: Color(0xFFFFD700),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const InventoriesScreen(),
                           ),
                         );
                       },
