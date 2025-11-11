@@ -108,7 +108,7 @@ class HomeScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         Image.asset(
-                          'assets/images/logo_sutodero_clean.png',
+                          'assets/images/logo_sutodero_final.png',
                           height: 200,
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) {
