@@ -166,6 +166,12 @@ class TicketModel {
   // Calificación (después de completar)
   final int? calificacion; // 1-5 estrellas
   final String? comentarioCalificacion;
+  
+  // Firma digital (al completar trabajo)
+  final String? firmaCliente; // Base64 de la firma del cliente
+  final String? firmaTodero; // Base64 de la firma del todero
+  final DateTime? fechaFirmaCliente;
+  final DateTime? fechaFirmaTodero;
 
   TicketModel({
     required this.id,
@@ -197,6 +203,10 @@ class TicketModel {
     this.notasTodero,
     this.calificacion,
     this.comentarioCalificacion,
+    this.firmaCliente,
+    this.firmaTodero,
+    this.fechaFirmaCliente,
+    this.fechaFirmaTodero,
   });
 
   /// Convertir a Map para Firestore
@@ -230,6 +240,10 @@ class TicketModel {
       'notasTodero': notasTodero,
       'calificacion': calificacion,
       'comentarioCalificacion': comentarioCalificacion,
+      'firmaCliente': firmaCliente,
+      'firmaTodero': firmaTodero,
+      'fechaFirmaCliente': fechaFirmaCliente != null ? Timestamp.fromDate(fechaFirmaCliente!) : null,
+      'fechaFirmaTodero': fechaFirmaTodero != null ? Timestamp.fromDate(fechaFirmaTodero!) : null,
     };
   }
 
@@ -274,6 +288,10 @@ class TicketModel {
       notasTodero: map['notasTodero'],
       calificacion: map['calificacion'],
       comentarioCalificacion: map['comentarioCalificacion'],
+      firmaCliente: map['firmaCliente'],
+      firmaTodero: map['firmaTodero'],
+      fechaFirmaCliente: map['fechaFirmaCliente'] != null ? (map['fechaFirmaCliente'] as Timestamp).toDate() : null,
+      fechaFirmaTodero: map['fechaFirmaTodero'] != null ? (map['fechaFirmaTodero'] as Timestamp).toDate() : null,
     );
   }
 
@@ -306,6 +324,10 @@ class TicketModel {
     String? notasTodero,
     int? calificacion,
     String? comentarioCalificacion,
+    String? firmaCliente,
+    String? firmaTodero,
+    DateTime? fechaFirmaCliente,
+    DateTime? fechaFirmaTodero,
   }) {
     return TicketModel(
       id: id,
@@ -337,6 +359,10 @@ class TicketModel {
       notasTodero: notasTodero ?? this.notasTodero,
       calificacion: calificacion ?? this.calificacion,
       comentarioCalificacion: comentarioCalificacion ?? this.comentarioCalificacion,
+      firmaCliente: firmaCliente ?? this.firmaCliente,
+      firmaTodero: firmaTodero ?? this.firmaTodero,
+      fechaFirmaCliente: fechaFirmaCliente ?? this.fechaFirmaCliente,
+      fechaFirmaTodero: fechaFirmaTodero ?? this.fechaFirmaTodero,
     );
   }
 }

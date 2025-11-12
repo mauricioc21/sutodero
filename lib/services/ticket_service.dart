@@ -417,6 +417,53 @@ class TicketService {
     }
   }
 
+  /// Guardar firma digital
+  Future<bool> saveSignature({
+    required String ticketId,
+    required String signatureBase64,
+    required bool isCliente,
+    String? userId,
+    String? userName,
+  }) async {
+    try {
+      if (_firebaseAvailable) {
+        final ticket = await getTicket(ticketId);
+        if (ticket == null) return false;
+        
+        final now = DateTime.now();
+        final updates = <String, dynamic>{
+          isCliente ? 'firmaCliente' : 'firmaTodero': signatureBase64,
+          isCliente ? 'fechaFirmaCliente' : 'fechaFirmaTodero': Timestamp.fromDate(now),
+          'fechaActualizacion': Timestamp.fromDate(now),
+        };
+        
+        await _firestore.collection('tickets').doc(ticketId).update(updates);
+        
+        // Registrar evento de firma
+        final userName_ = userName ?? (isCliente ? ticket.clienteNombre : ticket.toderoNombre ?? 'Usuario');
+        final userId_ = userId ?? (isCliente ? ticket.clienteId : ticket.toderoId ?? 'unknown');
+        
+        await _historyService.addEvent(
+          ticketId: ticketId,
+          type: EventType.commented,
+          description: isCliente 
+              ? 'Firma del cliente agregada'
+              : 'Firma del todero agregada',
+          userId: userId_,
+          userName: userName_,
+        );
+        
+        return true;
+      }
+      return false;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ Error guardando firma: $e');
+      }
+      return false;
+    }
+  }
+
   /// Eliminar ticket
   Future<bool> deleteTicket(String ticketId) async {
     try {

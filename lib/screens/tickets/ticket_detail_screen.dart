@@ -4,7 +4,9 @@ import '../../models/ticket_model.dart';
 import '../../services/ticket_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/chat_service.dart';
+import '../../services/pdf_service.dart';
 import '../../widgets/ticket_timeline.dart';
+import '../../widgets/signature_pad.dart';
 import 'chat_screen.dart';
 
 class TicketDetailScreen extends StatefulWidget {
@@ -18,6 +20,7 @@ class TicketDetailScreen extends StatefulWidget {
 
 class _TicketDetailScreenState extends State<TicketDetailScreen> {
   final TicketService _ticketService = TicketService();
+  final PdfService _pdfService = PdfService();
   TicketModel? _ticket;
   bool _isLoading = true;
 
@@ -63,6 +66,90 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
     }
   }
 
+  Future<void> _exportToPdf() async {
+    if (_ticket == null) return;
+    
+    try {
+      // Mostrar indicador de carga
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(color: Color(0xFFFFD700)),
+        ),
+      );
+      
+      // Generar PDF
+      final pdfBytes = await _pdfService.generateTicketPdf(_ticket!);
+      
+      if (!mounted) return;
+      Navigator.pop(context); // Cerrar indicador de carga
+      
+      // Compartir/Imprimir PDF
+      await _pdfService.sharePdf(
+        pdfBytes,
+        'ticket_${_ticket!.id.substring(0, 8)}.pdf',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // Cerrar indicador de carga
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Error al generar PDF: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _captureSignature(bool isCliente) async {
+    if (_ticket == null) return;
+    
+    final authService = Provider.of<AuthService>(context, listen: false);
+    
+    final signatureBase64 = await showSignaturePad(
+      context: context,
+      title: isCliente ? 'Firma del Cliente' : 'Firma del Todero',
+      subtitle: 'Confirme la realización del trabajo',
+    );
+    
+    if (signatureBase64 == null || !mounted) return;
+    
+    // Guardar firma
+    final success = await _ticketService.saveSignature(
+      ticketId: widget.ticketId,
+      signatureBase64: signatureBase64,
+      isCliente: isCliente,
+      userId: authService.currentUser?.uid,
+      userName: authService.currentUser?.nombre,
+    );
+    
+    if (success) {
+      _loadTicket();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isCliente 
+                  ? '✅ Firma del cliente guardada' 
+                  : '✅ Firma del todero guardada',
+            ),
+          ),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('❌ Error al guardar firma'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -101,6 +188,66 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
         backgroundColor: const Color(0xFF2C2C2C),
         foregroundColor: const Color(0xFFFFD700),
         actions: [
+          // Botón de Exportar PDF
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            tooltip: 'Exportar PDF',
+            onPressed: _exportToPdf,
+          ),
+          
+          // Botón de Firma Digital (solo si está completado o en progreso)
+          if (_ticket!.estado == TicketStatus.completado || 
+              _ticket!.estado == TicketStatus.enProgreso)
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.draw),
+              tooltip: 'Firma Digital',
+              onSelected: (value) {
+                if (value == 'cliente') {
+                  _captureSignature(true);
+                } else if (value == 'todero') {
+                  _captureSignature(false);
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'cliente',
+                  child: Row(
+                    children: [
+                      Icon(
+                        _ticket!.firmaCliente != null 
+                            ? Icons.check_circle 
+                            : Icons.circle_outlined,
+                        color: _ticket!.firmaCliente != null 
+                            ? Colors.green 
+                            : Colors.grey,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Firma Cliente'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'todero',
+                  child: Row(
+                    children: [
+                      Icon(
+                        _ticket!.firmaTodero != null 
+                            ? Icons.check_circle 
+                            : Icons.circle_outlined,
+                        color: _ticket!.firmaTodero != null 
+                            ? Colors.green 
+                            : Colors.grey,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Firma Todero'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          
           // Botón de chat con badge de mensajes no leídos
           Builder(
             builder: (context) {

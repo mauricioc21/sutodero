@@ -90,6 +90,9 @@ dependencies:
   # PDF Generation
   pdf: 3.11.1
   printing: 5.13.3
+  
+  # Signature/Drawing
+  signature: 5.5.0
 
 dev_dependencies:
   flutter_test:
