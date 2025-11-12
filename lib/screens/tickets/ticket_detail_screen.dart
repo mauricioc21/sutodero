@@ -4,6 +4,7 @@ import '../../models/ticket_model.dart';
 import '../../services/ticket_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/chat_service.dart';
+import '../../widgets/ticket_timeline.dart';
 import 'chat_screen.dart';
 
 class TicketDetailScreen extends StatefulWidget {
@@ -302,6 +303,37 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
             subtitle: _ticket!.fechaCompletado != null
                 ? 'Completado: ${_formatDate(_ticket!.fechaCompletado!)}'
                 : null,
+          ),
+          const SizedBox(height: 24),
+
+          // Historial de cambios
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF2C2C2C),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.history, color: Color(0xFFFFD700), size: 20),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Historial de Cambios',
+                      style: TextStyle(
+                        color: Color(0xFFFFD700),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                TicketTimeline(ticketId: _ticket!.id),
+              ],
+            ),
           ),
         ],
       ),
