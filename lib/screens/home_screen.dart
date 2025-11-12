@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import 'inventory/inventories_screen.dart';
+import 'tickets/tickets_screen.dart';
 import 'auth/login_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -175,9 +176,10 @@ class HomeScreen extends StatelessWidget {
                       description: 'Solicitudes de reparación',
                       color: const Color(0xFFFF6B00),
                       onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Funcionalidad en desarrollo'),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const TicketsScreen(),
                           ),
                         );
                       },
