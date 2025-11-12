@@ -6,11 +6,13 @@ import '../../models/inventory_property.dart';
 import '../../models/room_features.dart';
 import '../../services/inventory_service.dart';
 import '../../services/floor_plan_service.dart';
+import '../../services/qr_service.dart';
+import '../../services/inventory_pdf_service.dart';
 import 'add_edit_room_screen.dart';
 
 class RoomDetailScreen extends StatefulWidget {
-  final String roomId;
-  const RoomDetailScreen({super.key, required this.roomId});
+  final PropertyRoom room;
+  const RoomDetailScreen({super.key, required this.room});
 
   @override
   State<RoomDetailScreen> createState() => _RoomDetailScreenState();
@@ -20,6 +22,8 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
   final _inventoryService = InventoryService();
   final _floorPlanService = FloorPlanService();
   final _imagePicker = ImagePicker();
+  final _qrService = QRService();
+  final _pdfService = InventoryPdfService();
   PropertyRoom? _room;
   bool _isLoading = true;
   bool _isGeneratingFloorPlan = false;
@@ -27,13 +31,14 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _loadRoom();
+    _room = widget.room;
+    _isLoading = false;
   }
 
   Future<void> _loadRoom() async {
     setState(() => _isLoading = true);
     try {
-      final room = await _inventoryService.getRoom(widget.roomId);
+      final room = await _inventoryService.getRoom(widget.room.id);
       if (mounted) {
         setState(() {
           _room = room;
@@ -47,6 +52,61 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
           SnackBar(content: Text('Error al cargar espacio: $e')),
         );
       }
+    }
+  }
+
+  Future<void> _showQRCode() async {
+    if (_room == null) return;
+    
+    final qrData = _qrService.generateRoomQR(
+      _room!.id,
+      _room!.propertyId,
+      nombre: _room!.nombre,
+    );
+    
+    await _qrService.showQRDialog(
+      context,
+      data: qrData,
+      title: 'QR de Espacio',
+      subtitle: '${_room!.tipo.icon} ${_room!.nombre}',
+    );
+  }
+
+  Future<void> _exportToPdf() async {
+    if (_room == null) return;
+    
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(color: Color(0xFFFFD700)),
+        ),
+      );
+      
+      // Necesitamos cargar la propiedad
+      final property = await _inventoryService.getProperty(_room!.propertyId);
+      if (property == null) throw Exception('Propiedad no encontrada');
+      
+      final pdfBytes = await _pdfService.generateRoomPdf(property, _room!);
+      
+      if (!mounted) return;
+      Navigator.pop(context);
+      
+      await _pdfService.sharePdf(
+        pdfBytes,
+        'espacio_${_room!.nombre.replaceAll(' ', '_')}.pdf',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Error al generar PDF: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -280,6 +340,18 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
       appBar: AppBar(
         title: Text(_room!.nombre),
         actions: [
+          // Botón PDF
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            onPressed: _exportToPdf,
+            tooltip: 'Exportar PDF',
+          ),
+          // Botón QR
+          IconButton(
+            icon: const Icon(Icons.qr_code),
+            onPressed: _showQRCode,
+            tooltip: 'Código QR',
+          ),
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: _editRoom,

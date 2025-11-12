@@ -474,7 +474,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => RoomDetailScreen(roomId: room.id),
+        builder: (context) => RoomDetailScreen(room: room),
       ),
     );
     if (result == true) {

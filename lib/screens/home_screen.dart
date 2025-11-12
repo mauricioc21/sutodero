@@ -5,6 +5,7 @@ import 'inventory/inventories_screen.dart';
 import 'tickets/tickets_screen.dart';
 import 'tickets/dashboard_screen.dart';
 import 'auth/login_screen.dart';
+import 'qr/qr_scanner_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -193,6 +194,21 @@ class HomeScreen extends StatelessWidget {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Funcionalidad en desarrollo'),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildFeatureCard(
+                      context,
+                      icon: Icons.qr_code_scanner,
+                      title: 'Escanear QR',
+                      description: 'Escanea códigos QR',
+                      color: const Color(0xFF9C27B0), // Púrpura
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const QRScannerScreen(),
                           ),
                         );
                       },
