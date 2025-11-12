@@ -87,16 +87,7 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFF5F5F5),
-              Color(0xFFE0E0E0),
-            ],
-          ),
-        ),
+        color: Colors.black,
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(20),
@@ -104,45 +95,37 @@ class HomeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Tarjeta de bienvenida
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      children: [
-                        Image.asset(
-                          'assets/images/logo_sutodero_transparente.png',
-                          height: 200,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(
-                              Icons.handyman,
-                              size: 100,
-                              color: Color(0xFFFFD700),
-                            );
-                          },
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5E6C8),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    children: [
+                      Image.asset(
+                        'assets/images/logo_sutodero_transparente.png',
+                        height: 200,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(
+                            Icons.handyman,
+                            size: 100,
+                            color: Color(0xFFFFD700),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        '¡Bienvenido, ${authService.currentUser?.nombre ?? "mauricio"}!',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2C2C2C),
                         ),
-                        const SizedBox(height: 20),
-                        Text(
-                          '¡Bienvenido, ${authService.currentUser?.nombre ?? "Usuario"}!',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2C2C2C),
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Tu solución profesional para gestión de inventarios, tickets de reparación y captura 360°',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.black54,
-                            height: 1.5,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -246,14 +229,14 @@ class HomeScreen extends StatelessWidget {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5E6C8),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -263,13 +246,13 @@ class HomeScreen extends StatelessWidget {
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.2),
+                  color: color,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   icon,
                   size: 32,
-                  color: color,
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(height: 16),
@@ -286,8 +269,8 @@ class HomeScreen extends StatelessWidget {
               Text(
                 description,
                 style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.black54,
+                  fontSize: 13,
+                  color: Color(0xFF666666),
                   height: 1.3,
                 ),
                 textAlign: TextAlign.center,
