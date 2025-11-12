@@ -36,26 +36,25 @@ class DefaultFirebaseOptions {
     }
   }
 
-  // IMPORTANT: Replace these with your actual Firebase project credentials
-  // Get these from: https://console.firebase.google.com/
-  // Project Settings > General > Your apps > Web/Android app
+  // Firebase project credentials configured
+  // Project: su-todero
   
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'YOUR_WEB_API_KEY',
-    appId: '1:YOUR_APP_ID:web:YOUR_WEB_APP_ID',
-    messagingSenderId: 'YOUR_SENDER_ID',
-    projectId: 'sutodero-app',
-    authDomain: 'sutodero-app.firebaseapp.com',
-    storageBucket: 'sutodero-app.appspot.com',
-    measurementId: 'G-MEASUREMENT_ID',
+    apiKey: 'AIzaSyDltBp3tPYtsgw9WJo68mRuKIFnFZqMmP8',
+    appId: '1:292635586927:web:bad9207d28dc0c9e29789a',
+    messagingSenderId: '292635586927',
+    projectId: 'su-todero',
+    authDomain: 'su-todero.firebaseapp.com',
+    storageBucket: 'su-todero.firebasestorage.app',
+    measurementId: 'G-HZLJ1WZTRP',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'YOUR_ANDROID_API_KEY',
-    appId: '1:YOUR_APP_ID:android:YOUR_ANDROID_APP_ID',
-    messagingSenderId: 'YOUR_SENDER_ID',
-    projectId: 'sutodero-app',
-    storageBucket: 'sutodero-app.appspot.com',
+    apiKey: 'AIzaSyDltBp3tPYtsgw9WJo68mRuKIFnFZqMmP8',
+    appId: '1:292635586927:android:PENDING_ANDROID_CONFIG',
+    messagingSenderId: '292635586927',
+    projectId: 'su-todero',
+    storageBucket: 'su-todero.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
