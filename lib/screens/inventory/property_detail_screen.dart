@@ -14,10 +14,14 @@ import '../../services/qr_service.dart';
 import '../../services/ticket_service.dart';
 import '../../services/inventory_act_service.dart';
 import '../../services/inventory_act_pdf_service.dart';
+import '../../services/virtual_tour_service.dart';
 import 'add_edit_property_screen.dart';
 import 'add_edit_room_screen.dart';
 import 'room_detail_screen.dart';
 import 'sign_inventory_act_screen.dart';
+import '../camera_360/camera_360_capture_screen.dart';
+import '../virtual_tour/virtual_tour_viewer_screen.dart';
+import '../../models/virtual_tour_model.dart';
 
 class PropertyDetailScreen extends StatefulWidget {
   final InventoryProperty property;
@@ -37,9 +41,11 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   final TicketService _ticketService = TicketService();
   final InventoryActService _actService = InventoryActService();
   final InventoryActPdfService _actPdfService = InventoryActPdfService();
+  final VirtualTourService _virtualTourService = VirtualTourService();
   List<PropertyRoom> _rooms = [];
   List<TicketModel> _relatedTickets = [];
   List<InventoryAct> _acts = [];
+  List<VirtualTourModel> _virtualTours = [];
   bool _isLoading = true;
   bool _isGeneratingPropertyPlan = false;
 
@@ -55,10 +61,13 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
       final rooms = await _inventoryService.getRoomsByProperty(widget.property.id);
       // Cargar tickets relacionados
       final tickets = await _loadRelatedTickets();
+      // Cargar tours virtuales
+      final tours = await _virtualTourService.getToursByProperty(widget.property.id);
       if (mounted) {
         setState(() {
           _rooms = rooms;
           _relatedTickets = tickets;
+          _virtualTours = tours;
           _isLoading = false;
         });
       }
@@ -322,6 +331,21 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     }
   }
 
+  /// Abrir pantalla de captura 360°
+  Future<void> _openCamera360Capture() async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => Camera360CaptureScreen(property: widget.property),
+      ),
+    );
+
+    // Si se creó un tour, recargar la lista
+    if (result == true) {
+      _loadRooms(); // Esto también recargará los tours
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -352,6 +376,12 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
             onPressed: _generate3DFloorPlan,
             tooltip: 'Generar Plano 3D Isométrico',
           ),
+          // Botón Captura 360°
+          IconButton(
+            icon: const Icon(Icons.panorama_photosphere),
+            onPressed: _openCamera360Capture,
+            tooltip: 'Capturar Fotos 360°',
+          ),
           // Botón QR
           IconButton(
             icon: const Icon(Icons.qr_code),
@@ -374,6 +404,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
           children: [
             _buildPropertyHeader(),
             _buildPropertyInfo(),
+            if (_virtualTours.isNotEmpty) _buildVirtualToursSection(),
             if (_relatedTickets.isNotEmpty) _buildRelatedTicketsSection(),
             _buildRoomsSection(),
           ],
@@ -1037,6 +1068,171 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
       //   ..setAttribute('download', filename)
       //   ..click();
       // html.Url.revokeObjectUrl(url);
+    }
+  }
+
+  /// Sección de tours virtuales 360°
+  Widget _buildVirtualToursSection() {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFD700).withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.panorama_photosphere,
+                      color: Color(0xFFFFD700),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Tours Virtuales 360°',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFD700),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${_virtualTours.length}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _virtualTours.length,
+            itemBuilder: (context, index) {
+              final tour = _virtualTours[index];
+              return Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: InkWell(
+                  onTap: () => _openVirtualTour(tour),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(8),
+                            image: tour.photo360Urls.isNotEmpty
+                                ? DecorationImage(
+                                    image: NetworkImage(tour.photo360Urls.first),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
+                          ),
+                          child: tour.photo360Urls.isEmpty
+                              ? const Icon(Icons.panorama, size: 40, color: Colors.grey)
+                              : null,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                tour.description.isNotEmpty
+                                    ? tour.description
+                                    : 'Tour Virtual',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${tour.photoCount} foto(s) 360°',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Creado: ${_formatDate(tour.createdAt)}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.play_circle_filled,
+                          color: Color(0xFFFFD700),
+                          size: 32,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Abrir tour virtual
+  void _openVirtualTour(VirtualTourModel tour) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VirtualTourViewerScreen(tour: tour),
+      ),
+    );
+  }
+
+  /// Formatear fecha
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays == 0) {
+      return 'Hoy';
+    } else if (difference.inDays == 1) {
+      return 'Ayer';
+    } else if (difference.inDays < 7) {
+      return 'Hace ${difference.inDays} días';
+    } else {
+      return '${date.day}/${date.month}/${date.year}';
     }
   }
 }
