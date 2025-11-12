@@ -2,11 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'screens/auth/login_screen.dart';
 import 'services/auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Inicializar Firebase
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    if (kDebugMode) {
+      debugPrint('✅ Firebase inicializado correctamente');
+    }
+  } catch (e) {
+    if (kDebugMode) {
+      debugPrint('⚠️ Error al inicializar Firebase: $e');
+      debugPrint('La app funcionará en modo local sin Firebase');
+    }
+  }
   
   runApp(
     MultiProvider(
