@@ -2,11 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
 import '../models/ticket_model.dart';
+import '../models/ticket_event.dart';
+import 'ticket_history_service.dart';
 
 /// Servicio para gestionar tickets de trabajo
 class TicketService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final Uuid _uuid = const Uuid();
+  final TicketHistoryService _historyService = TicketHistoryService();
   
   static final TicketService _instance = TicketService._internal();
   factory TicketService() => _instance;
@@ -58,6 +61,14 @@ class TicketService {
     try {
       if (_firebaseAvailable) {
         await _firestore.collection('tickets').doc(ticket.id).set(ticket.toMap());
+        
+        // Registrar evento de creación del ticket
+        await _historyService.logTicketCreated(
+          ticketId: ticket.id,
+          userId: clienteId,
+          userName: clienteNombre,
+          titulo: titulo,
+        );
       }
       return ticket;
     } catch (e) {
@@ -184,9 +195,15 @@ class TicketService {
   }
 
   /// Cambiar estado del ticket
-  Future<bool> updateTicketStatus(String ticketId, TicketStatus newStatus) async {
+  Future<bool> updateTicketStatus(String ticketId, TicketStatus newStatus, {String? userId, String? userName}) async {
     try {
       if (_firebaseAvailable) {
+        // Obtener ticket actual para comparar estado
+        final ticket = await getTicket(ticketId);
+        if (ticket == null) return false;
+        
+        final oldStatus = ticket.estado;
+        
         final updates = <String, dynamic>{
           'estado': newStatus.value,
           'fechaActualizacion': Timestamp.fromDate(DateTime.now()),
@@ -203,6 +220,39 @@ class TicketService {
         }
         
         await _firestore.collection('tickets').doc(ticketId).update(updates);
+        
+        // Registrar evento de cambio de estado
+        final userName_ = userName ?? ticket.toderoNombre ?? ticket.clienteNombre;
+        final userId_ = userId ?? ticket.toderoId ?? ticket.clienteId;
+        
+        await _historyService.logStatusChanged(
+          ticketId: ticketId,
+          userId: userId_,
+          userName: userName_,
+          oldStatus: oldStatus.displayName,
+          newStatus: newStatus.displayName,
+        );
+        
+        // Si se completó, registrar evento especial
+        if (newStatus == TicketStatus.completado) {
+          await _historyService.logTicketCompleted(
+            ticketId: ticketId,
+            userId: userId_,
+            userName: userName_,
+          );
+        }
+        
+        // Si se canceló, registrar evento de cancelación
+        if (newStatus == TicketStatus.cancelado) {
+          await _historyService.addEvent(
+            ticketId: ticketId,
+            type: EventType.cancelled,
+            description: 'Ticket cancelado',
+            userId: userId_,
+            userName: userName_,
+          );
+        }
+        
         return true;
       }
       return false;
@@ -215,15 +265,31 @@ class TicketService {
   }
 
   /// Asignar todero al ticket
-  Future<bool> assignTodero(String ticketId, String toderoId, String toderoNombre) async {
+  Future<bool> assignTodero(String ticketId, String toderoId, String toderoNombre, {String? assignedByUserId, String? assignedByUserName}) async {
     try {
       if (_firebaseAvailable) {
+        // Obtener ticket para saber quién lo asigna
+        final ticket = await getTicket(ticketId);
+        if (ticket == null) return false;
+        
         await _firestore.collection('tickets').doc(ticketId).update({
           'toderoId': toderoId,
           'toderoNombre': toderoNombre,
           'estado': TicketStatus.pendiente.value,
           'fechaActualizacion': Timestamp.fromDate(DateTime.now()),
         });
+        
+        // Registrar evento de asignación
+        final assignerName = assignedByUserName ?? ticket.clienteNombre;
+        final assignerId = assignedByUserId ?? ticket.clienteId;
+        
+        await _historyService.logToderoAssigned(
+          ticketId: ticketId,
+          userId: assignerId,
+          userName: assignerName,
+          toderoName: toderoNombre,
+        );
+        
         return true;
       }
       return false;
@@ -236,7 +302,7 @@ class TicketService {
   }
 
   /// Agregar foto al ticket
-  Future<bool> addPhoto(String ticketId, String photoPath, {bool isResult = false}) async {
+  Future<bool> addPhoto(String ticketId, String photoPath, {bool isResult = false, String? userId, String? userName}) async {
     try {
       if (_firebaseAvailable) {
         final ticket = await getTicket(ticketId);
@@ -249,6 +315,18 @@ class TicketService {
           field: [...currentPhotos, photoPath],
           'fechaActualizacion': Timestamp.fromDate(DateTime.now()),
         });
+        
+        // Registrar evento de foto agregada
+        final userName_ = userName ?? ticket.toderoNombre ?? ticket.clienteNombre;
+        final userId_ = userId ?? ticket.toderoId ?? ticket.clienteId;
+        
+        await _historyService.logPhotoAdded(
+          ticketId: ticketId,
+          userId: userId_,
+          userName: userName_,
+          isResult: isResult,
+        );
+        
         return true;
       }
       return false;
@@ -261,20 +339,79 @@ class TicketService {
   }
 
   /// Calificar ticket (después de completado)
-  Future<bool> rateTicket(String ticketId, int calificacion, String? comentario) async {
+  Future<bool> rateTicket(String ticketId, int calificacion, String? comentario, {String? userId, String? userName}) async {
     try {
       if (_firebaseAvailable) {
+        // Obtener ticket para saber quién califica
+        final ticket = await getTicket(ticketId);
+        if (ticket == null) return false;
+        
         await _firestore.collection('tickets').doc(ticketId).update({
           'calificacion': calificacion,
           'comentarioCalificacion': comentario,
           'fechaActualizacion': Timestamp.fromDate(DateTime.now()),
         });
+        
+        // Registrar evento de calificación
+        final userName_ = userName ?? ticket.clienteNombre;
+        final userId_ = userId ?? ticket.clienteId;
+        
+        await _historyService.logTicketRated(
+          ticketId: ticketId,
+          userId: userId_,
+          userName: userName_,
+          rating: calificacion,
+        );
+        
         return true;
       }
       return false;
     } catch (e) {
       if (kDebugMode) {
         debugPrint('⚠️ Error calificando ticket: $e');
+      }
+      return false;
+    }
+  }
+
+  /// Actualizar presupuesto del ticket
+  Future<bool> updateBudget(String ticketId, double newBudget, {String? userId, String? userName}) async {
+    try {
+      if (_firebaseAvailable) {
+        final ticket = await getTicket(ticketId);
+        if (ticket == null) return false;
+        
+        final oldBudget = ticket.presupuestoEstimado;
+        
+        await _firestore.collection('tickets').doc(ticketId).update({
+          'presupuestoEstimado': newBudget,
+          'fechaActualizacion': Timestamp.fromDate(DateTime.now()),
+        });
+        
+        // Registrar evento de actualización de presupuesto
+        final userName_ = userName ?? ticket.toderoNombre ?? ticket.clienteNombre;
+        final userId_ = userId ?? ticket.toderoId ?? ticket.clienteId;
+        
+        await _historyService.addEvent(
+          ticketId: ticketId,
+          type: EventType.budgetUpdated,
+          description: oldBudget != null 
+              ? 'Presupuesto actualizado de \$${oldBudget.toStringAsFixed(0)} a \$${newBudget.toStringAsFixed(0)}'
+              : 'Presupuesto establecido en \$${newBudget.toStringAsFixed(0)}',
+          userId: userId_,
+          userName: userName_,
+          metadata: {
+            'oldBudget': oldBudget,
+            'newBudget': newBudget,
+          },
+        );
+        
+        return true;
+      }
+      return false;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ Error actualizando presupuesto: $e');
       }
       return false;
     }
