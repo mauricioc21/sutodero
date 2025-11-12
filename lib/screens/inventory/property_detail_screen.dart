@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import '../../models/inventory_property.dart';
 import '../../models/property_room.dart';
 import '../../models/ticket_model.dart';
+import '../../models/inventory_act.dart';
 import '../../services/inventory_service.dart';
 import '../../services/floor_plan_service.dart';
 import '../../services/inventory_pdf_service.dart';
 import '../../services/qr_service.dart';
 import '../../services/ticket_service.dart';
+import '../../services/inventory_act_service.dart';
+import '../../services/inventory_act_pdf_service.dart';
 import 'add_edit_property_screen.dart';
 import 'add_edit_room_screen.dart';
 import 'room_detail_screen.dart';
+import 'sign_inventory_act_screen.dart';
 
 class PropertyDetailScreen extends StatefulWidget {
   final InventoryProperty property;
@@ -27,8 +33,11 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   final InventoryPdfService _pdfService = InventoryPdfService();
   final QRService _qrService = QRService();
   final TicketService _ticketService = TicketService();
+  final InventoryActService _actService = InventoryActService();
+  final InventoryActPdfService _actPdfService = InventoryActPdfService();
   List<PropertyRoom> _rooms = [];
   List<TicketModel> _relatedTickets = [];
+  List<InventoryAct> _acts = [];
   bool _isLoading = true;
   bool _isGeneratingPropertyPlan = false;
 
@@ -127,6 +136,12 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
       appBar: AppBar(
         title: const Text('Detalle de Propiedad'),
         actions: [
+          // Botón Acta de Inventario
+          IconButton(
+            icon: const Icon(Icons.assignment),
+            onPressed: _createInventoryAct,
+            tooltip: 'Crear Acta de Inventario',
+          ),
           // Botón PDF
           IconButton(
             icon: const Icon(Icons.picture_as_pdf),
@@ -751,5 +766,331 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
       case TicketStatus.cancelado:
         return const Color(0xFF757575);
     }
+  }
+
+  /// Crea un Acta de Inventario
+  Future<void> _createInventoryAct() async {
+    // Mostrar diálogo para capturar información del cliente
+    final actData = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (context) => _ActClientInfoDialog(property: widget.property),
+    );
+
+    if (actData == null) return;
+
+    try {
+      // Recopilar todas las fotos de la propiedad y sus espacios
+      final allPhotos = <String>[
+        ...widget.property.fotos,
+        ..._rooms.expand((room) => room.fotos),
+      ];
+
+      // Crear acta inicial
+      final act = await _actService.createAct(
+        propertyId: widget.property.id,
+        propertyAddress: widget.property.direccion,
+        propertyType: widget.property.tipo.name,
+        propertyDescription: widget.property.descripcion,
+        clientName: actData['clientName']!,
+        clientPhone: actData['clientPhone'],
+        clientEmail: actData['clientEmail'],
+        clientIdNumber: actData['clientIdNumber'],
+        observations: actData['observations'],
+        roomIds: _rooms.map((r) => r.id).toList(),
+        photoUrls: allPhotos,
+        createdBy: 'current_user', // TODO: Obtener del AuthService
+        createdByName: actData['inspectorName'],
+        createdByRole: actData['inspectorRole'],
+      );
+
+      if (!mounted) return;
+
+      // Navegar a pantalla de firma y reconocimiento facial
+      final completedAct = await Navigator.push<InventoryAct>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SignInventoryActScreen(act: act),
+        ),
+      );
+
+      if (completedAct != null && mounted) {
+        // Generar y descargar PDF
+        await _generateAndDownloadActPdf(completedAct);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al crear acta: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Genera PDF del acta y lo descarga
+  Future<void> _generateAndDownloadActPdf(InventoryAct act) async {
+    try {
+      // Mostrar loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: Color(0xFFFFD700)),
+                  SizedBox(height: 16),
+                  Text('Generando PDF del acta...'),
+                  Text('Esto puede tomar unos momentos', style: TextStyle(fontSize: 12)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Generar PDF
+      final pdfBytes = await _actPdfService.generateActPdf(
+        act: act,
+        rooms: _rooms,
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context); // Cerrar loading
+
+      // Guardar PDF
+      if (kIsWeb) {
+        // En web: descargar automáticamente
+        _downloadPdfWeb(pdfBytes, 'Acta_${act.validationCode}.pdf');
+      } else {
+        // En móvil: guardar y compartir
+        final dir = await getApplicationDocumentsDirectory();
+        final file = File('${dir.path}/Acta_${act.validationCode}.pdf');
+        await file.writeAsBytes(pdfBytes);
+
+        // Subir PDF a Firebase Storage
+        final pdfUrl = await _actService.uploadPdf(act.id, file);
+        await _actService.updatePdfUrl(act.id, pdfUrl);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('✓ PDF generado: Acta_${act.validationCode}.pdf'),
+              backgroundColor: Colors.green,
+              action: SnackBarAction(
+                label: 'Compartir',
+                onPressed: () {
+                  // Share PDF
+                  // Share.shareXFiles([XFile(file.path)]);
+                },
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Cerrar loading si está abierto
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al generar PDF: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Descarga PDF en web
+  void _downloadPdfWeb(List<int> bytes, String filename) {
+    // Esta función solo se ejecuta en web
+    // El import condicional de dart:html lo permite
+    if (kIsWeb) {
+      // TODO: Implementar descarga web cuando se compile para web
+      // final blob = html.Blob([bytes]);
+      // final url = html.Url.createObjectUrlFromBlob(blob);
+      // final anchor = html.AnchorElement(href: url)
+      //   ..setAttribute('download', filename)
+      //   ..click();
+      // html.Url.revokeObjectUrl(url);
+    }
+  }
+}
+
+/// Diálogo para capturar información del cliente para el acta
+class _ActClientInfoDialog extends StatefulWidget {
+  final InventoryProperty property;
+
+  const _ActClientInfoDialog({required this.property});
+
+  @override
+  State<_ActClientInfoDialog> createState() => _ActClientInfoDialogState();
+}
+
+class _ActClientInfoDialogState extends State<_ActClientInfoDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _clientNameController = TextEditingController();
+  final _clientPhoneController = TextEditingController();
+  final _clientEmailController = TextEditingController();
+  final _clientIdController = TextEditingController();
+  final _inspectorNameController = TextEditingController();
+  final _inspectorRoleController = TextEditingController();
+  final _observationsController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-llenar con datos de la propiedad si existen
+    _clientNameController.text = widget.property.clienteNombre ?? '';
+    _clientPhoneController.text = widget.property.clienteTelefono ?? '';
+    _clientEmailController.text = widget.property.clienteEmail ?? '';
+  }
+
+  @override
+  void dispose() {
+    _clientNameController.dispose();
+    _clientPhoneController.dispose();
+    _clientEmailController.dispose();
+    _clientIdController.dispose();
+    _inspectorNameController.dispose();
+    _inspectorRoleController.dispose();
+    _observationsController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Información del Acta'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'DATOS DEL CLIENTE',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF9C27B0),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _clientNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Nombre del Cliente *',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'El nombre es requerido';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _clientIdController,
+                decoration: const InputDecoration(
+                  labelText: 'Número de Identificación',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _clientPhoneController,
+                decoration: const InputDecoration(
+                  labelText: 'Teléfono',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _clientEmailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'DATOS DEL INSPECTOR',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFFF6B00),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _inspectorNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Nombre del Inspector',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _inspectorRoleController,
+                decoration: const InputDecoration(
+                  labelText: 'Cargo/Rol',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'OBSERVACIONES',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _observationsController,
+                decoration: const InputDecoration(
+                  labelText: 'Observaciones generales',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            if (_formKey.currentState!.validate()) {
+              Navigator.pop(context, {
+                'clientName': _clientNameController.text,
+                'clientPhone': _clientPhoneController.text.isEmpty ? null : _clientPhoneController.text,
+                'clientEmail': _clientEmailController.text.isEmpty ? null : _clientEmailController.text,
+                'clientIdNumber': _clientIdController.text.isEmpty ? null : _clientIdController.text,
+                'inspectorName': _inspectorNameController.text.isEmpty ? null : _inspectorNameController.text,
+                'inspectorRole': _inspectorRoleController.text.isEmpty ? null : _inspectorRoleController.text,
+                'observations': _observationsController.text.isEmpty ? null : _observationsController.text,
+              });
+            }
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFFFD700),
+            foregroundColor: Colors.black,
+          ),
+          child: const Text('Continuar'),
+        ),
+      ],
+    );
   }
 }
