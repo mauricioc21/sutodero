@@ -61,35 +61,44 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment(0, -0.4),
-            radius: 1.2,
-            colors: [
-              Color(0x66FFD700),
-              Color(0x26FFD700),
-              Color(0xFF1A1A1A),
-            ],
-            stops: [0.0, 0.3, 0.7],
-          ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 20),
-                  
-                  Center(
-                    child: SizedBox(
-                      width: 200,
-                      height: 200,
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 20),
+                
+                // Logo del maestro todero con efecto moderno de resplandor
+                Center(
+                  child: Container(
+                    width: 220,
+                    height: 220,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        // Resplandor dorado suave y difuso
+                        BoxShadow(
+                          color: const Color(0xFFFFD700).withValues(alpha: 0.3),
+                          blurRadius: 60,
+                          spreadRadius: 20,
+                        ),
+                        // Segundo nivel de resplandor más intenso
+                        BoxShadow(
+                          color: const Color(0xFFFFD700).withValues(alpha: 0.2),
+                          blurRadius: 100,
+                          spreadRadius: 40,
+                        ),
+                      ],
+                    ),
+                    child: Center(
                       child: Image.asset(
                         'assets/images/maestro_todero_nobg.png',
+                        width: 200,
+                        height: 200,
                         fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) {
                           return const Icon(
@@ -101,6 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
+                ),
                 
                   const SizedBox(height: 24),
                   
@@ -326,7 +336,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
-      ),
     );
   }
 }
