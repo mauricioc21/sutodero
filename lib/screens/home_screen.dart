@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import 'inventory/inventories_screen.dart';
 import 'tickets/tickets_screen.dart';
+import 'tickets/dashboard_screen.dart';
 import 'auth/login_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -180,6 +181,21 @@ class HomeScreen extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                             builder: (context) => const TicketsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildFeatureCard(
+                      context,
+                      icon: Icons.dashboard,
+                      title: 'Dashboard',
+                      description: 'Estadísticas y métricas',
+                      color: const Color(0xFF9C27B0),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const DashboardScreen(),
                           ),
                         );
                       },
