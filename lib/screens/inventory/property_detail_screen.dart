@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../../models/inventory_property.dart';
 import '../../models/property_room.dart';
+import '../../models/ticket_model.dart';
 import '../../services/inventory_service.dart';
 import '../../services/floor_plan_service.dart';
+import '../../services/inventory_pdf_service.dart';
+import '../../services/qr_service.dart';
+import '../../services/ticket_service.dart';
 import 'add_edit_property_screen.dart';
 import 'add_edit_room_screen.dart';
 import 'room_detail_screen.dart';
@@ -20,7 +24,11 @@ class PropertyDetailScreen extends StatefulWidget {
 class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   final InventoryService _inventoryService = InventoryService();
   final FloorPlanService _floorPlanService = FloorPlanService();
+  final InventoryPdfService _pdfService = InventoryPdfService();
+  final QRService _qrService = QRService();
+  final TicketService _ticketService = TicketService();
   List<PropertyRoom> _rooms = [];
+  List<TicketModel> _relatedTickets = [];
   bool _isLoading = true;
   bool _isGeneratingPropertyPlan = false;
 
@@ -34,9 +42,12 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     setState(() => _isLoading = true);
     try {
       final rooms = await _inventoryService.getRoomsByProperty(widget.property.id);
+      // Cargar tickets relacionados
+      final tickets = await _loadRelatedTickets();
       if (mounted) {
         setState(() {
           _rooms = rooms;
+          _relatedTickets = tickets;
           _isLoading = false;
         });
       }
@@ -50,12 +61,84 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     }
   }
 
+  Future<List<TicketModel>> _loadRelatedTickets() async {
+    try {
+      final allTickets = await _ticketService.getAllTickets();
+      return allTickets.where((ticket) {
+        return ticket.propiedadId == widget.property.id;
+      }).toList();
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Error loading related tickets: $e');
+      }
+      return [];
+    }
+  }
+
+  Future<void> _exportToPdf() async {
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(color: Color(0xFFFFD700)),
+        ),
+      );
+      
+      final pdfBytes = await _pdfService.generatePropertyPdf(widget.property, _rooms);
+      
+      if (!mounted) return;
+      Navigator.pop(context);
+      
+      await _pdfService.sharePdf(
+        pdfBytes,
+        'propiedad_${widget.property.id.substring(0, 8)}.pdf',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ Error al generar PDF: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _showQRCode() async {
+    final qrData = _qrService.generatePropertyQR(
+      widget.property.id,
+      direccion: widget.property.direccion,
+    );
+    
+    await _qrService.showQRDialog(
+      context,
+      data: qrData,
+      title: 'QR de Propiedad',
+      subtitle: widget.property.direccion,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detalle de Propiedad'),
         actions: [
+          // Botón PDF
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf),
+            onPressed: _exportToPdf,
+            tooltip: 'Exportar PDF',
+          ),
+          // Botón QR
+          IconButton(
+            icon: const Icon(Icons.qr_code),
+            onPressed: _showQRCode,
+            tooltip: 'Código QR',
+          ),
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: _editProperty,
@@ -72,6 +155,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
           children: [
             _buildPropertyHeader(),
             _buildPropertyInfo(),
+            if (_relatedTickets.isNotEmpty) _buildRelatedTicketsSection(),
             _buildRoomsSection(),
           ],
         ),
@@ -538,6 +622,134 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
           SnackBar(content: Text('Error: $e')),
         );
       }
+    }
+  }
+
+  Widget _buildRelatedTicketsSection() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.assignment, color: Color(0xFFFF6B00), size: 24),
+              const SizedBox(width: 8),
+              Text(
+                'Tickets Relacionados (${_relatedTickets.length})',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2C2C2C),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ..._relatedTickets.take(5).map((ticket) {
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5E6C8).withOpacity(0.3),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: _getTicketStatusColor(ticket.estado),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          ticket.titulo,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (ticket.espacioNombre != null)
+                          Text(
+                            '📍 ${ticket.espacioNombre}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _getTicketStatusColor(ticket.estado).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      ticket.estado.displayName,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: _getTicketStatusColor(ticket.estado),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+          if (_relatedTickets.length > 5)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                '+ ${_relatedTickets.length - 5} tickets más',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Color _getTicketStatusColor(TicketStatus status) {
+    switch (status) {
+      case TicketStatus.nuevo:
+        return const Color(0xFFFFD700);
+      case TicketStatus.pendiente:
+        return const Color(0xFFFF9800);
+      case TicketStatus.enProgreso:
+        return const Color(0xFF2196F3);
+      case TicketStatus.completado:
+        return const Color(0xFF4CAF50);
+      case TicketStatus.cancelado:
+        return const Color(0xFF757575);
     }
   }
 }
