@@ -26,10 +26,16 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
   late TextEditingController _tituloController;
   late TextEditingController _descripcionController;
   late TextEditingController _presupuestoController;
+  late TextEditingController _direccionController;
+  late TextEditingController _codigoInmuebleController;
+  late TextEditingController _barrioController;
+  late TextEditingController _telefonoController;
   
   ServiceType _tipoServicio = ServiceType.otro;
   TicketPriority _prioridad = TicketPriority.media;
   bool _isLoading = false;
+  DateTime? _fechaVisitaPreferida;
+  TimeOfDay? _horaVisitaPreferida;
   
   // Selector de propiedad
   List<InventoryProperty> _propiedades = [];
@@ -46,11 +52,16 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
     _presupuestoController = TextEditingController(
       text: widget.ticket?.presupuestoEstimado?.toString() ?? '',
     );
+    _direccionController = TextEditingController(text: widget.ticket?.propiedadDireccion ?? '');
+    _codigoInmuebleController = TextEditingController();
+    _barrioController = TextEditingController();
+    _telefonoController = TextEditingController();
     
     if (widget.ticket != null) {
       _tipoServicio = widget.ticket!.tipoServicio;
       _prioridad = widget.ticket!.prioridad;
       _fotos = List.from(widget.ticket!.fotosProblema);
+      _fechaVisitaPreferida = widget.ticket!.fechaProgramada;
     }
     
     _loadPropiedades();
@@ -119,6 +130,60 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
     setState(() {
       _fotos.removeAt(index);
     });
+  }
+
+  Future<void> _selectFechaVisita() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _fechaVisitaPreferida ?? DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 90)),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.dark().copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Color(0xFFFFD700),
+              onPrimary: Color(0xFF2C2C2C),
+              surface: Color(0xFF2C2C2C),
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    
+    if (picked != null) {
+      setState(() {
+        _fechaVisitaPreferida = picked;
+      });
+    }
+  }
+
+  Future<void> _selectHoraVisita() async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: _horaVisitaPreferida ?? const TimeOfDay(hour: 9, minute: 0),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.dark().copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Color(0xFFFFD700),
+              onPrimary: Color(0xFF2C2C2C),
+              surface: Color(0xFF2C2C2C),
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    
+    if (picked != null) {
+      setState(() {
+        _horaVisitaPreferida = picked;
+      });
+    }
   }
 
   void _showEmergencyDialog() {
@@ -316,6 +381,10 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
     _tituloController.dispose();
     _descripcionController.dispose();
     _presupuestoController.dispose();
+    _direccionController.dispose();
+    _codigoInmuebleController.dispose();
+    _barrioController.dispose();
+    _telefonoController.dispose();
     super.dispose();
   }
 
@@ -338,18 +407,47 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
     try {
       final presupuesto = double.tryParse(_presupuestoController.text);
       
+      // Combinar fecha y hora si ambas están seleccionadas
+      DateTime? fechaProgramada;
+      if (_fechaVisitaPreferida != null && _horaVisitaPreferida != null) {
+        fechaProgramada = DateTime(
+          _fechaVisitaPreferida!.year,
+          _fechaVisitaPreferida!.month,
+          _fechaVisitaPreferida!.day,
+          _horaVisitaPreferida!.hour,
+          _horaVisitaPreferida!.minute,
+        );
+      } else if (_fechaVisitaPreferida != null) {
+        fechaProgramada = _fechaVisitaPreferida;
+      }
+      
+      // Construir título completo con código de inmueble si existe
+      String tituloCompleto = _tituloController.text.trim();
+      if (_codigoInmuebleController.text.trim().isNotEmpty) {
+        tituloCompleto = '${_codigoInmuebleController.text.trim()} - $tituloCompleto';
+      }
+      
+      // Usar dirección ingresada o la de la propiedad seleccionada
+      final direccionFinal = _direccionController.text.trim().isNotEmpty
+          ? _direccionController.text.trim()
+          : _propiedadSeleccionada?.direccion;
+      
       await _ticketService.createTicket(
-        titulo: _tituloController.text.trim(),
+        titulo: tituloCompleto,
         descripcion: _descripcionController.text.trim(),
         tipoServicio: _tipoServicio,
         clienteId: user.uid,
         clienteNombre: user.nombre,
-        clienteTelefono: user.telefono,
+        clienteTelefono: _telefonoController.text.trim().isNotEmpty 
+            ? _telefonoController.text.trim() 
+            : user.telefono,
         clienteEmail: user.email,
         prioridad: _prioridad,
         presupuestoEstimado: presupuesto,
         propiedadId: _propiedadSeleccionada?.id,
-        propiedadDireccion: _propiedadSeleccionada?.direccion,
+        propiedadDireccion: direccionFinal,
+        fechaProgramada: fechaProgramada,
+        notasCliente: 'Barrio: ${_barrioController.text.trim()}',
       );
 
       if (mounted) {
@@ -410,6 +508,113 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
               ),
               validator: (value) =>
                   value?.isEmpty ?? true ? 'Ingresa un título' : null,
+            ),
+            const SizedBox(height: 16),
+
+            // Código de inmueble (opcional)
+            TextFormField(
+              controller: _codigoInmuebleController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'Código de Inmueble (Opcional)',
+                labelStyle: const TextStyle(color: Color(0xFFFFD700)),
+                hintText: 'Ej: INM-001, APT-205',
+                hintStyle: TextStyle(color: Colors.grey[600]),
+                filled: true,
+                fillColor: const Color(0xFF2C2C2C),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[800]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFFFD700)),
+                ),
+                prefixIcon: const Icon(Icons.tag, color: Color(0xFFFFD700)),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Dirección
+            TextFormField(
+              controller: _direccionController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'Dirección del Inmueble *',
+                labelStyle: const TextStyle(color: Color(0xFFFFD700)),
+                hintText: 'Calle, número, piso, apto',
+                hintStyle: TextStyle(color: Colors.grey[600]),
+                filled: true,
+                fillColor: const Color(0xFF2C2C2C),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[800]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFFFD700)),
+                ),
+                prefixIcon: const Icon(Icons.location_on, color: Color(0xFFFFD700)),
+              ),
+              validator: (value) =>
+                  value?.isEmpty ?? true ? 'Ingresa la dirección' : null,
+            ),
+            const SizedBox(height: 16),
+
+            // Barrio
+            TextFormField(
+              controller: _barrioController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'Barrio *',
+                labelStyle: const TextStyle(color: Color(0xFFFFD700)),
+                hintText: 'Nombre del barrio o zona',
+                hintStyle: TextStyle(color: Colors.grey[600]),
+                filled: true,
+                fillColor: const Color(0xFF2C2C2C),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[800]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFFFD700)),
+                ),
+                prefixIcon: const Icon(Icons.map, color: Color(0xFFFFD700)),
+              ),
+              validator: (value) =>
+                  value?.isEmpty ?? true ? 'Ingresa el barrio' : null,
+            ),
+            const SizedBox(height: 16),
+
+            // Teléfono de contacto
+            TextFormField(
+              controller: _telefonoController,
+              style: const TextStyle(color: Colors.white),
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                labelText: 'Teléfono de Contacto *',
+                labelStyle: const TextStyle(color: Color(0xFFFFD700)),
+                hintText: 'Número para coordinar la visita',
+                hintStyle: TextStyle(color: Colors.grey[600]),
+                filled: true,
+                fillColor: const Color(0xFF2C2C2C),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[800]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFFFD700)),
+                ),
+                prefixIcon: const Icon(Icons.phone, color: Color(0xFFFFD700)),
+              ),
+              validator: (value) =>
+                  value?.isEmpty ?? true ? 'Ingresa un teléfono' : null,
             ),
             const SizedBox(height: 16),
 
@@ -496,6 +701,85 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
             ),
             const SizedBox(height: 16),
 
+            // Fecha y hora preferida para visita
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF2C2C2C),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[800]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_today, color: Color(0xFFFFD700), size: 20),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Fecha y Hora Preferida para Visita',
+                        style: TextStyle(
+                          color: Color(0xFFFFD700),
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _selectFechaVisita,
+                          icon: const Icon(Icons.event),
+                          label: Text(
+                            _fechaVisitaPreferida == null
+                                ? 'Seleccionar Fecha'
+                                : '${_fechaVisitaPreferida!.day}/${_fechaVisitaPreferida!.month}/${_fechaVisitaPreferida!.year}',
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFFFFD700),
+                            side: const BorderSide(color: Color(0xFFFFD700)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _selectHoraVisita,
+                          icon: const Icon(Icons.access_time),
+                          label: Text(
+                            _horaVisitaPreferida == null
+                                ? 'Seleccionar Hora'
+                                : '${_horaVisitaPreferida!.hour.toString().padLeft(2, '0')}:${_horaVisitaPreferida!.minute.toString().padLeft(2, '0')}',
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFFFFD700),
+                            side: const BorderSide(color: Color(0xFFFFD700)),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_fechaVisitaPreferida != null || _horaVisitaPreferida != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Nota: Esta es una preferencia. El técnico confirmará la disponibilidad.',
+                      style: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
             // Selector de propiedad
             if (_propiedades.isNotEmpty)
               DropdownButtonFormField<InventoryProperty>(
@@ -526,7 +810,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
               ),
             if (_propiedades.isNotEmpty) const SizedBox(height: 16),
 
-            // Fotos del problema
+            // Fotos de los daños
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -539,10 +823,10 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.photo_library, color: Color(0xFFFFD700), size: 20),
+                      const Icon(Icons.photo_camera, color: Color(0xFFFFD700), size: 20),
                       const SizedBox(width: 8),
                       const Text(
-                        'Fotos del Problema',
+                        'Fotos de los Daños',
                         style: TextStyle(color: Color(0xFFFFD700), fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       const Spacer(),
@@ -551,6 +835,11 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                         style: TextStyle(color: Colors.grey[500], fontSize: 12),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Sube fotos del problema que necesitas arreglar',
+                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
                   ),
                   const SizedBox(height: 12),
                   Row(
