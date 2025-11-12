@@ -8,6 +8,7 @@ import '../../models/ticket_model.dart';
 import '../../models/inventory_act.dart';
 import '../../services/inventory_service.dart';
 import '../../services/floor_plan_service.dart';
+import '../../services/floor_plan_3d_service.dart';
 import '../../services/inventory_pdf_service.dart';
 import '../../services/qr_service.dart';
 import '../../services/ticket_service.dart';
@@ -30,6 +31,7 @@ class PropertyDetailScreen extends StatefulWidget {
 class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   final InventoryService _inventoryService = InventoryService();
   final FloorPlanService _floorPlanService = FloorPlanService();
+  final FloorPlan3DService _floorPlan3DService = FloorPlan3DService();
   final InventoryPdfService _pdfService = InventoryPdfService();
   final QRService _qrService = QRService();
   final TicketService _ticketService = TicketService();
@@ -226,6 +228,100 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     }
   }
 
+  /// Genera plano 3D isométrico de la propiedad
+  Future<void> _generate3DFloorPlan() async {
+    if (_rooms.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Agrega espacios primero para generar el plano 3D'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Mostrar loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => WillPopScope(
+          onWillPop: () async => false,
+          child: const Center(
+            child: Card(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(color: Color(0xFFFFD700)),
+                    SizedBox(height: 16),
+                    Text('Generando plano 3D isométrico...'),
+                    Text(
+                      'Renderizando vista tridimensional',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Generar plano 3D
+      final pdfBytes = await _floorPlan3DService.generate3DFloorPlan(
+        property: widget.property,
+        rooms: _rooms,
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context); // Cerrar loading
+
+      // Guardar PDF
+      if (kIsWeb) {
+        // En web: descargar automáticamente
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Plano 3D generado (función web en desarrollo)'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        // En móvil: guardar y compartir
+        final dir = await getApplicationDocumentsDirectory();
+        final file = File('${dir.path}/Plano_3D_${widget.property.id.substring(0, 8)}.pdf');
+        await file.writeAsBytes(pdfBytes);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('✅ Plano 3D isométrico guardado: ${file.path}'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 4),
+              action: SnackBarAction(
+                label: 'Ver',
+                onPressed: () {
+                  // TODO: Abrir PDF
+                },
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Cerrar loading si está abierto
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error al generar plano 3D: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -249,6 +345,12 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
             icon: const Icon(Icons.architecture),
             onPressed: _generateFloorPlan,
             tooltip: 'Generar Plano 2D',
+          ),
+          // Botón Plano 3D
+          IconButton(
+            icon: const Icon(Icons.view_in_ar),
+            onPressed: _generate3DFloorPlan,
+            tooltip: 'Generar Plano 3D Isométrico',
           ),
           // Botón QR
           IconButton(

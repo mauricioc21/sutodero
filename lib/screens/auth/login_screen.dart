@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../services/auth_service.dart';
+import '../../services/face_recognition_service.dart';
 import '../home_screen.dart';
 import 'register_screen.dart';
 
@@ -18,6 +20,8 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
   bool _rememberMe = true; // Por defecto activado
+  final _faceRecognitionService = FaceRecognitionService();
+  final _imagePicker = ImagePicker();
 
   @override
   void dispose() {
@@ -57,6 +61,70 @@ class _LoginScreenState extends State<LoginScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const RegisterScreen()),
     );
+  }
+
+  /// Login con reconocimiento facial
+  Future<void> _handleFacialLogin() async {
+    try {
+      // Solicitar permiso y capturar foto
+      final XFile? photo = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        preferredCameraDevice: CameraDevice.front,
+        imageQuality: 85,
+      );
+
+      if (photo == null) return;
+
+      setState(() => _isLoading = true);
+
+      // Autenticar con reconocimiento facial
+      final userId = await _faceRecognitionService.authenticateUser(photo.path);
+
+      if (userId != null && mounted) {
+        // Buscar usuario en Firebase por ID
+        final authService = Provider.of<AuthService>(context, listen: false);
+        // En producción, deberías tener un método para login con userId
+        // Por ahora mostrar éxito
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ Reconocimiento facial exitoso para usuario: $userId'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+
+        // Aquí deberías implementar la lógica de login con userId
+        // Simulación de navegación exitosa
+        await Future.delayed(const Duration(seconds: 1));
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const HomeScreen()),
+          );
+        }
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('❌ No se reconoció el rostro. Intenta de nuevo.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -326,6 +394,33 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   
                   const SizedBox(height: 24),
+                  
+                  // Botón de reconocimiento facial
+                  SizedBox(
+                    height: 56,
+                    child: OutlinedButton.icon(
+                      onPressed: _isLoading ? null : _handleFacialLogin,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFFFD700),
+                        side: const BorderSide(color: Color(0xFFFFD700), width: 2),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        backgroundColor: const Color(0xFF1A1A1A),
+                      ),
+                      icon: const Icon(Icons.face, size: 28),
+                      label: const Text(
+                        'RECONOCIMIENTO FACIAL',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
                   
                   OutlinedButton(
                     onPressed: _navigateToRegister,
