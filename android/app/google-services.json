@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "292635586927",
+    "project_id": "su-todero",
+    "storage_bucket": "su-todero.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:292635586927:android:c9c2fda0230fbacc29789a",
+        "android_client_info": {
+          "package_name": "sutodero.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBVYy6qGJvV1Kizim3KnTEZfHRC9EYOjmg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

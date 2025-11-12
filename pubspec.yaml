@@ -78,14 +78,14 @@ dependencies:
   
   # Bluetooth & WiFi
   flutter_blue_plus: 1.33.3
-  wifi_iot: 0.3.19+1
+  # wifi_iot: 0.3.19+1  # Removed due to build issues
   
   # Utilities
   intl: 0.20.2
   uuid: 4.5.1
   
-  # 360° Camera Integration
-  panorama: 0.4.1
+  # 360° Camera Integration (Removed temporally due to build issues)
+  # panorama: 0.4.1
   
   # PDF Generation
   pdf: 3.11.1

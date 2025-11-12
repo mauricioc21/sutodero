@@ -2,11 +2,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:uuid/uuid.dart';
 import '../../models/ticket_model.dart';
 import '../../models/inventory_property.dart';
 import '../../services/ticket_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/inventory_service.dart';
+import '../../services/storage_service.dart';
 
 class AddEditTicketScreen extends StatefulWidget {
   final TicketModel? ticket;
@@ -21,6 +23,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
   final _formKey = GlobalKey<FormState>();
   final TicketService _ticketService = TicketService();
   final InventoryService _inventoryService = InventoryService();
+  final StorageService _storageService = StorageService();
   final ImagePicker _imagePicker = ImagePicker();
   
   late TextEditingController _tituloController;
@@ -432,6 +435,53 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
           ? _direccionController.text.trim()
           : _propiedadSeleccionada?.direccion;
       
+      // Generar ID temporal para subir fotos
+      final tempTicketId = const Uuid().v4();
+      
+      // Subir fotos si existen
+      List<String> fotosUrls = [];
+      if (_fotos.isNotEmpty) {
+        if (mounted) {
+          // Mostrar diálogo de progreso
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => WillPopScope(
+              onWillPop: () async => false,
+              child: Center(
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const CircularProgressIndicator(color: Color(0xFFFFD700)),
+                        const SizedBox(height: 16),
+                        Text('Subiendo ${_fotos.length} foto(s)...'),
+                        const Text(
+                          'Esto puede tomar unos momentos',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+        
+        fotosUrls = await _storageService.uploadTicketPhotos(
+          ticketId: tempTicketId,
+          filePaths: _fotos,
+          isResultPhotos: false,
+        );
+        
+        if (mounted) {
+          Navigator.pop(context); // Cerrar diálogo de progreso
+        }
+      }
+      
       await _ticketService.createTicket(
         titulo: tituloCompleto,
         descripcion: _descripcionController.text.trim(),
@@ -448,6 +498,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
         propiedadDireccion: direccionFinal,
         fechaProgramada: fechaProgramada,
         notasCliente: 'Barrio: ${_barrioController.text.trim()}',
+        fotosProblema: fotosUrls,
       );
 
       if (mounted) {
@@ -457,8 +508,13 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
             content: Text(
               _fotos.isEmpty 
                 ? '✅ Ticket creado exitosamente'
-                : '✅ Ticket creado con ${_fotos.length} foto(s)'
+                : fotosUrls.length == _fotos.length
+                  ? '✅ Ticket creado con ${fotosUrls.length} foto(s)'
+                  : '⚠️ Ticket creado, pero solo ${fotosUrls.length}/${_fotos.length} foto(s) se subieron'
             ),
+            backgroundColor: fotosUrls.length == _fotos.length || _fotos.isEmpty 
+              ? Colors.green 
+              : Colors.orange,
           ),
         );
       }

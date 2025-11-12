@@ -130,6 +130,102 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     );
   }
 
+  /// Genera plano 2D de la propiedad
+  Future<void> _generateFloorPlan() async {
+    if (_rooms.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ Agrega espacios primero para generar el plano'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Mostrar loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => WillPopScope(
+          onWillPop: () async => false,
+          child: const Center(
+            child: Card(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(color: Color(0xFFFFD700)),
+                    SizedBox(height: 16),
+                    Text('Generando plano 2D...'),
+                    Text(
+                      'Calculando layout automático',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Generar plano 2D
+      final floorPlanService = FloorPlanService();
+      final pdfBytes = await floorPlanService.generateFloorPlanPdf(
+        property: widget.property,
+        rooms: _rooms,
+      );
+
+      if (!mounted) return;
+      Navigator.pop(context); // Cerrar loading
+
+      // Guardar PDF
+      if (kIsWeb) {
+        // En web: descargar automáticamente
+        // TODO: Implementar descarga web
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Plano 2D generado (función web en desarrollo)'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        // En móvil: guardar y compartir
+        final dir = await getApplicationDocumentsDirectory();
+        final file = File('${dir.path}/Plano_2D_${widget.property.id.substring(0, 8)}.pdf');
+        await file.writeAsBytes(pdfBytes);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('✅ Plano 2D guardado: ${file.path}'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 4),
+              action: SnackBarAction(
+                label: 'Ver',
+                onPressed: () {
+                  // TODO: Abrir PDF
+                },
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Cerrar loading si está abierto
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error al generar plano: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -147,6 +243,12 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
             icon: const Icon(Icons.picture_as_pdf),
             onPressed: _exportToPdf,
             tooltip: 'Exportar PDF',
+          ),
+          // Botón Plano 2D
+          IconButton(
+            icon: const Icon(Icons.architecture),
+            onPressed: _generateFloorPlan,
+            tooltip: 'Generar Plano 2D',
           ),
           // Botón QR
           IconButton(
@@ -528,116 +630,8 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   }
 
   Future<void> _generatePropertyFloorPlan() async {
-    // Verificar que haya espacios
-    if (_rooms.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('⚠️ Necesitas agregar al menos un espacio a la propiedad'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    // Verificar que al menos un espacio tenga fotos
-    final roomsWithPhotos = _rooms.where((room) => room.fotos.isNotEmpty).toList();
-    if (roomsWithPhotos.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('⚠️ Necesitas tomar fotos de al menos un espacio'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    setState(() => _isGeneratingPropertyPlan = true);
-    try {
-      final floorPlan = await _floorPlanService.generatePropertyFloorPlan(widget.property.id);
-      
-      if (mounted) {
-        setState(() => _isGeneratingPropertyPlan = false);
-        
-        if (floorPlan != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✅ Plano completo generado correctamente'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        } else {
-          // Calcular estadísticas
-          double totalArea = 0;
-          int totalPhotos = 0;
-          int rooms360 = 0;
-          
-          for (final room in _rooms) {
-            if (room.area != null) totalArea += room.area!;
-            totalPhotos += room.fotos.length;
-            if (room.tiene360) rooms360++;
-          }
-
-          // Mostrar mensaje de función en desarrollo
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Row(
-                children: [
-                  Icon(Icons.maps_home_work, color: Colors.blue),
-                  SizedBox(width: 8),
-                  Text('Plano Completo'),
-                ],
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Análisis de la propiedad:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text('🏠 Total espacios: ${_rooms.length}'),
-                  Text('📐 Área total: ${totalArea.toStringAsFixed(2)} m²'),
-                  Text('📷 Total fotos: $totalPhotos'),
-                  Text('🔄 Fotos 360°: $rooms360'),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Espacios incluidos:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  ..._rooms.map((room) => Padding(
-                    padding: const EdgeInsets.only(left: 8, top: 4),
-                    child: Text(
-                      '${room.tipo.icon} ${room.nombre} (${room.fotos.length} fotos)',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  )),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'La generación automática del plano completo con IA estará disponible en una próxima actualización.',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Entendido'),
-                ),
-              ],
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isGeneratingPropertyPlan = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
-      }
-    }
+    // Redirigir al método correcto
+    await _generateFloorPlan();
   }
 
   Widget _buildRelatedTicketsSection() {
@@ -832,32 +826,55 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   /// Genera PDF del acta y lo descarga
   Future<void> _generateAndDownloadActPdf(InventoryAct act) async {
     try {
-      // Mostrar loading
+      // Mostrar loading con más información
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const Center(
-          child: Card(
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(color: Color(0xFFFFD700)),
-                  SizedBox(height: 16),
-                  Text('Generando PDF del acta...'),
-                  Text('Esto puede tomar unos momentos', style: TextStyle(fontSize: 12)),
-                ],
+        builder: (context) => WillPopScope(
+          onWillPop: () async => false,
+          child: Center(
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircularProgressIndicator(color: Color(0xFFFFD700)),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Generando PDF del acta...',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Descargando ${act.photoUrls.length} fotos',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Esto puede tomar 10-30 segundos',
+                      style: TextStyle(fontSize: 11, color: Colors.grey),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
       );
 
-      // Generar PDF
+      // Generar PDF con timeout general de 2 minutos
       final pdfBytes = await _actPdfService.generateActPdf(
         act: act,
         rooms: _rooms,
+      ).timeout(
+        const Duration(minutes: 2),
+        onTimeout: () {
+          throw Exception(
+            'La generación del PDF tardó demasiado. '
+            'Intenta con menos fotos o verifica tu conexión.',
+          );
+        },
       );
 
       if (!mounted) return;

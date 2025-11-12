@@ -156,13 +156,6 @@ class _InventoriesScreenState extends State<InventoriesScreen> {
               color: Colors.black38,
             ),
           ),
-          const SizedBox(height: 32),
-          if (_searchQuery.isEmpty)
-            ElevatedButton.icon(
-              onPressed: () => _navigateToAddProperty(),
-              icon: const Icon(Icons.add),
-              label: const Text('Agregar Propiedad'),
-            ),
         ],
       ),
     );

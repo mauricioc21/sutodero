@@ -5,6 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart';
 import '../models/inventory_act.dart';
 import '../models/property_room.dart';
 import '../models/inventory_property.dart';
@@ -140,17 +141,49 @@ class InventoryActPdfService {
     return pdf.save();
   }
 
-  /// Descarga imagen desde URL
-  Future<pw.MemoryImage?> _downloadImage(String url) async {
-    try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        return pw.MemoryImage(response.bodyBytes);
+  /// Descarga imagen desde URL con timeout y reintentos
+  Future<pw.MemoryImage?> _downloadImage(String url, {int maxRetries = 2}) async {
+    for (int attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        if (kDebugMode) {
+          debugPrint('📥 Descargando imagen (intento ${attempt + 1}/${maxRetries + 1}): $url');
+        }
+        
+        final response = await http.get(Uri.parse(url)).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            throw Exception('Timeout al descargar imagen después de 10 segundos');
+          },
+        );
+        
+        if (response.statusCode == 200) {
+          if (kDebugMode) {
+            debugPrint('✅ Imagen descargada exitosamente (${response.bodyBytes.length} bytes)');
+          }
+          return pw.MemoryImage(response.bodyBytes);
+        } else {
+          if (kDebugMode) {
+            debugPrint('⚠️ Error HTTP ${response.statusCode} al descargar imagen');
+          }
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('❌ Error descargando imagen (intento ${attempt + 1}): $e');
+        }
+        
+        // Si es el último intento, retornar null
+        if (attempt == maxRetries) {
+          if (kDebugMode) {
+            debugPrint('🚫 Todos los intentos fallaron para: $url');
+          }
+          return null;
+        }
+        
+        // Esperar antes de reintentar
+        await Future.delayed(Duration(milliseconds: 500 * (attempt + 1)));
       }
-      return null;
-    } catch (e) {
-      return null;
     }
+    return null;
   }
 
   /// Header principal del documento

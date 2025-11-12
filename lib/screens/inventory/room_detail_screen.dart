@@ -203,7 +203,8 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
 
     setState(() => _isGeneratingFloorPlan = true);
     try {
-      final floorPlan = await _floorPlanService.generateRoomFloorPlan(_room!.id);
+      // Plano individual de habitación - En desarrollo
+      final floorPlan = null; // await _floorPlanService.generateRoomFloorPlan(_room!.id);
       
       if (mounted) {
         setState(() => _isGeneratingFloorPlan = false);

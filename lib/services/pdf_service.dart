@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import '../models/ticket_model.dart';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
 
 /// Servicio para generar PDFs de tickets
 class PdfService {
@@ -17,11 +18,13 @@ class PdfService {
   Future<Uint8List> generateTicketPdf(TicketModel ticket) async {
     final pdf = pw.Document();
     
-    // Cargar logo si existe
+    // Cargar logo SU TODERO
     pw.ImageProvider? logoImage;
     try {
-      // Intentar cargar el logo de la app
-      logoImage = await imageFromAssetBundle('assets/icons/app_icon.png');
+      logoImage = await imageFromAssetBundle('assets/images/logo_sutodero_transparente.png');
+      if (kDebugMode) {
+        debugPrint('✅ Logo SU TODERO cargado exitosamente');
+      }
     } catch (e) {
       if (kDebugMode) {
         debugPrint('⚠️ No se pudo cargar el logo: $e');
@@ -54,6 +57,50 @@ class PdfService {
       }
     }
 
+    // Descargar fotos del problema
+    final fotosProblema = <pw.MemoryImage>[];
+    if (ticket.fotosProblema.isNotEmpty) {
+      if (kDebugMode) {
+        debugPrint('📥 Descargando ${ticket.fotosProblema.length} fotos del problema...');
+      }
+      for (final photoUrl in ticket.fotosProblema) {
+        try {
+          final image = await _downloadImage(photoUrl);
+          if (image != null) fotosProblema.add(image);
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('⚠️ Error descargando foto del problema: $e');
+          }
+          continue;
+        }
+      }
+      if (kDebugMode) {
+        debugPrint('✅ ${fotosProblema.length}/${ticket.fotosProblema.length} fotos del problema descargadas');
+      }
+    }
+
+    // Descargar fotos del resultado
+    final fotosResultado = <pw.MemoryImage>[];
+    if (ticket.fotosResultado.isNotEmpty) {
+      if (kDebugMode) {
+        debugPrint('📥 Descargando ${ticket.fotosResultado.length} fotos del resultado...');
+      }
+      for (final photoUrl in ticket.fotosResultado) {
+        try {
+          final image = await _downloadImage(photoUrl);
+          if (image != null) fotosResultado.add(image);
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('⚠️ Error descargando foto del resultado: $e');
+          }
+          continue;
+        }
+      }
+      if (kDebugMode) {
+        debugPrint('✅ ${fotosResultado.length}/${ticket.fotosResultado.length} fotos del resultado descargadas');
+      }
+    }
+
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.letter,
@@ -69,7 +116,7 @@ class PdfService {
             style: pw.TextStyle(
               fontSize: 24,
               fontWeight: pw.FontWeight.bold,
-              color: PdfColors.orange,
+              color: PdfColor.fromHex('#FFD700'), // Dorado corporativo
             ),
             textAlign: pw.TextAlign.center,
           ),
@@ -83,7 +130,7 @@ class PdfService {
               _buildStatusBadge(ticket.estado),
             ],
           ),
-          pw.Divider(thickness: 2, color: PdfColors.orange),
+          pw.Divider(thickness: 2, color: PdfColor.fromHex('#FFD700')),
           pw.SizedBox(height: 20),
           
           // Información del ticket
@@ -170,6 +217,36 @@ class PdfService {
           if (ticket.calificacion != null)
             pw.SizedBox(height: 15),
           
+          // Fotos del problema
+          if (fotosProblema.isNotEmpty) ...[
+            pw.Text(
+              'Fotos del Problema (${fotosProblema.length})',
+              style: pw.TextStyle(
+                fontSize: 16,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColors.orange900,
+              ),
+            ),
+            pw.SizedBox(height: 10),
+            _buildPhotoGrid(fotosProblema),
+            pw.SizedBox(height: 15),
+          ],
+          
+          // Fotos del resultado
+          if (fotosResultado.isNotEmpty) ...[
+            pw.Text(
+              'Fotos del Resultado (${fotosResultado.length})',
+              style: pw.TextStyle(
+                fontSize: 16,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColors.green900,
+              ),
+            ),
+            pw.SizedBox(height: 10),
+            _buildPhotoGrid(fotosResultado),
+            pw.SizedBox(height: 15),
+          ],
+          
           // Firmas digitales
           if (firmaClienteImage != null || firmaToderoImage != null)
             _buildSignaturesSection(
@@ -183,18 +260,41 @@ class PdfService {
           
           pw.Spacer(),
           
-          // Pie de página
-          pw.Divider(),
-          pw.SizedBox(height: 10),
-          pw.Text(
-            'SU TODERO - Gestión Profesional de Servicios',
-            style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey),
-            textAlign: pw.TextAlign.center,
-          ),
-          pw.Text(
-            'Generado el ${_formatDate(DateTime.now())}',
-            style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey),
-            textAlign: pw.TextAlign.center,
+          // Pie de página con diseño corporativo
+          pw.Container(
+            padding: const pw.EdgeInsets.all(16),
+            decoration: pw.BoxDecoration(
+              color: PdfColor.fromHex('#2C2C2C'),
+              borderRadius: pw.BorderRadius.circular(8),
+            ),
+            child: pw.Column(
+              children: [
+                pw.Text(
+                  'SU TODERO',
+                  style: pw.TextStyle(
+                    fontSize: 12,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColor.fromHex('#FFD700'),
+                  ),
+                  textAlign: pw.TextAlign.center,
+                ),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  'Gestión Profesional de Servicios de Reparación y Mantenimiento',
+                  style: pw.TextStyle(
+                    fontSize: 9,
+                    color: PdfColor.fromHex('#F5E6C8'),
+                  ),
+                  textAlign: pw.TextAlign.center,
+                ),
+                pw.SizedBox(height: 8),
+                pw.Text(
+                  'Documento generado el ${_formatDate(DateTime.now())}',
+                  style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey),
+                  textAlign: pw.TextAlign.center,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -203,33 +303,66 @@ class PdfService {
     return pdf.save();
   }
 
-  /// Construir encabezado con logo
+  /// Construir encabezado con logo y colores corporativos
   pw.Widget _buildHeader(pw.ImageProvider? logo) {
-    return pw.Row(
-      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-      children: [
-        if (logo != null)
-          pw.Image(logo, width: 60, height: 60)
-        else
-          pw.Container(width: 60, height: 60),
-        pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.end,
-          children: [
-            pw.Text(
-              'SU TODERO',
-              style: pw.TextStyle(
-                fontSize: 20,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.orange,
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(16),
+      decoration: pw.BoxDecoration(
+        color: PdfColor.fromHex('#000000'), // Negro corporativo
+        borderRadius: pw.BorderRadius.circular(12),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          // Logo SU TODERO
+          if (logo != null)
+            pw.Container(
+              width: 80,
+              height: 80,
+              child: pw.Image(logo, fit: pw.BoxFit.contain),
+            )
+          else
+            pw.Container(
+              width: 80,
+              height: 80,
+              decoration: pw.BoxDecoration(
+                color: PdfColor.fromHex('#FFD700'), // Dorado
+                shape: pw.BoxShape.circle,
+              ),
+              child: pw.Center(
+                child: pw.Icon(
+                  pw.IconData(0xe1a3), // handyman icon
+                  size: 40,
+                  color: PdfColor.fromHex('#000000'),
+                ),
               ),
             ),
-            pw.Text(
-              'Servicios Profesionales',
-              style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey700),
+          pw.SizedBox(width: 16),
+          pw.Expanded(
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  'SU TODERO',
+                  style: pw.TextStyle(
+                    fontSize: 24,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColor.fromHex('#FFD700'), // Dorado corporativo
+                  ),
+                ),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  'Servicios Profesionales de Reparación y Mantenimiento',
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    color: PdfColor.fromHex('#F5E6C8'), // Beige claro
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -267,24 +400,32 @@ class PdfService {
     );
   }
 
-  /// Construir sección con título
+  /// Construir sección con título y colores corporativos
   pw.Widget _buildSection(String title, List<pw.Widget> children) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text(
-          title,
-          style: pw.TextStyle(
-            fontSize: 16,
-            fontWeight: pw.FontWeight.bold,
-            color: PdfColors.orange900,
+        pw.Container(
+          padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: pw.BoxDecoration(
+            color: PdfColor.fromHex('#2C2C2C'), // Gris oscuro corporativo
+            borderRadius: pw.BorderRadius.circular(8),
+          ),
+          child: pw.Text(
+            title,
+            style: pw.TextStyle(
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColor.fromHex('#FFD700'), // Dorado corporativo
+            ),
           ),
         ),
         pw.SizedBox(height: 8),
         pw.Container(
           padding: const pw.EdgeInsets.all(12),
           decoration: pw.BoxDecoration(
-            border: pw.Border.all(color: PdfColors.grey400),
+            color: PdfColor.fromHex('#F5E6C8'), // Beige claro
+            border: pw.Border.all(color: PdfColor.fromHex('#FFD700'), width: 1),
             borderRadius: pw.BorderRadius.circular(8),
           ),
           child: pw.Column(
@@ -315,6 +456,29 @@ class PdfService {
           ),
         ],
       ),
+    );
+  }
+
+  /// Construir grid de fotos (2 columnas)
+  pw.Widget _buildPhotoGrid(List<pw.MemoryImage> photos) {
+    return pw.GridView(
+      crossAxisCount: 2,
+      childAspectRatio: 1.3,
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      children: photos.map((photo) {
+        return pw.Container(
+          decoration: pw.BoxDecoration(
+            border: pw.Border.all(color: PdfColors.grey300, width: 2),
+            borderRadius: pw.BorderRadius.circular(8),
+          ),
+          child: pw.ClipRRect(
+            horizontalRadius: 6,
+            verticalRadius: 6,
+            child: pw.Image(photo, fit: pw.BoxFit.cover),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -398,6 +562,51 @@ class PdfService {
         ),
       ],
     );
+  }
+
+  /// Descargar imagen desde URL con timeout y reintentos
+  Future<pw.MemoryImage?> _downloadImage(String url, {int maxRetries = 2}) async {
+    for (int attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        if (kDebugMode) {
+          debugPrint('📥 Descargando imagen (intento ${attempt + 1}/${maxRetries + 1}): $url');
+        }
+        
+        final response = await http.get(Uri.parse(url)).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            throw Exception('Timeout al descargar imagen después de 10 segundos');
+          },
+        );
+        
+        if (response.statusCode == 200) {
+          if (kDebugMode) {
+            debugPrint('✅ Imagen descargada exitosamente (${response.bodyBytes.length} bytes)');
+          }
+          return pw.MemoryImage(response.bodyBytes);
+        } else {
+          if (kDebugMode) {
+            debugPrint('⚠️ Error HTTP ${response.statusCode} al descargar imagen');
+          }
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('❌ Error descargando imagen (intento ${attempt + 1}): $e');
+        }
+        
+        // Si es el último intento, retornar null
+        if (attempt == maxRetries) {
+          if (kDebugMode) {
+            debugPrint('🚫 Todos los intentos fallaron para: $url');
+          }
+          return null;
+        }
+        
+        // Esperar antes de reintentar
+        await Future.delayed(Duration(milliseconds: 500 * (attempt + 1)));
+      }
+    }
+    return null;
   }
 
   /// Formatear fecha

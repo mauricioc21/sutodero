@@ -17,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _rememberMe = true; // Por defecto activado
 
   @override
   void dispose() {
@@ -234,7 +235,42 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 16),
+                  
+                  // Checkbox "Recordarme"
+                  Row(
+                    children: [
+                      Theme(
+                        data: ThemeData(
+                          checkboxTheme: CheckboxThemeData(
+                            fillColor: WidgetStateProperty.resolveWith<Color>((states) {
+                              if (states.contains(WidgetState.selected)) {
+                                return const Color(0xFFFFD700);
+                              }
+                              return Colors.transparent;
+                            }),
+                            checkColor: WidgetStateProperty.all(const Color(0xFF2C2C2C)),
+                            side: const BorderSide(color: Color(0xFFFFD700), width: 2),
+                          ),
+                        ),
+                        child: Checkbox(
+                          value: _rememberMe,
+                          onChanged: (value) {
+                            setState(() => _rememberMe = value ?? true);
+                          },
+                        ),
+                      ),
+                      const Text(
+                        'Recordarme',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 16),
                   
                   SizedBox(
                     height: 56,

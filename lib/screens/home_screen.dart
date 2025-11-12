@@ -106,21 +106,22 @@ class HomeScreen extends StatelessWidget {
                     children: [
                       Image.asset(
                         'assets/images/logo_sutodero_transparente.png',
-                        height: 200,
+                        height: 150, // Reducido de 200 a 150 para evitar overflow
                         fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) {
                           return const Icon(
                             Icons.handyman,
-                            size: 100,
+                            size: 80, // Reducido de 100 a 80
                             color: Color(0xFFFFD700),
                           );
                         },
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        '¡Bienvenido, ${authService.currentUser?.nombre ?? "mauricio"}!',
+                        authService.currentUser?.obtenerSaludoPersonalizado() ?? 
+                        '¡Bienvenido/a!',
                         style: const TextStyle(
-                          fontSize: 24,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF2C2C2C),
                         ),
@@ -137,7 +138,7 @@ class HomeScreen extends StatelessWidget {
                   crossAxisCount: 2,
                   mainAxisSpacing: 16,
                   crossAxisSpacing: 16,
-                  childAspectRatio: 0.85,
+                  childAspectRatio: 1.0, // Ajustado de 0.85 a 1.0 para evitar overflow
                   children: [
                     _buildFeatureCard(
                       context,

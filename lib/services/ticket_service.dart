@@ -34,6 +34,7 @@ class TicketService {
     double? presupuestoEstimado,
     DateTime? fechaProgramada,
     String? notasCliente,
+    List<String> fotosProblema = const [],
   }) async {
     final now = DateTime.now();
     final ticket = TicketModel(
@@ -56,6 +57,7 @@ class TicketService {
       fechaActualizacion: now,
       fechaProgramada: fechaProgramada,
       notasCliente: notasCliente,
+      fotosProblema: fotosProblema,
     );
 
     try {
