@@ -1,8 +1,12 @@
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../models/ticket_model.dart';
+import '../../models/inventory_property.dart';
 import '../../services/ticket_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/inventory_service.dart';
 
 class AddEditTicketScreen extends StatefulWidget {
   final TicketModel? ticket;
@@ -16,6 +20,8 @@ class AddEditTicketScreen extends StatefulWidget {
 class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
   final _formKey = GlobalKey<FormState>();
   final TicketService _ticketService = TicketService();
+  final InventoryService _inventoryService = InventoryService();
+  final ImagePicker _imagePicker = ImagePicker();
   
   late TextEditingController _tituloController;
   late TextEditingController _descripcionController;
@@ -24,6 +30,13 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
   ServiceType _tipoServicio = ServiceType.otro;
   TicketPriority _prioridad = TicketPriority.media;
   bool _isLoading = false;
+  
+  // Selector de propiedad
+  List<InventoryProperty> _propiedades = [];
+  InventoryProperty? _propiedadSeleccionada;
+  
+  // Fotos del ticket
+  List<String> _fotos = [];
 
   @override
   void initState() {
@@ -37,8 +50,78 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
     if (widget.ticket != null) {
       _tipoServicio = widget.ticket!.tipoServicio;
       _prioridad = widget.ticket!.prioridad;
+      _fotos = List.from(widget.ticket!.fotosProblema);
+    }
+    
+    _loadPropiedades();
+  }
+
+  Future<void> _loadPropiedades() async {
+    try {
+      final propiedades = await _inventoryService.getAllProperties();
+      if (mounted) {
+        setState(() {
+          _propiedades = propiedades;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al cargar propiedades: $e')),
+        );
+      }
     }
   }
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+      
+      if (image != null) {
+        setState(() {
+          _fotos.add(image.path);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al seleccionar imagen: $e')),
+      );
+    }
+  }
+
+  Future<void> _takePhoto() async {
+    try {
+      final XFile? photo = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+      
+      if (photo != null) {
+        setState(() {
+          _fotos.add(photo.path);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al tomar foto: $e')),
+      );
+    }
+  }
+
+  void _removePhoto(int index) {
+    setState(() {
+      _fotos.removeAt(index);
+    });
+  }
+
+
 
   @override
   void dispose() {
@@ -77,12 +160,20 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
         clienteEmail: user.email,
         prioridad: _prioridad,
         presupuestoEstimado: presupuesto,
+        propiedadId: _propiedadSeleccionada?.id,
+        propiedadDireccion: _propiedadSeleccionada?.direccion,
       );
 
       if (mounted) {
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Ticket creado exitosamente')),
+          SnackBar(
+            content: Text(
+              _fotos.isEmpty 
+                ? '✅ Ticket creado exitosamente'
+                : '✅ Ticket creado con ${_fotos.length} foto(s)'
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -203,6 +294,150 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
               ),
               validator: (value) =>
                   value?.isEmpty ?? true ? 'Ingresa una descripción' : null,
+            ),
+            const SizedBox(height: 16),
+
+            // Selector de propiedad
+            if (_propiedades.isNotEmpty)
+              DropdownButtonFormField<InventoryProperty>(
+                value: _propiedadSeleccionada,
+                dropdownColor: const Color(0xFF2C2C2C),
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Propiedad (Opcional)',
+                  labelStyle: const TextStyle(color: Color(0xFFFFD700)),
+                  hintText: 'Selecciona una propiedad',
+                  hintStyle: TextStyle(color: Colors.grey[600]),
+                  filled: true,
+                  fillColor: const Color(0xFF2C2C2C),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  prefixIcon: const Icon(Icons.home, color: Color(0xFFFFD700)),
+                ),
+                items: _propiedades
+                    .map((propiedad) => DropdownMenuItem(
+                          value: propiedad,
+                          child: Text(
+                            propiedad.direccion,
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ))
+                    .toList(),
+                onChanged: (value) => setState(() => _propiedadSeleccionada = value),
+              ),
+            if (_propiedades.isNotEmpty) const SizedBox(height: 16),
+
+            // Fotos del problema
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF2C2C2C),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[800]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.photo_library, color: Color(0xFFFFD700), size: 20),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Fotos del Problema',
+                        style: TextStyle(color: Color(0xFFFFD700), fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${_fotos.length}/10',
+                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _fotos.length < 10 ? _pickImage : null,
+                          icon: const Icon(Icons.image),
+                          label: const Text('Galería'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFFFFD700),
+                            side: const BorderSide(color: Color(0xFFFFD700)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _fotos.length < 10 ? _takePhoto : null,
+                          icon: const Icon(Icons.camera_alt),
+                          label: const Text('Cámara'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFFFFD700),
+                            side: const BorderSide(color: Color(0xFFFFD700)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_fotos.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 100,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _fotos.length,
+                        itemBuilder: (context, index) {
+                          return Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            child: Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    _fotos[index],
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        width: 100,
+                                        height: 100,
+                                        color: Colors.grey[800],
+                                        child: const Icon(Icons.broken_image, color: Colors.grey),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 4,
+                                  right: 4,
+                                  child: GestureDetector(
+                                    onTap: () => _removePhoto(index),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.close,
+                                        size: 16,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
             const SizedBox(height: 16),
 

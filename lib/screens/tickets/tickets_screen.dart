@@ -13,14 +13,28 @@ class TicketsScreen extends StatefulWidget {
 
 class _TicketsScreenState extends State<TicketsScreen> {
   final TicketService _ticketService = TicketService();
+  final TextEditingController _searchController = TextEditingController();
   List<TicketModel> _tickets = [];
   bool _isLoading = true;
   String _filterStatus = 'todos';
+  String _searchQuery = '';
+  String _sortBy = 'fecha_desc'; // fecha_desc, fecha_asc, prioridad, estado
 
   @override
   void initState() {
     super.initState();
     _loadTickets();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadTickets() async {
@@ -33,8 +47,48 @@ class _TicketsScreenState extends State<TicketsScreen> {
   }
 
   List<TicketModel> get _filteredTickets {
-    if (_filterStatus == 'todos') return _tickets;
-    return _tickets.where((t) => t.estado.value == _filterStatus).toList();
+    var filtered = _tickets;
+
+    // Filtro por estado
+    if (_filterStatus != 'todos') {
+      filtered = filtered.where((t) => t.estado.value == _filterStatus).toList();
+    }
+
+    // Filtro por búsqueda
+    if (_searchQuery.isNotEmpty) {
+      filtered = filtered.where((t) {
+        return t.titulo.toLowerCase().contains(_searchQuery) ||
+            t.descripcion.toLowerCase().contains(_searchQuery) ||
+            t.clienteNombre.toLowerCase().contains(_searchQuery) ||
+            (t.propiedadDireccion?.toLowerCase().contains(_searchQuery) ?? false);
+      }).toList();
+    }
+
+    // Ordenamiento
+    switch (_sortBy) {
+      case 'fecha_asc':
+        filtered.sort((a, b) => a.fechaCreacion.compareTo(b.fechaCreacion));
+        break;
+      case 'fecha_desc':
+        filtered.sort((a, b) => b.fechaCreacion.compareTo(a.fechaCreacion));
+        break;
+      case 'prioridad':
+        filtered.sort((a, b) {
+          final priorityOrder = {
+            TicketPriority.urgente: 0,
+            TicketPriority.alta: 1,
+            TicketPriority.media: 2,
+            TicketPriority.baja: 3,
+          };
+          return priorityOrder[a.prioridad]!.compareTo(priorityOrder[b.prioridad]!);
+        });
+        break;
+      case 'estado':
+        filtered.sort((a, b) => a.estado.value.compareTo(b.estado.value));
+        break;
+    }
+
+    return filtered;
   }
 
   Color _getStatusColor(TicketStatus status) {
@@ -96,9 +150,70 @@ class _TicketsScreenState extends State<TicketsScreen> {
       ),
       body: Column(
         children: [
-          // Filtros
+          // Búsqueda
           Container(
             padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: _searchController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'Buscar tickets...',
+                hintStyle: TextStyle(color: Colors.grey[600]),
+                prefixIcon: const Icon(Icons.search, color: Color(0xFFFFD700)),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, color: Color(0xFFFFD700)),
+                        onPressed: () {
+                          _searchController.clear();
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: const Color(0xFF2C2C2C),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+
+          // Ordenamiento
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                const Icon(Icons.sort, color: Color(0xFFFFD700), size: 20),
+                const SizedBox(width: 8),
+                const Text(
+                  'Ordenar:',
+                  style: TextStyle(color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildSortChip('Más reciente', 'fecha_desc', Icons.arrow_downward),
+                        const SizedBox(width: 8),
+                        _buildSortChip('Más antiguo', 'fecha_asc', Icons.arrow_upward),
+                        const SizedBox(width: 8),
+                        _buildSortChip('Prioridad', 'prioridad', Icons.priority_high),
+                        const SizedBox(width: 8),
+                        _buildSortChip('Estado', 'estado', Icons.label),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Filtros por estado
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -120,6 +235,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
               ),
             ),
           ),
+          const SizedBox(height: 8),
 
           // Lista de tickets
           Expanded(
@@ -188,6 +304,31 @@ class _TicketsScreenState extends State<TicketsScreen> {
       labelStyle: TextStyle(
         color: isSelected ? const Color(0xFF2C2C2C) : const Color(0xFFFFD700),
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+    );
+  }
+
+  Widget _buildSortChip(String label, String value, IconData icon) {
+    final isSelected = _sortBy == value;
+    return FilterChip(
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: isSelected ? const Color(0xFF2C2C2C) : const Color(0xFFFFD700)),
+          const SizedBox(width: 4),
+          Text(label),
+        ],
+      ),
+      selected: isSelected,
+      onSelected: (selected) {
+        setState(() => _sortBy = value);
+      },
+      backgroundColor: const Color(0xFF2C2C2C),
+      selectedColor: const Color(0xFFFFD700),
+      labelStyle: TextStyle(
+        color: isSelected ? const Color(0xFF2C2C2C) : const Color(0xFFFFD700),
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        fontSize: 12,
       ),
     );
   }
