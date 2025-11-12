@@ -121,6 +121,194 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
     });
   }
 
+  void _showEmergencyDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF2C2C2C),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 32),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  '⚠️ EMERGENCIA URGENTE',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Instrucciones de seguridad inmediatas:',
+                  style: TextStyle(
+                    color: Color(0xFFFFD700),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // Emergencia de agua
+                _buildEmergencyItem(
+                  icon: Icons.water_drop,
+                  title: '💧 Fuga de Agua',
+                  instructions: [
+                    'Cerrar el registro principal de agua',
+                    'Cortar el suministro del área afectada',
+                    'Retirar objetos de valor de la zona',
+                  ],
+                ),
+                const SizedBox(height: 16),
+                
+                // Emergencia de gas
+                _buildEmergencyItem(
+                  icon: Icons.local_fire_department,
+                  title: '🔥 Fuga de Gas',
+                  instructions: [
+                    'NO encender luces ni aparatos eléctricos',
+                    'Cerrar la llave de paso de gas inmediatamente',
+                    'Abrir puertas y ventanas para ventilar',
+                    'Evacuar el área y llamar a emergencias',
+                  ],
+                ),
+                const SizedBox(height: 16),
+                
+                // Emergencia eléctrica
+                _buildEmergencyItem(
+                  icon: Icons.electrical_services,
+                  title: '⚡ Corto Circuito',
+                  instructions: [
+                    'Apagar los tacos/breakers principales',
+                    'Desconectar electrodomésticos',
+                    'NO tocar cables expuestos',
+                    'Llamar a un electricista certificado',
+                  ],
+                ),
+                const SizedBox(height: 20),
+                
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.schedule, color: Colors.orange, size: 20),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'Horario de Atención',
+                              style: TextStyle(
+                                color: Colors.orange,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '• Emergencias en fin de semana o horario nocturno: '
+                        'Se enviará personal al día siguiente apenas se confirme la asistencia.\n\n'
+                        '• Para emergencias críticas que no pueden esperar, '
+                        'contacte a los servicios de emergencia locales.',
+                        style: TextStyle(color: Colors.grey[300], fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'ENTENDIDO',
+                style: TextStyle(
+                  color: Color(0xFFFFD700),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildEmergencyItem({
+    required IconData icon,
+    required String title,
+    required List<String> instructions,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.red.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: Colors.red, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ...instructions.map((instruction) => Padding(
+                padding: const EdgeInsets.only(left: 8, bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '• ',
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                    ),
+                    Expanded(
+                      child: Text(
+                        instruction,
+                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+        ],
+      ),
+    );
+  }
+
 
 
   @override
@@ -265,7 +453,18 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                         child: Text(priority.displayName),
                       ))
                   .toList(),
-              onChanged: (value) => setState(() => _prioridad = value!),
+              onChanged: (value) {
+                setState(() => _prioridad = value!);
+                // Mostrar diálogo de emergencia si se selecciona "Urgente"
+                if (value == TicketPriority.urgente) {
+                  // Delay para que el dropdown se cierre primero
+                  Future.delayed(const Duration(milliseconds: 300), () {
+                    if (mounted) {
+                      _showEmergencyDialog();
+                    }
+                  });
+                }
+              },
             ),
             const SizedBox(height: 16),
 
