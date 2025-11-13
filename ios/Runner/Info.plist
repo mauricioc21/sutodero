@@ -45,5 +45,50 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	
+	<!-- Permisos de Cámara -->
+	<key>NSCameraUsageDescription</key>
+	<string>SU TODERO necesita acceso a la cámara para tomar fotos de propiedades, tickets y inventarios.</string>
+	
+	<!-- Permisos de Galería/Fotos -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>SU TODERO necesita acceso a tu galería para seleccionar fotos de propiedades e inventarios.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>SU TODERO necesita guardar fotos en tu galería.</string>
+	
+	<!-- Permisos de Ubicación -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>SU TODERO necesita tu ubicación para registrar la ubicación de propiedades y tickets.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>SU TODERO necesita acceso a tu ubicación para funciones de seguimiento de técnicos.</string>
+	
+	<!-- Permisos de Bluetooth (para cámaras 360°) -->
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>SU TODERO necesita Bluetooth para conectar con cámaras 360° compatibles.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>SU TODERO usa Bluetooth para comunicarse con dispositivos de captura 360°.</string>
+	
+	<!-- Permisos de Micrófono (para videos) -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>SU TODERO necesita acceso al micrófono para grabar videos de propiedades.</string>
+	
+	<!-- Firebase Cloud Messaging (Notificaciones Push) -->
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
+	
+	<!-- Soporte de orientaciones y multitarea iPad -->
+	<key>UIRequiresFullScreen</key>
+	<false/>
+	<key>UIStatusBarHidden</key>
+	<false/>
+	
+	<!-- App Transport Security (permite conexiones seguras) -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 </dict>
 </plist>
