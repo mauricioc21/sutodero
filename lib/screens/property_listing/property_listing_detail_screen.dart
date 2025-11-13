@@ -908,7 +908,7 @@ class _PropertyListingDetailScreenState extends State<PropertyListingDetailScree
 
     if (confirmed == true && mounted) {
       try {
-        await _service.deletePropertyListing(_listing.id);
+        await _service.deleteListing(_listing.id);
         if (mounted) {
           Navigator.pop(context, true); // Volver a lista
           ScaffoldMessenger.of(context).showSnackBar(
@@ -928,7 +928,7 @@ class _PropertyListingDetailScreenState extends State<PropertyListingDetailScree
   /// Recargar datos de la captación
   void _reloadListing() async {
     try {
-      final updated = await _service.getPropertyListing(_listing.id);
+      final updated = await _service.getListing(_listing.id);
       if (updated != null && mounted) {
         setState(() {
           _listing = updated;
