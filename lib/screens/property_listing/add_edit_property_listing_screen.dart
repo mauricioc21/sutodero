@@ -112,42 +112,141 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
 
   // Photo selection methods
   Future<void> _pickRegularPhotos() async {
+    // Mostrar opciones: Cámara o Galería
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Agregar Fotos'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: AppTheme.dorado),
+              title: const Text('Tomar Foto'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: AppTheme.dorado),
+              title: const Text('Galería'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
     try {
-      final List<XFile> images = await _imagePicker.pickMultiImage();
-      if (images.isNotEmpty) {
-        setState(() {
-          _localPhotos.addAll(images);
-        });
+      if (source == ImageSource.camera) {
+        // Tomar una foto con la cámara
+        final XFile? photo = await _imagePicker.pickImage(source: ImageSource.camera);
+        if (photo != null) {
+          setState(() {
+            _localPhotos.add(photo);
+          });
+        }
+      } else {
+        // Seleccionar múltiples fotos de galería
+        final List<XFile> images = await _imagePicker.pickMultiImage();
+        if (images.isNotEmpty) {
+          setState(() {
+            _localPhotos.addAll(images);
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error seleccionando fotos: $e')),
+          SnackBar(content: Text('Error con fotos: $e')),
         );
       }
     }
   }
 
   Future<void> _pick360Photos() async {
+    // Mostrar opciones: Cámara o Galería
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Agregar Fotos 360°'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: AppTheme.dorado),
+              title: const Text('Tomar Foto 360°'),
+              subtitle: const Text('Panorama manual'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: AppTheme.dorado),
+              title: const Text('Galería'),
+              subtitle: const Text('Fotos 360° existentes'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
     try {
-      final List<XFile> images = await _imagePicker.pickMultiImage();
-      if (images.isNotEmpty) {
-        setState(() {
-          _localPhotos360.addAll(images);
-        });
+      if (source == ImageSource.camera) {
+        // Tomar una foto panorámica con la cámara
+        final XFile? photo = await _imagePicker.pickImage(source: ImageSource.camera);
+        if (photo != null) {
+          setState(() {
+            _localPhotos360.add(photo);
+          });
+        }
+      } else {
+        // Seleccionar múltiples fotos 360° de galería
+        final List<XFile> images = await _imagePicker.pickMultiImage();
+        if (images.isNotEmpty) {
+          setState(() {
+            _localPhotos360.addAll(images);
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error seleccionando fotos 360°: $e')),
+          SnackBar(content: Text('Error con fotos 360°: $e')),
         );
       }
     }
   }
 
   Future<void> _pickPlano2D() async {
+    // Mostrar opciones: Cámara o Galería
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Agregar Plano 2D'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: AppTheme.dorado),
+              title: const Text('Tomar Foto'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: AppTheme.dorado),
+              title: const Text('Galería'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
     try {
-      final XFile? image = await _imagePicker.pickImage(source: ImageSource.gallery);
+      final XFile? image = await _imagePicker.pickImage(source: source);
       if (image != null) {
         setState(() {
           _localPlano2D = image;
@@ -156,15 +255,40 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error seleccionando plano 2D: $e')),
+          SnackBar(content: Text('Error con plano 2D: $e')),
         );
       }
     }
   }
 
   Future<void> _pickPlano3D() async {
+    // Mostrar opciones: Cámara o Galería
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Agregar Plano 3D'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: AppTheme.dorado),
+              title: const Text('Tomar Foto'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: AppTheme.dorado),
+              title: const Text('Galería'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
     try {
-      final XFile? image = await _imagePicker.pickImage(source: ImageSource.gallery);
+      final XFile? image = await _imagePicker.pickImage(source: source);
       if (image != null) {
         setState(() {
           _localPlano3D = image;
@@ -173,7 +297,7 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error seleccionando plano 3D: $e')),
+          SnackBar(content: Text('Error con plano 3D: $e')),
         );
       }
     }
