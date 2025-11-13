@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import '../../models/property_listing.dart';
+import '../../models/virtual_tour_model.dart';
 import '../../services/property_listing_service.dart';
+import '../../services/virtual_tour_service.dart';
 import '../../widgets/panorama_360_viewer.dart';
 import '../../config/app_theme.dart';
+import '../virtual_tour/virtual_tour_viewer_screen.dart';
 import 'add_edit_property_listing_screen.dart';
 
 /// Pantalla de detalle completa de una captación inmobiliaria
@@ -22,12 +25,37 @@ class PropertyListingDetailScreen extends StatefulWidget {
 
 class _PropertyListingDetailScreenState extends State<PropertyListingDetailScreen> {
   final PropertyListingService _service = PropertyListingService();
+  final VirtualTourService _tourService = VirtualTourService();
   late PropertyListing _listing;
+  VirtualTourModel? _virtualTour;
+  bool _loadingTour = false;
 
   @override
   void initState() {
     super.initState();
     _listing = widget.listing;
+    _loadVirtualTour();
+  }
+
+  /// Cargar tour virtual si existe
+  Future<void> _loadVirtualTour() async {
+    if (_listing.tourVirtualId == null) return;
+
+    setState(() => _loadingTour = true);
+    
+    try {
+      final tour = await _tourService.getTourById(_listing.tourVirtualId!);
+      if (mounted) {
+        setState(() {
+          _virtualTour = tour;
+          _loadingTour = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loadingTour = false);
+      }
+    }
   }
 
   @override
@@ -679,28 +707,185 @@ class _PropertyListingDetailScreenState extends State<PropertyListingDetailScree
 
   /// Tour virtual
   Widget _buildVirtualTour() {
+    if (_loadingTour) {
+      return Container(
+        margin: EdgeInsets.all(AppTheme.paddingMD),
+        padding: EdgeInsets.all(AppTheme.paddingLG),
+        decoration: BoxDecoration(
+          color: AppTheme.grisOscuro.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(color: AppTheme.dorado),
+        ),
+      );
+    }
+
+    if (_virtualTour == null) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: EdgeInsets.all(AppTheme.paddingMD),
+      padding: EdgeInsets.all(AppTheme.paddingMD),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.dorado.withValues(alpha: 0.2),
+            AppTheme.grisOscuro.withValues(alpha: 0.2),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        border: Border.all(color: AppTheme.dorado, width: 2),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Tour Virtual',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.dorado,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                ),
+                child: const Icon(
+                  Icons.panorama_photosphere,
+                  color: AppTheme.negro,
+                  size: 24,
+                ),
+              ),
+              SizedBox(width: AppTheme.spacingMD),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tour Virtual 360°',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.blanco,
+                      ),
+                    ),
+                    Text(
+                      'Explora la propiedad en 360°',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.grisClaro,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.dorado,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                ),
+                child: Text(
+                  '${_virtualTour!.photoCount} vistas',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.negro,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          ElevatedButton.icon(
-            onPressed: () {
-              // TODO: Abrir tour virtual
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Tour virtual en desarrollo')),
-              );
-            },
-            icon: const Icon(Icons.view_in_ar),
-            label: const Text('Ver Tour Virtual'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFD700),
-              foregroundColor: Colors.black,
+          SizedBox(height: AppTheme.spacingMD),
+          
+          // Thumbnail del tour
+          if (_virtualTour!.photo360Urls.isNotEmpty)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+              child: Stack(
+                children: [
+                  Image.network(
+                    _virtualTour!.photo360Urls.first,
+                    height: 150,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            AppTheme.negro.withValues(alpha: 0.7),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Positioned(
+                    bottom: 8,
+                    left: 8,
+                    child: Row(
+                      children: [
+                        Icon(Icons.threesixty, color: AppTheme.dorado, size: 20),
+                        SizedBox(width: 4),
+                        Text(
+                          'Vista panorámica 360°',
+                          style: TextStyle(
+                            color: AppTheme.blanco,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          
+          SizedBox(height: AppTheme.spacingMD),
+          
+          // Descripción si existe
+          if (_virtualTour!.description.isNotEmpty)
+            Padding(
+              padding: EdgeInsets.only(bottom: AppTheme.spacingSM),
+              child: Text(
+                _virtualTour!.description,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppTheme.grisClaro,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          
+          // Botón de ver tour
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => VirtualTourViewerScreen(tour: _virtualTour!),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.play_circle_filled),
+              label: const Text('VER TOUR VIRTUAL'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.dorado,
+                foregroundColor: AppTheme.negro,
+                padding: EdgeInsets.symmetric(vertical: AppTheme.paddingMD),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                ),
+              ),
             ),
           ),
         ],

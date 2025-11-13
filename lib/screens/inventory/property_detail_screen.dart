@@ -408,7 +408,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
           children: [
             _buildPropertyHeader(),
             _buildPropertyInfo(),
-            if (_virtualTours.isNotEmpty) _buildVirtualToursSection(),
+            _buildVirtualToursSection(), // Siempre mostrar sección (con botón crear si vacío)
             if (_relatedTickets.isNotEmpty) _buildRelatedTicketsSection(),
             _buildRoomsSection(),
           ],
@@ -1120,109 +1120,351 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppTheme.dorado,
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                ),
-                child: Text(
-                  '${_virtualTours.length}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.negro,
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.dorado,
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                    ),
+                    child: Text(
+                      '${_virtualTours.length}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.negro,
+                      ),
+                    ),
                   ),
-                ),
+                  SizedBox(width: AppTheme.spacingSM),
+                  IconButton(
+                    onPressed: _showCreateTourDialog,
+                    icon: const Icon(Icons.add_circle),
+                    color: AppTheme.dorado,
+                    tooltip: 'Crear Tour Virtual',
+                  ),
+                ],
               ),
             ],
           ),
           SizedBox(height: AppTheme.spacingMD),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _virtualTours.length,
-            itemBuilder: (context, index) {
-              final tour = _virtualTours[index];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                elevation: 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                ),
-                child: InkWell(
-                  onTap: () => _openVirtualTour(tour),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                  child: Padding(
-                    padding: EdgeInsets.all(AppTheme.paddingMD),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                            image: tour.photo360Urls.isNotEmpty
-                                ? DecorationImage(
-                                    image: NetworkImage(tour.photo360Urls.first),
-                                    fit: BoxFit.cover,
-                                  )
-                                : null,
-                          ),
-                          child: tour.photo360Urls.isEmpty
-                              ? const Icon(Icons.panorama, size: 40, color: Colors.grey)
-                              : null,
-                        ),
-                        SizedBox(width: AppTheme.spacingMD),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                tour.description.isNotEmpty
-                                    ? tour.description
-                                    : 'Tour Virtual',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${tour.photoCount} foto(s) 360°',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Creado: ${_formatDate(tour.createdAt)}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(
-                          Icons.play_circle_filled,
-                          color: Color(0xFFFAB334),
-                          size: 32,
-                        ),
-                      ],
+          
+          // Si no hay tours, mostrar mensaje
+          if (_virtualTours.isEmpty)
+            Container(
+              padding: EdgeInsets.all(AppTheme.paddingLG),
+              decoration: BoxDecoration(
+                color: AppTheme.grisOscuro.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                border: Border.all(color: AppTheme.dorado.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.panorama_photosphere_outlined,
+                    size: 64,
+                    color: AppTheme.dorado.withValues(alpha: 0.5),
+                  ),
+                  SizedBox(height: AppTheme.spacingMD),
+                  const Text(
+                    'No hay tours virtuales creados',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.grisClaro,
                     ),
                   ),
-                ),
-              );
-            },
-          ),
+                  SizedBox(height: AppTheme.spacingSM),
+                  const Text(
+                    'Crea un tour virtual 360° con las fotos capturadas',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.grisClaro,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: AppTheme.spacingMD),
+                  ElevatedButton.icon(
+                    onPressed: _showCreateTourDialog,
+                    icon: const Icon(Icons.add),
+                    label: const Text('CREAR TOUR VIRTUAL'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.dorado,
+                      foregroundColor: AppTheme.negro,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppTheme.paddingLG,
+                        vertical: AppTheme.paddingMD,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _virtualTours.length,
+              itemBuilder: (context, index) {
+                final tour = _virtualTours[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                  ),
+                  child: InkWell(
+                    onTap: () => _openVirtualTour(tour),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                    child: Padding(
+                      padding: EdgeInsets.all(AppTheme.paddingMD),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[300],
+                              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                              image: tour.photo360Urls.isNotEmpty
+                                  ? DecorationImage(
+                                      image: NetworkImage(tour.photo360Urls.first),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : null,
+                            ),
+                            child: tour.photo360Urls.isEmpty
+                                ? const Icon(Icons.panorama, size: 40, color: Colors.grey)
+                                : const Center(
+                                    child: Icon(
+                                      Icons.threesixty,
+                                      color: Colors.white,
+                                      size: 32,
+                                    ),
+                                  ),
+                          ),
+                          SizedBox(width: AppTheme.spacingMD),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  tour.description.isNotEmpty
+                                      ? tour.description
+                                      : 'Tour Virtual',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${tour.photoCount} foto(s) 360°',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Creado: ${_formatDate(tour.createdAt)}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.play_circle_filled,
+                            color: Color(0xFFFAB334),
+                            size: 32,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
         ],
       ),
     );
+  }
+
+  /// Mostrar diálogo para crear tour virtual
+  Future<void> _showCreateTourDialog() async {
+    // Obtener fotos 360° de todos los rooms
+    final List<String> all360Photos = [];
+    for (final room in _rooms) {
+      all360Photos.addAll(room.fotos360);
+    }
+
+    if (all360Photos.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('⚠️ No hay fotos 360° capturadas. Captura fotos 360° en los espacios primero.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Controller para descripción
+    final descriptionController = TextEditingController();
+    final selectedPhotos = <String>[...all360Photos]; // Por defecto, todas seleccionadas
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          backgroundColor: AppTheme.grisOscuro,
+          title: const Text(
+            'Crear Tour Virtual 360°',
+            style: TextStyle(color: AppTheme.dorado, fontWeight: FontWeight.bold),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Descripción
+                TextField(
+                  controller: descriptionController,
+                  style: const TextStyle(color: AppTheme.blanco),
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    labelText: 'Descripción del Tour',
+                    labelStyle: const TextStyle(color: AppTheme.dorado),
+                    hintText: 'Ej: Tour completo de la propiedad',
+                    hintStyle: TextStyle(color: Colors.grey[600]),
+                    filled: true,
+                    fillColor: AppTheme.negro,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                      borderSide: BorderSide(color: Colors.grey[800]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                      borderSide: const BorderSide(color: AppTheme.dorado),
+                    ),
+                  ),
+                ),
+                SizedBox(height: AppTheme.spacingMD),
+
+                // Contador de fotos
+                Container(
+                  padding: EdgeInsets.all(AppTheme.paddingSM),
+                  decoration: BoxDecoration(
+                    color: AppTheme.dorado.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.panorama_photosphere, color: AppTheme.dorado),
+                      SizedBox(width: AppTheme.spacingSM),
+                      Expanded(
+                        child: Text(
+                          '${selectedPhotos.length} foto(s) 360° incluidas',
+                          style: const TextStyle(
+                            color: AppTheme.blanco,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: AppTheme.spacingSM),
+                
+                const Text(
+                  'Se incluirán todas las fotos 360° capturadas en los espacios.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.grisClaro,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text(
+                'CANCELAR',
+                style: TextStyle(color: AppTheme.grisClaro),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.dorado,
+                foregroundColor: AppTheme.negro,
+              ),
+              child: const Text('CREAR TOUR'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (result == true && mounted) {
+      // Crear el tour
+      try {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(color: AppTheme.dorado),
+          ),
+        );
+
+        final tour = await _virtualTourService.createTour(
+          propertyId: widget.property.id,
+          propertyName: widget.property.tipo.displayName,
+          propertyAddress: widget.property.direccion,
+          photo360Urls: selectedPhotos,
+          description: descriptionController.text.trim().isNotEmpty
+              ? descriptionController.text.trim()
+              : 'Tour Virtual de ${widget.property.direccion}',
+        );
+
+        if (mounted) {
+          Navigator.pop(context); // Cerrar loading
+
+          // Recargar tours
+          _loadRooms();
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Tour virtual creado exitosamente'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Abrir el tour recién creado
+          _openVirtualTour(tour);
+        }
+      } catch (e) {
+        if (mounted) {
+          Navigator.pop(context); // Cerrar loading
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('❌ Error al crear tour: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+
+    descriptionController.dispose();
   }
 
   /// Abrir tour virtual
