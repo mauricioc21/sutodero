@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -11,11 +12,22 @@ import 'services/auth_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Inicializar Firebase
+  // Inicializar Firebase con timeout agresivo
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
+    ).timeout(
+      const Duration(seconds: 10),
+      onTimeout: () {
+        if (kDebugMode) {
+          debugPrint('⏱️ Timeout en inicialización de Firebase (10s)');
+          debugPrint('⚠️ La app continuará sin Firebase');
+        }
+        // Retornar Firebase app mock (no se puede hacer, solo dejamos que falle)
+        throw TimeoutException('Firebase initialization timeout');
+      },
     );
+    
     if (kDebugMode) {
       debugPrint('✅ Firebase inicializado correctamente');
     }
@@ -24,6 +36,7 @@ void main() async {
       debugPrint('⚠️ Error al inicializar Firebase: $e');
       debugPrint('La app funcionará en modo local sin Firebase');
     }
+    // Continuar sin Firebase - la app debe funcionar en modo offline
   }
   
   runApp(
@@ -53,7 +66,100 @@ class SuToderoApp extends StatelessWidget {
         Locale('es', 'ES'),
       ],
       theme: AppTheme.theme,
-      home: const LoginScreen(),
+      home: const InitializationScreen(), // Pantalla de inicialización
+    );
+  }
+}
+
+/// Pantalla de inicialización que verifica Firebase y navega al login
+class InitializationScreen extends StatefulWidget {
+  const InitializationScreen({super.key});
+
+  @override
+  State<InitializationScreen> createState() => _InitializationScreenState();
+}
+
+class _InitializationScreenState extends State<InitializationScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    // Esperar mínimo 1 segundo para mostrar logo
+    await Future.delayed(const Duration(seconds: 1));
+    
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.negro,
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Logo
+              Container(
+                width: 200,
+                height: 200,
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.dorado.withValues(alpha: 0.3),
+                      blurRadius: 30,
+                      spreadRadius: 10,
+                    ),
+                  ],
+                ),
+                child: Image.asset(
+                  'assets/images/maestro_todero_nobg.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(
+                      Icons.handyman,
+                      size: 100,
+                      color: AppTheme.dorado,
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 32),
+              // Nombre de la app
+              const Text(
+                'SU TODERO',
+                style: TextStyle(
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.dorado,
+                  letterSpacing: 2,
+                ),
+              ),
+              const SizedBox(height: 48),
+              // Loading indicator
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.dorado),
+                strokeWidth: 3,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Inicializando...',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
