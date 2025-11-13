@@ -8,6 +8,7 @@ import '../../services/pdf_service.dart';
 import '../../widgets/ticket_timeline.dart';
 import '../../widgets/signature_pad.dart';
 import 'chat_screen.dart';
+import '../../config/app_theme.dart';
 
 class TicketDetailScreen extends StatefulWidget {
   final String ticketId;
@@ -42,7 +43,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
   Color _getStatusColor(TicketStatus status) {
     switch (status) {
       case TicketStatus.nuevo:
-        return const Color(0xFFFFD700);
+        return AppTheme.dorado;
       case TicketStatus.pendiente:
         return const Color(0xFFFF9800);
       case TicketStatus.enProgreso:
@@ -154,10 +155,10 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.negro,
         appBar: AppBar(
-          backgroundColor: const Color(0xFF2C2C2C),
-          foregroundColor: const Color(0xFFFFD700),
+          backgroundColor: AppTheme.grisOscuro,
+          foregroundColor: AppTheme.dorado,
         ),
         body: const Center(
           child: CircularProgressIndicator(color: Color(0xFFFFD700)),
@@ -167,26 +168,26 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
 
     if (_ticket == null) {
       return Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.negro,
         appBar: AppBar(
-          backgroundColor: const Color(0xFF2C2C2C),
-          foregroundColor: const Color(0xFFFFD700),
+          backgroundColor: AppTheme.grisOscuro,
+          foregroundColor: AppTheme.dorado,
         ),
         body: const Center(
           child: Text(
             'Ticket no encontrado',
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: AppTheme.blanco),
           ),
         ),
       );
     }
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.negro,
       appBar: AppBar(
         title: const Text('Detalle del Ticket'),
-        backgroundColor: const Color(0xFF2C2C2C),
-        foregroundColor: const Color(0xFFFFD700),
+        backgroundColor: AppTheme.grisOscuro,
+        foregroundColor: AppTheme.dorado,
         actions: [
           // Botón de Exportar PDF
           IconButton(
@@ -222,7 +223,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                             : Colors.grey,
                         size: 20,
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: AppTheme.spacingSM),
                       const Text('Firma Cliente'),
                     ],
                   ),
@@ -240,7 +241,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                             : Colors.grey,
                         size: 20,
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: AppTheme.spacingSM),
                       const Text('Firma Todero'),
                     ],
                   ),
@@ -293,7 +294,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                         child: Text(
                           unreadCount > 9 ? '9+' : '$unreadCount',
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppTheme.blanco,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
@@ -336,14 +337,14 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(AppTheme.paddingMD),
         children: [
           // Estado
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(AppTheme.paddingMD),
             decoration: BoxDecoration(
-              color: const Color(0xFF2C2C2C),
-              borderRadius: BorderRadius.circular(16),
+              color: AppTheme.grisOscuro,
+              borderRadius: BorderRadius.circular(AppTheme.radiusLG),
             ),
             child: Row(
               children: [
@@ -355,7 +356,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                     shape: BoxShape.circle,
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: AppTheme.spacingMD),
                 Text(
                   _ticket!.estado.displayName,
                   style: TextStyle(
@@ -368,7 +369,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFD700).withValues(alpha: 0.2),
+                    color: AppTheme.dorado.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -383,18 +384,18 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: AppTheme.spacingMD),
 
           // Título
           Text(
             _ticket!.titulo,
             style: const TextStyle(
-              color: Colors.white,
+              color: AppTheme.blanco,
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: AppTheme.spacingSM),
 
           // Tipo de servicio
           Text(
@@ -404,7 +405,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
               fontSize: 16,
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: AppTheme.spacingXL),
 
           // Descripción
           _buildSection(
@@ -412,7 +413,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
             Icons.description,
             _ticket!.descripcion,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: AppTheme.spacingMD),
 
           // Cliente
           _buildSection(
@@ -421,7 +422,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
             _ticket!.clienteNombre,
             subtitle: _ticket!.clienteTelefono,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: AppTheme.spacingMD),
 
           // Propiedad (si existe)
           if (_ticket!.propiedadDireccion != null)
@@ -431,7 +432,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
               _ticket!.propiedadDireccion!,
               subtitle: _ticket!.espacioNombre,
             ),
-          if (_ticket!.propiedadDireccion != null) const SizedBox(height: 16),
+          if (_ticket!.propiedadDireccion != null) SizedBox(height: AppTheme.spacingMD),
 
           // Presupuesto (si existe)
           if (_ticket!.presupuestoEstimado != null)
@@ -440,7 +441,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
               Icons.attach_money,
               '\$${_ticket!.presupuestoEstimado!.toStringAsFixed(2)}',
             ),
-          if (_ticket!.presupuestoEstimado != null) const SizedBox(height: 16),
+          if (_ticket!.presupuestoEstimado != null) SizedBox(height: AppTheme.spacingMD),
 
           // Fechas
           _buildSection(
@@ -451,14 +452,14 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                 ? 'Completado: ${_formatDate(_ticket!.fechaCompletado!)}'
                 : null,
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: AppTheme.spacingXL),
 
           // Historial de cambios
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(AppTheme.paddingMD),
             decoration: BoxDecoration(
-              color: const Color(0xFF2C2C2C),
-              borderRadius: BorderRadius.circular(16),
+              color: AppTheme.grisOscuro,
+              borderRadius: BorderRadius.circular(AppTheme.radiusLG),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -466,7 +467,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                 Row(
                   children: [
                     const Icon(Icons.history, color: Color(0xFFFFD700), size: 20),
-                    const SizedBox(width: 8),
+                    SizedBox(width: AppTheme.spacingSM),
                     const Text(
                       'Historial de Cambios',
                       style: TextStyle(
@@ -477,7 +478,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: AppTheme.spacingMD),
                 TicketTimeline(ticketId: _ticket!.id),
               ],
             ),
@@ -489,18 +490,18 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
 
   Widget _buildSection(String title, IconData icon, String content, {String? subtitle}) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(AppTheme.paddingMD),
       decoration: BoxDecoration(
-        color: const Color(0xFF2C2C2C),
-        borderRadius: BorderRadius.circular(16),
+        color: AppTheme.grisOscuro,
+        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: const Color(0xFFFFD700), size: 20),
-              const SizedBox(width: 8),
+              Icon(icon, color: AppTheme.dorado, size: 20),
+              SizedBox(width: AppTheme.spacingSM),
               Text(
                 title,
                 style: const TextStyle(
@@ -511,16 +512,16 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: AppTheme.spacingMD),
           Text(
             content,
             style: const TextStyle(
-              color: Colors.white,
+              color: AppTheme.blanco,
               fontSize: 16,
             ),
           ),
           if (subtitle != null) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: AppTheme.spacingSM),
             Text(
               subtitle,
               style: TextStyle(

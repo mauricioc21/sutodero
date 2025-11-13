@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import '../services/auth_service.dart';
 import 'package:uuid/uuid.dart';
 import '../models/inventory_property.dart';
 import '../models/property_room.dart';
@@ -54,6 +55,7 @@ class InventoryService {
 
   /// Crea una nueva propiedad
   Future<InventoryProperty> createProperty({
+    required String userId,
     required String direccion,
     String? clienteNombre,
     String? clienteTelefono,
@@ -66,6 +68,7 @@ class InventoryService {
   }) async {
     final property = InventoryProperty(
       id: _uuid.v4(),
+      userId: userId,
       direccion: direccion,
       clienteNombre: clienteNombre,
       clienteTelefono: clienteTelefono,

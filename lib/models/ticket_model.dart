@@ -122,6 +122,7 @@ extension TicketPriorityExtension on TicketPriority {
 /// Modelo de Ticket para gestión de órdenes de trabajo
 class TicketModel {
   final String id;
+  final String userId; // ID del usuario propietario del ticket
   final String titulo;
   final String descripcion;
   final ServiceType tipoServicio;
@@ -175,6 +176,7 @@ class TicketModel {
 
   TicketModel({
     required this.id,
+    required this.userId,
     required this.titulo,
     required this.descripcion,
     required this.tipoServicio,
@@ -212,6 +214,7 @@ class TicketModel {
   /// Convertir a Map para Firestore
   Map<String, dynamic> toMap() {
     return {
+      'userId': userId,
       'titulo': titulo,
       'descripcion': descripcion,
       'tipoServicio': tipoServicio.value,
@@ -251,6 +254,7 @@ class TicketModel {
   factory TicketModel.fromMap(Map<String, dynamic> map, String id) {
     return TicketModel(
       id: id,
+      userId: map['userId'] ?? '',
       titulo: map['titulo'] ?? '',
       descripcion: map['descripcion'] ?? '',
       tipoServicio: ServiceType.values.firstWhere(
@@ -297,6 +301,7 @@ class TicketModel {
 
   /// Copiar con modificaciones
   TicketModel copyWith({
+    String? userId,
     String? titulo,
     String? descripcion,
     ServiceType? tipoServicio,
@@ -331,6 +336,7 @@ class TicketModel {
   }) {
     return TicketModel(
       id: id,
+      userId: userId ?? this.userId,
       titulo: titulo ?? this.titulo,
       descripcion: descripcion ?? this.descripcion,
       tipoServicio: tipoServicio ?? this.tipoServicio,

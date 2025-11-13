@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../models/ticket_model.dart';
 import '../../services/ticket_service.dart';
 import 'ticket_detail_screen.dart';
+import '../../config/app_theme.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -39,7 +40,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Color _getStatusColor(TicketStatus status) {
     switch (status) {
       case TicketStatus.nuevo:
-        return const Color(0xFFFFD700);
+        return AppTheme.dorado;
       case TicketStatus.pendiente:
         return const Color(0xFFFF9800);
       case TicketStatus.enProgreso:
@@ -54,11 +55,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.negro,
       appBar: AppBar(
         title: const Text('Dashboard de Tickets'),
-        backgroundColor: const Color(0xFF2C2C2C),
-        foregroundColor: const Color(0xFFFFD700),
+        backgroundColor: AppTheme.grisOscuro,
+        foregroundColor: AppTheme.dorado,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -72,28 +73,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
             )
           : RefreshIndicator(
               onRefresh: _loadData,
-              color: const Color(0xFFFFD700),
+              color: AppTheme.dorado,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(AppTheme.paddingMD),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Resumen general
                     _buildResumenGeneral(),
-                    const SizedBox(height: 24),
+                    SizedBox(height: AppTheme.spacingXL),
 
                     // Gráfico circular de estados
                     _buildEstadosChart(),
-                    const SizedBox(height: 24),
+                    SizedBox(height: AppTheme.spacingXL),
 
                     // Gráfico de barras de servicios
                     _buildServiciosChart(),
-                    const SizedBox(height: 24),
+                    SizedBox(height: AppTheme.spacingXL),
 
                     // Tickets urgentes
                     _buildTicketsUrgentes(),
-                    const SizedBox(height: 24),
+                    SizedBox(height: AppTheme.spacingXL),
 
                     // Actividad reciente
                     _buildActividadReciente(),
@@ -122,7 +123,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: AppTheme.spacingMD),
         Row(
           children: [
             Expanded(
@@ -130,10 +131,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 title: 'Total',
                 value: total.toString(),
                 icon: Icons.assignment,
-                color: const Color(0xFFFFD700),
+                color: AppTheme.dorado,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: AppTheme.spacingMD),
             Expanded(
               child: _buildStatCard(
                 title: 'Activos',
@@ -144,7 +145,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: AppTheme.spacingMD),
         Row(
           children: [
             Expanded(
@@ -155,13 +156,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 color: const Color(0xFF4CAF50),
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: AppTheme.spacingMD),
             Expanded(
               child: _buildStatCard(
                 title: 'Nuevos',
                 value: nuevo.toString(),
                 icon: Icons.fiber_new,
-                color: const Color(0xFFFFD700),
+                color: AppTheme.dorado,
               ),
             ),
           ],
@@ -177,10 +178,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(AppTheme.paddingMD),
       decoration: BoxDecoration(
-        color: const Color(0xFF2C2C2C),
-        borderRadius: BorderRadius.circular(12),
+        color: AppTheme.grisOscuro,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
@@ -200,7 +201,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: AppTheme.spacingSM),
           Text(
             title,
             style: TextStyle(
@@ -219,10 +220,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(AppTheme.paddingMD),
       decoration: BoxDecoration(
-        color: const Color(0xFF2C2C2C),
-        borderRadius: BorderRadius.circular(12),
+        color: AppTheme.grisOscuro,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -235,7 +236,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: AppTheme.spacingXL),
           SizedBox(
             height: 200,
             child: PieChart(
@@ -247,7 +248,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: AppTheme.spacingMD),
           _buildLegend(),
         ],
       ),
@@ -269,7 +270,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         PieChartSectionData(
           value: nuevo.toDouble(),
           title: '$nuevo',
-          color: const Color(0xFFFFD700),
+          color: AppTheme.dorado,
           radius: 50,
           titleStyle: const TextStyle(
             fontSize: 14,
@@ -286,7 +287,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           titleStyle: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppTheme.blanco,
           ),
         ),
       if (enProgreso > 0)
@@ -298,7 +299,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           titleStyle: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppTheme.blanco,
           ),
         ),
       if (completado > 0)
@@ -310,7 +311,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           titleStyle: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppTheme.blanco,
           ),
         ),
       if (cancelado > 0)
@@ -322,7 +323,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           titleStyle: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppTheme.blanco,
           ),
         ),
     ];
@@ -333,7 +334,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       spacing: 12,
       runSpacing: 8,
       children: [
-        _buildLegendItem('Nuevo', const Color(0xFFFFD700)),
+        _buildLegendItem('Nuevo', AppTheme.dorado),
         _buildLegendItem('Pendiente', const Color(0xFFFF9800)),
         _buildLegendItem('En Progreso', const Color(0xFF2196F3)),
         _buildLegendItem('Completado', const Color(0xFF4CAF50)),
@@ -382,10 +383,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ..sort((a, b) => b.value.compareTo(a.value));
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(AppTheme.paddingMD),
       decoration: BoxDecoration(
-        color: const Color(0xFF2C2C2C),
-        borderRadius: BorderRadius.circular(12),
+        color: AppTheme.grisOscuro,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -398,7 +399,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: AppTheme.spacingXL),
           SizedBox(
             height: 250,
             child: BarChart(
@@ -462,7 +463,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     barRods: [
                       BarChartRodData(
                         toY: entry.value.value.toDouble(),
-                        color: const Color(0xFFFFD700),
+                        color: AppTheme.dorado,
                         width: 20,
                         borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                       ),
@@ -517,7 +518,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Row(
           children: [
             const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 24),
-            const SizedBox(width: 8),
+            SizedBox(width: AppTheme.spacingSM),
             const Text(
               'Tickets Urgentes',
               style: TextStyle(
@@ -526,17 +527,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: AppTheme.spacingSM),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: Colors.red,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMD),
               ),
               child: Text(
                 '${urgentes.length}',
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: AppTheme.blanco,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -544,7 +545,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: AppTheme.spacingMD),
         ...urgentes.take(3).map((ticket) => _buildTicketCard(ticket)),
       ],
     );
@@ -565,7 +566,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: AppTheme.spacingMD),
         ...recientes.map((ticket) => _buildTicketCard(ticket)),
       ],
     );
@@ -573,7 +574,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildTicketCard(TicketModel ticket) {
     return Card(
-      color: const Color(0xFF2C2C2C),
+      color: AppTheme.grisOscuro,
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: () {
@@ -596,7 +597,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: AppTheme.spacingMD),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -604,7 +605,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Text(
                       ticket.titulo,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.blanco,
                         fontWeight: FontWeight.bold,
                       ),
                       maxLines: 1,
@@ -625,7 +626,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: _getStatusColor(ticket.estado).withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                 ),
                 child: Text(
                   ticket.estado.displayName,

@@ -4,6 +4,7 @@ import '../../models/chat_message.dart';
 import '../../models/ticket_model.dart';
 import '../../services/chat_service.dart';
 import '../../services/auth_service.dart';
+import '../../config/app_theme.dart';
 
 class ChatScreen extends StatefulWidget {
   final TicketModel ticket;
@@ -87,10 +88,10 @@ class _ChatScreenState extends State<ChatScreen> {
     final currentUser = authService.currentUser;
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.negro,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF2C2C2C),
-        foregroundColor: const Color(0xFFFFD700),
+        backgroundColor: AppTheme.grisOscuro,
+        foregroundColor: AppTheme.dorado,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -132,7 +133,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           size: 64,
                           color: Colors.grey[700],
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: AppTheme.spacingMD),
                         Text(
                           'No hay mensajes aún',
                           style: TextStyle(
@@ -140,7 +141,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             fontSize: 16,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: AppTheme.spacingSM),
                         Text(
                           'Inicia la conversación',
                           style: TextStyle(
@@ -160,7 +161,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
                 return ListView.builder(
                   controller: _scrollController,
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(AppTheme.paddingMD),
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final message = messages[index];
@@ -182,10 +183,10 @@ class _ChatScreenState extends State<ChatScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF2C2C2C),
+              color: AppTheme.grisOscuro,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
+                  color: AppTheme.negro.withValues(alpha: 0.3),
                   blurRadius: 4,
                   offset: const Offset(0, -2),
                 ),
@@ -197,12 +198,12 @@ class _ChatScreenState extends State<ChatScreen> {
                   Expanded(
                     child: TextField(
                       controller: _messageController,
-                      style: const TextStyle(color: Colors.white),
+                      style: const TextStyle(color: AppTheme.blanco),
                       decoration: InputDecoration(
                         hintText: 'Escribe un mensaje...',
                         hintStyle: TextStyle(color: Colors.grey[600]),
                         filled: true,
-                        fillColor: Colors.black,
+                        fillColor: AppTheme.negro,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),
                           borderSide: BorderSide.none,
@@ -218,9 +219,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       onSubmitted: (_) => _sendMessage(),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: AppTheme.spacingSM),
                   CircleAvatar(
-                    backgroundColor: const Color(0xFFFFD700),
+                    backgroundColor: AppTheme.dorado,
                     child: IconButton(
                       icon: const Icon(Icons.send, color: Color(0xFF2C2C2C)),
                       onPressed: _sendMessage,
@@ -243,7 +244,7 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           if (!isMe) ...[
             CircleAvatar(
-              backgroundColor: const Color(0xFFFFD700),
+              backgroundColor: AppTheme.dorado,
               radius: 16,
               child: Text(
                 message.senderName[0].toUpperCase(),
@@ -254,7 +255,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: AppTheme.spacingSM),
           ],
           Flexible(
             child: Column(
@@ -279,8 +280,8 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   decoration: BoxDecoration(
                     color: isMe
-                        ? const Color(0xFFFFD700)
-                        : const Color(0xFF2C2C2C),
+                        ? AppTheme.dorado
+                        : AppTheme.grisOscuro,
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(16),
                       topRight: const Radius.circular(16),
@@ -294,7 +295,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       Text(
                         message.content,
                         style: TextStyle(
-                          color: isMe ? const Color(0xFF2C2C2C) : Colors.white,
+                          color: isMe ? AppTheme.grisOscuro : AppTheme.blanco,
                           fontSize: 15,
                         ),
                       ),
@@ -306,7 +307,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             _formatTime(message.timestamp),
                             style: TextStyle(
                               color: isMe
-                                  ? const Color(0xFF2C2C2C).withValues(alpha: 0.7)
+                                  ? AppTheme.grisOscuro.withValues(alpha: 0.7)
                                   : Colors.grey[500],
                               fontSize: 11,
                             ),
@@ -320,7 +321,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               size: 14,
                               color: message.isRead
                                   ? Colors.blue
-                                  : const Color(0xFF2C2C2C).withValues(alpha: 0.7),
+                                  : AppTheme.grisOscuro.withValues(alpha: 0.7),
                             ),
                           ],
                         ],
@@ -332,9 +333,9 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           if (isMe) ...[
-            const SizedBox(width: 8),
+            SizedBox(width: AppTheme.spacingSM),
             CircleAvatar(
-              backgroundColor: const Color(0xFF2C2C2C),
+              backgroundColor: AppTheme.grisOscuro,
               radius: 16,
               child: Text(
                 message.senderName[0].toUpperCase(),
@@ -358,7 +359,7 @@ class _ChatScreenState extends State<ChatScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: Colors.grey[800],
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
         ),
         child: Text(
           message.content,

@@ -9,6 +9,7 @@ import '../../services/floor_plan_service.dart';
 import '../../services/qr_service.dart';
 import '../../services/inventory_pdf_service.dart';
 import 'add_edit_room_screen.dart';
+import '../../config/app_theme.dart';
 
 class RoomDetailScreen extends StatefulWidget {
   final PropertyRoom room;
@@ -236,13 +237,13 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                     'Análisis completado:',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: AppTheme.spacingSM),
                   Text('📐 Dimensiones: ${_room!.ancho ?? "N/A"} x ${_room!.largo ?? "N/A"} m'),
                   Text('📷 Fotos: ${_room!.fotos.length}'),
                   Text('🔄 Foto 360°: ${_room!.tiene360 ? "Sí" : "No"}'),
                   if (_room!.area != null)
                     Text('📏 Área: ${_room!.area!.toStringAsFixed(2)} m²'),
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppTheme.spacingMD),
                   const Text(
                     'La generación automática de planos con IA estará disponible en una próxima actualización.',
                     style: TextStyle(fontSize: 12, color: Colors.grey),
@@ -366,12 +367,12 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
       body: RefreshIndicator(
         onRefresh: _loadRoom,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(AppTheme.paddingMD),
           children: [
             // Encabezado con tipo y estado
             Card(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(AppTheme.paddingMD),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -381,7 +382,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                           _room!.tipo.icon,
                           style: const TextStyle(fontSize: 40),
                         ),
-                        const SizedBox(width: 16),
+                        SizedBox(width: AppTheme.spacingMD),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -397,9 +398,9 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                               Row(
                                 children: [
                                   Text(_room!.tipo.displayName),
-                                  const SizedBox(width: 8),
+                                  SizedBox(width: AppTheme.spacingSM),
                                   Text('•'),
-                                  const SizedBox(width: 8),
+                                  SizedBox(width: AppTheme.spacingSM),
                                   Text(_room!.estado.emoji),
                                   const SizedBox(width: 4),
                                   Text(_room!.estado.displayName),
@@ -411,14 +412,14 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                       ],
                     ),
                     if (_room!.descripcion != null) ...[
-                      const SizedBox(height: 12),
+                      SizedBox(height: AppTheme.spacingMD),
                       Text(_room!.descripcion!),
                     ],
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: AppTheme.spacingMD),
 
             // Dimensiones
             if (_room!.ancho != null || _room!.largo != null || _room!.altura != null) ...[
@@ -426,10 +427,10 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                 'Dimensiones',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: AppTheme.spacingSM),
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(AppTheme.paddingMD),
                   child: Column(
                     children: [
                       if (_room!.ancho != null)
@@ -445,7 +446,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: AppTheme.spacingMD),
             ],
 
             // Características detalladas
@@ -459,10 +460,10 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                 'Características',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: AppTheme.spacingSM),
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(AppTheme.paddingMD),
                   child: Column(
                     children: [
                       if (_room!.tipoPiso != null)
@@ -486,7 +487,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: AppTheme.spacingMD),
             ],
 
             // Sección de fotos
@@ -494,7 +495,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
               'Fotos del Espacio',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: AppTheme.spacingSM),
             
             // Botones de captura
             Row(
@@ -506,11 +507,11 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                     label: const Text('Tomar Foto'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
+                      foregroundColor: AppTheme.blanco,
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: AppTheme.spacingSM),
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: _pickFromGallery,
@@ -518,13 +519,13 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                     label: const Text('Galería'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
+                      foregroundColor: AppTheme.blanco,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: AppTheme.spacingSM),
             
             // Botón foto 360°
             ElevatedButton.icon(
@@ -533,10 +534,10 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
               label: Text(_room!.tiene360 ? 'Reemplazar Foto 360°' : 'Tomar Foto 360°'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
-                foregroundColor: Colors.white,
+                foregroundColor: AppTheme.blanco,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: AppTheme.spacingMD),
             
             // Botón generar plano
             ElevatedButton.icon(
@@ -547,18 +548,18 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.blanco),
                       ),
                     )
                   : const Icon(Icons.architecture),
               label: Text(_isGeneratingFloorPlan ? 'Generando Plano...' : 'Generar Plano del Espacio'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFD700),
-                foregroundColor: const Color(0xFF2C2C2C),
+                backgroundColor: AppTheme.dorado,
+                foregroundColor: AppTheme.grisOscuro,
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: AppTheme.spacingMD),
 
             // Galería de fotos
             if (_room!.fotos.isNotEmpty) ...[
@@ -574,7 +575,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                 itemBuilder: (context, index) {
                   final photoPath = _room!.fotos[index];
                   return ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                     child: Image.file(
                       File(photoPath),
                       fit: BoxFit.cover,
@@ -582,7 +583,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                   );
                 },
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: AppTheme.spacingMD),
             ],
 
             // Foto 360°
@@ -591,16 +592,16 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                 'Foto 360°',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: AppTheme.spacingSM),
               ClipRRect(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                 child: Image.file(
                   File(_room!.foto360Url!),
                   fit: BoxFit.cover,
                   height: 200,
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: AppTheme.spacingMD),
             ],
           ],
         ),

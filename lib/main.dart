@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'config/app_theme.dart';
 import 'screens/auth/login_screen.dart';
 import 'services/auth_service.dart';
 
@@ -51,43 +52,7 @@ class SuToderoApp extends StatelessWidget {
       supportedLocales: const [
         Locale('es', 'ES'),
       ],
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFFFD700), // Amarillo dorado
-          primary: const Color(0xFFFFD700),
-          secondary: const Color(0xFFFF6B00), // Naranja
-          surface: Colors.white,
-          background: const Color(0xFFF5F5F5),
-        ),
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          elevation: 2,
-          backgroundColor: Color(0xFF2C2C2C), // Gris oscuro
-          foregroundColor: Color(0xFFFFD700), // Amarillo dorado
-        ),
-        cardTheme: CardThemeData(
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFFFD700),
-            foregroundColor: const Color(0xFF2C2C2C),
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            textStyle: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ),
-      ),
+      theme: AppTheme.theme,
       home: const LoginScreen(),
     );
   }

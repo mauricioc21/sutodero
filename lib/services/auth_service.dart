@@ -145,6 +145,49 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  // Login con userId (para reconocimiento facial)
+  Future<bool> loginWithUserId(String userId) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      if (_firebaseAvailable) {
+        // Cargar datos del usuario desde Firestore
+        await _loadUserData(userId);
+        
+        if (_currentUser != null) {
+          _isLoading = false;
+          notifyListeners();
+          return true;
+        } else {
+          _errorMessage = 'Usuario no encontrado';
+          _isLoading = false;
+          notifyListeners();
+          return false;
+        }
+      } else {
+        // Modo demo sin Firebase
+        await Future.delayed(const Duration(seconds: 1));
+        _currentUser = UserModel(
+          uid: userId,
+          nombre: 'Usuario Biométrico',
+          email: 'biometric@sutodero.com',
+          rol: 'cliente',
+          telefono: '3138160439',
+        );
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      _errorMessage = 'Error al autenticar con userId: $e';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
   // Cerrar sesión
   Future<void> logout() async {
     try {

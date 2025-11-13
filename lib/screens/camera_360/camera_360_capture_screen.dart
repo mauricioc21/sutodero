@@ -3,6 +3,7 @@ import '../../services/camera_360_service.dart';
 import '../../services/storage_service.dart';
 import '../../services/virtual_tour_service.dart';
 import '../../models/inventory_property.dart';
+import '../../config/app_theme.dart';
 
 /// Pantalla universal de captura de fotos 360°
 /// Soporta múltiples métodos: Galería, Cámara del teléfono, Bluetooth
@@ -31,11 +32,11 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.negro,
       appBar: AppBar(
         title: const Text('Captura 360°'),
-        backgroundColor: const Color(0xFF2C2C2C),
-        foregroundColor: const Color(0xFFFFD700),
+        backgroundColor: AppTheme.grisOscuro,
+        foregroundColor: AppTheme.dorado,
         actions: [
           if (_capturedPhotos.isNotEmpty)
             Padding(
@@ -55,29 +56,29 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(AppTheme.paddingLG),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Información de la propiedad
               _buildPropertyInfo(),
               
-              const SizedBox(height: 32),
+              SizedBox(height: AppTheme.spacingXL),
               
               // Métodos de captura principales
               _buildCaptureMethodsSection(),
               
-              const SizedBox(height: 32),
+              SizedBox(height: AppTheme.spacingXL),
               
               // Sección de cámaras Bluetooth
               _buildBluetoothCamerasSection(),
               
-              const SizedBox(height: 32),
+              SizedBox(height: AppTheme.spacingXL),
               
               // Fotos capturadas
               if (_capturedPhotos.isNotEmpty) _buildCapturedPhotosSection(),
               
-              const SizedBox(height: 32),
+              SizedBox(height: AppTheme.spacingXL),
               
               // Botón para crear tour virtual
               if (_capturedPhotos.isNotEmpty) _buildCreateTourButton(),
@@ -91,11 +92,11 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
   /// Información de la propiedad
   Widget _buildPropertyInfo() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(AppTheme.paddingMD),
       decoration: BoxDecoration(
-        color: const Color(0xFF2C2C2C),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFFD700), width: 2),
+        color: AppTheme.grisOscuro,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        border: Border.all(color: AppTheme.dorado, width: 2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,7 +104,7 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
           Row(
             children: [
               const Icon(Icons.home, color: Color(0xFFFFD700), size: 32),
-              const SizedBox(width: 12),
+              SizedBox(width: AppTheme.spacingMD),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,7 +114,7 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: AppTheme.blanco,
                       ),
                     ),
                     Text(
@@ -147,7 +148,7 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
             letterSpacing: 1,
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: AppTheme.spacingMD),
         
         // Botón: Seleccionar desde Galería (RECOMENDADO)
         _buildCaptureMethodButton(
@@ -158,7 +159,7 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
           onPressed: _pickFromGallery,
         ),
         
-        const SizedBox(height: 12),
+        SizedBox(height: AppTheme.spacingMD),
         
         // Botón: Capturar con Cámara del Teléfono
         _buildCaptureMethodButton(
@@ -181,31 +182,31 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
         border: Border.all(
-          color: recommended ? const Color(0xFFFFD700) : const Color(0xFF2C2C2C),
+          color: recommended ? AppTheme.dorado : AppTheme.grisOscuro,
           width: 2,
         ),
       ),
       child: Material(
-        color: const Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.circular(12),
+        color: AppTheme.negro,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
         child: InkWell(
           onTap: onPressed,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(AppTheme.paddingMD),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFD700).withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
+                    color: AppTheme.dorado.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                   ),
-                  child: Icon(icon, color: const Color(0xFFFFD700), size: 32),
+                  child: Icon(icon, color: AppTheme.dorado, size: 32),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: AppTheme.spacingMD),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -217,18 +218,18 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: AppTheme.blanco,
                             ),
                           ),
                           if (recommended) ...[
-                            const SizedBox(width: 8),
+                            SizedBox(width: AppTheme.spacingSM),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFFD700),
+                                color: AppTheme.dorado,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: const Text(
@@ -236,7 +237,7 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black,
+                                  color: AppTheme.negro,
                                 ),
                               ),
                             ),
@@ -287,7 +288,7 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
               ),
           ],
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: AppTheme.spacingMD),
         
         if (_isScanning)
           const Center(
@@ -297,28 +298,28 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
                 SizedBox(height: 16),
                 Text(
                   'Escaneando cámaras 360°...',
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppTheme.blanco),
                 ),
               ],
             ),
           )
         else if (_detectedCameras.isEmpty)
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(AppTheme.paddingMD),
             decoration: BoxDecoration(
-              color: const Color(0xFF2C2C2C),
-              borderRadius: BorderRadius.circular(12),
+              color: AppTheme.grisOscuro,
+              borderRadius: BorderRadius.circular(AppTheme.radiusMD),
             ),
             child: Column(
               children: [
                 const Icon(Icons.bluetooth_searching, size: 48, color: Colors.grey),
-                const SizedBox(height: 12),
+                SizedBox(height: AppTheme.spacingMD),
                 const Text(
                   'No se detectaron cámaras 360°',
                   style: TextStyle(color: Colors.grey),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: AppTheme.spacingSM),
                 TextButton.icon(
                   onPressed: _scanForCameras,
                   icon: const Icon(Icons.search, color: Color(0xFFFFD700)),
@@ -340,16 +341,16 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
   Widget _buildCameraCard(Camera360Device camera) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(AppTheme.paddingMD),
       decoration: BoxDecoration(
-        color: const Color(0xFF2C2C2C),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFFD700), width: 1),
+        color: AppTheme.grisOscuro,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        border: Border.all(color: AppTheme.dorado, width: 1),
       ),
       child: Row(
         children: [
           const Icon(Icons.camera, color: Color(0xFFFFD700), size: 40),
-          const SizedBox(width: 16),
+          SizedBox(width: AppTheme.spacingMD),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -359,7 +360,7 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: AppTheme.blanco,
                   ),
                 ),
                 Text(
@@ -383,8 +384,8 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
           ElevatedButton(
             onPressed: () => _connectToCamera(camera),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFFD700),
-              foregroundColor: Colors.black,
+              backgroundColor: AppTheme.dorado,
+              foregroundColor: AppTheme.negro,
             ),
             child: const Text('Conectar'),
           ),
@@ -407,7 +408,7 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
             letterSpacing: 1,
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: AppTheme.spacingMD),
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -421,7 +422,7 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
             return Stack(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   child: Image.network(
                     _capturedPhotos[index],
                     fit: BoxFit.cover,
@@ -439,7 +440,7 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                      icon: const Icon(Icons.close, color: AppTheme.blanco, size: 20),
                       onPressed: () {
                         setState(() {
                           _capturedPhotos.removeAt(index);
@@ -463,11 +464,11 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
     return ElevatedButton.icon(
       onPressed: _isUploading ? null : _createVirtualTour,
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFFFFD700),
-        foregroundColor: Colors.black,
+        backgroundColor: AppTheme.dorado,
+        foregroundColor: AppTheme.negro,
         padding: const EdgeInsets.symmetric(vertical: 16),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
         ),
       ),
       icon: _isUploading
@@ -476,7 +477,7 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
               height: 20,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.negro),
               ),
             )
           : const Icon(Icons.panorama_photosphere, size: 28),

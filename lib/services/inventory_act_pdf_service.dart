@@ -689,20 +689,30 @@ class InventoryActPdfService {
       padding: const pw.EdgeInsets.symmetric(vertical: 12),
       decoration: pw.BoxDecoration(
         border: pw.Border(
-          top: pw.BorderSide(color: PdfColors.grey300),
+          top: pw.BorderSide(color: PdfColor.fromHex('#FFD700'), width: 2),
         ),
       ),
       child: pw.Column(
         children: [
           pw.Text(
-            'Documento generado automáticamente por SU TODERO',
-            style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+            'SU TODERO - Gestión Profesional de Inventarios',
+            style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColor.fromHex('#000000'),
+            ),
             textAlign: pw.TextAlign.center,
           ),
           pw.SizedBox(height: 4),
           pw.Text(
-            'Fecha de generación: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}',
-            style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+            'Cra 14b #112-85 Segundo Piso, Bogotá, Colombia | Tel: (601) 703-9495 | www.sutodero.com',
+            style: pw.TextStyle(fontSize: 8, color: PdfColor.fromHex('#2C2C2C')),
+            textAlign: pw.TextAlign.center,
+          ),
+          pw.SizedBox(height: 4),
+          pw.Text(
+            'Documento generado automáticamente - Fecha: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}',
+            style: pw.TextStyle(fontSize: 8, color: PdfColor.fromHex('#2C2C2C')),
             textAlign: pw.TextAlign.center,
           ),
         ],

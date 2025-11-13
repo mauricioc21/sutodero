@@ -3,6 +3,7 @@ import '../../models/ticket_model.dart';
 import '../../services/ticket_service.dart';
 import 'add_edit_ticket_screen.dart';
 import 'ticket_detail_screen.dart';
+import '../../config/app_theme.dart';
 
 class TicketsScreen extends StatefulWidget {
   const TicketsScreen({super.key});
@@ -94,7 +95,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
   Color _getStatusColor(TicketStatus status) {
     switch (status) {
       case TicketStatus.nuevo:
-        return const Color(0xFFFFD700);
+        return AppTheme.dorado;
       case TicketStatus.pendiente:
         return const Color(0xFFFF9800);
       case TicketStatus.enProgreso:
@@ -136,11 +137,11 @@ class _TicketsScreenState extends State<TicketsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.negro,
       appBar: AppBar(
         title: const Text('Tickets de Trabajo'),
-        backgroundColor: const Color(0xFF2C2C2C),
-        foregroundColor: const Color(0xFFFFD700),
+        backgroundColor: AppTheme.grisOscuro,
+        foregroundColor: AppTheme.dorado,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -152,10 +153,10 @@ class _TicketsScreenState extends State<TicketsScreen> {
         children: [
           // Búsqueda
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(AppTheme.paddingMD),
             child: TextField(
               controller: _searchController,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppTheme.blanco),
               decoration: InputDecoration(
                 hintText: 'Buscar tickets...',
                 hintStyle: TextStyle(color: Colors.grey[600]),
@@ -169,9 +170,9 @@ class _TicketsScreenState extends State<TicketsScreen> {
                       )
                     : null,
                 filled: true,
-                fillColor: const Color(0xFF2C2C2C),
+                fillColor: AppTheme.grisOscuro,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   borderSide: BorderSide.none,
                 ),
               ),
@@ -184,23 +185,23 @@ class _TicketsScreenState extends State<TicketsScreen> {
             child: Row(
               children: [
                 const Icon(Icons.sort, color: Color(0xFFFFD700), size: 20),
-                const SizedBox(width: 8),
+                SizedBox(width: AppTheme.spacingSM),
                 const Text(
                   'Ordenar:',
                   style: TextStyle(color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: AppTheme.spacingSM),
                 Expanded(
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
                         _buildSortChip('Más reciente', 'fecha_desc', Icons.arrow_downward),
-                        const SizedBox(width: 8),
+                        SizedBox(width: AppTheme.spacingSM),
                         _buildSortChip('Más antiguo', 'fecha_asc', Icons.arrow_upward),
-                        const SizedBox(width: 8),
+                        SizedBox(width: AppTheme.spacingSM),
                         _buildSortChip('Prioridad', 'prioridad', Icons.priority_high),
-                        const SizedBox(width: 8),
+                        SizedBox(width: AppTheme.spacingSM),
                         _buildSortChip('Estado', 'estado', Icons.label),
                       ],
                     ),
@@ -209,7 +210,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: AppTheme.spacingSM),
 
           // Filtros por estado
           Container(
@@ -219,23 +220,23 @@ class _TicketsScreenState extends State<TicketsScreen> {
               child: Row(
                 children: [
                   _buildFilterChip('Todos', 'todos', _tickets.length),
-                  const SizedBox(width: 8),
+                  SizedBox(width: AppTheme.spacingSM),
                   _buildFilterChip('Nuevo', 'nuevo', 
                     _tickets.where((t) => t.estado == TicketStatus.nuevo).length),
-                  const SizedBox(width: 8),
+                  SizedBox(width: AppTheme.spacingSM),
                   _buildFilterChip('Pendiente', 'pendiente',
                     _tickets.where((t) => t.estado == TicketStatus.pendiente).length),
-                  const SizedBox(width: 8),
+                  SizedBox(width: AppTheme.spacingSM),
                   _buildFilterChip('En Progreso', 'en_progreso',
                     _tickets.where((t) => t.estado == TicketStatus.enProgreso).length),
-                  const SizedBox(width: 8),
+                  SizedBox(width: AppTheme.spacingSM),
                   _buildFilterChip('Completado', 'completado',
                     _tickets.where((t) => t.estado == TicketStatus.completado).length),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: AppTheme.spacingSM),
 
           // Lista de tickets
           Expanded(
@@ -247,12 +248,12 @@ class _TicketsScreenState extends State<TicketsScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.assignment, size: 64, color: Colors.grey[700]),
-                            const SizedBox(height: 16),
+                            SizedBox(height: AppTheme.spacingMD),
                             Text(
                               'No hay tickets',
                               style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: AppTheme.spacingSM),
                             Text(
                               'Crea tu primer ticket de trabajo',
                               style: TextStyle(fontSize: 14, color: Colors.grey[700]),
@@ -262,9 +263,9 @@ class _TicketsScreenState extends State<TicketsScreen> {
                       )
                     : RefreshIndicator(
                         onRefresh: _loadTickets,
-                        color: const Color(0xFFFFD700),
+                        color: AppTheme.dorado,
                         child: ListView.builder(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(AppTheme.paddingMD),
                           itemCount: _filteredTickets.length,
                           itemBuilder: (context, index) {
                             final ticket = _filteredTickets[index];
@@ -283,8 +284,8 @@ class _TicketsScreenState extends State<TicketsScreen> {
           );
           _loadTickets();
         },
-        backgroundColor: const Color(0xFFFFD700),
-        foregroundColor: const Color(0xFF2C2C2C),
+        backgroundColor: AppTheme.dorado,
+        foregroundColor: AppTheme.grisOscuro,
         icon: const Icon(Icons.add),
         label: const Text('Nuevo Ticket'),
       ),
@@ -299,10 +300,10 @@ class _TicketsScreenState extends State<TicketsScreen> {
       onSelected: (selected) {
         setState(() => _filterStatus = value);
       },
-      backgroundColor: const Color(0xFF2C2C2C),
-      selectedColor: const Color(0xFFFFD700),
+      backgroundColor: AppTheme.grisOscuro,
+      selectedColor: AppTheme.dorado,
       labelStyle: TextStyle(
-        color: isSelected ? const Color(0xFF2C2C2C) : const Color(0xFFFFD700),
+        color: isSelected ? AppTheme.grisOscuro : AppTheme.dorado,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
     );
@@ -314,7 +315,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
       label: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: isSelected ? const Color(0xFF2C2C2C) : const Color(0xFFFFD700)),
+          Icon(icon, size: 16, color: isSelected ? AppTheme.grisOscuro : AppTheme.dorado),
           const SizedBox(width: 4),
           Text(label),
         ],
@@ -323,10 +324,10 @@ class _TicketsScreenState extends State<TicketsScreen> {
       onSelected: (selected) {
         setState(() => _sortBy = value);
       },
-      backgroundColor: const Color(0xFF2C2C2C),
-      selectedColor: const Color(0xFFFFD700),
+      backgroundColor: AppTheme.grisOscuro,
+      selectedColor: AppTheme.dorado,
       labelStyle: TextStyle(
-        color: isSelected ? const Color(0xFF2C2C2C) : const Color(0xFFFFD700),
+        color: isSelected ? AppTheme.grisOscuro : AppTheme.dorado,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         fontSize: 12,
       ),
@@ -335,9 +336,9 @@ class _TicketsScreenState extends State<TicketsScreen> {
 
   Widget _buildTicketCard(TicketModel ticket) {
     return Card(
-      color: const Color(0xFF2C2C2C),
+      color: AppTheme.grisOscuro,
       margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusLG)),
       child: InkWell(
         onTap: () async {
           await Navigator.push(
@@ -348,9 +349,9 @@ class _TicketsScreenState extends State<TicketsScreen> {
           );
           _loadTickets();
         },
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(AppTheme.paddingMD),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -372,7 +373,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: AppTheme.spacingSM),
                   if (ticket.prioridad == TicketPriority.alta || 
                       ticket.prioridad == TicketPriority.urgente)
                     Icon(
@@ -385,25 +386,25 @@ class _TicketsScreenState extends State<TicketsScreen> {
                   const Spacer(),
                   Icon(
                     _getServiceIcon(ticket.tipoServicio),
-                    color: const Color(0xFFFFD700),
+                    color: AppTheme.dorado,
                     size: 24,
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: AppTheme.spacingMD),
 
               // Título
               Text(
                 ticket.titulo,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: AppTheme.blanco,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: AppTheme.spacingSM),
 
               // Descripción
               Text(
@@ -412,7 +413,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: AppTheme.spacingMD),
 
               // Información adicional
               Row(
@@ -427,7 +428,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                     ),
                   ),
                   if (ticket.propiedadDireccion != null) ...[
-                    const SizedBox(width: 16),
+                    SizedBox(width: AppTheme.spacingMD),
                     Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
                     const SizedBox(width: 4),
                     Expanded(
@@ -440,7 +441,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                   ],
                 ],
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: AppTheme.spacingSM),
 
               // Fecha
               Row(

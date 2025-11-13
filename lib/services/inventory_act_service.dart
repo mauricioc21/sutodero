@@ -100,7 +100,7 @@ class InventoryActService {
     String? facialUrl,
   }) async {
     final updates = <String, dynamic>{
-      'updatedAt': DateTime.now().toIso8601String(),
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
     };
 
     if (signatureUrl != null) {
@@ -136,9 +136,9 @@ class InventoryActService {
     // Actualizar en Firestore
     await _firestore.collection(_collectionName).doc(actId).update({
       'isCompleted': true,
-      'signatureTimestamp': completedAct.signatureTimestamp!.toIso8601String(),
+      'signatureTimestamp': Timestamp.fromDate(completedAct.signatureTimestamp!),
       'authenticationHash': completedAct.authenticationHash,
-      'updatedAt': DateTime.now().toIso8601String(),
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
     });
 
     // Actualizar en Hive
@@ -153,7 +153,7 @@ class InventoryActService {
     await _firestore.collection(_collectionName).doc(actId).update({
       'pdfUrl': pdfUrl,
       'isPdfGenerated': true,
-      'updatedAt': DateTime.now().toIso8601String(),
+      'updatedAt': Timestamp.fromDate(DateTime.now()),
     });
 
     final box = await _getBox();

@@ -19,6 +19,7 @@ class TicketService {
 
   /// Crear un nuevo ticket
   Future<TicketModel> createTicket({
+    required String userId,
     required String titulo,
     required String descripcion,
     required ServiceType tipoServicio,
@@ -39,6 +40,7 @@ class TicketService {
     final now = DateTime.now();
     final ticket = TicketModel(
       id: _uuid.v4(),
+      userId: userId,
       titulo: titulo,
       descripcion: descripcion,
       tipoServicio: tipoServicio,

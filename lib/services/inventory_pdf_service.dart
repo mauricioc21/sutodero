@@ -45,7 +45,7 @@ class InventoryPdfService {
             style: pw.TextStyle(
               fontSize: 24,
               fontWeight: pw.FontWeight.bold,
-              color: PdfColors.orange,
+              color: PdfColor.fromHex('#FFD700'),
             ),
             textAlign: pw.TextAlign.center,
           ),
@@ -102,7 +102,7 @@ class InventoryPdfService {
             style: pw.TextStyle(
               fontSize: 24,
               fontWeight: pw.FontWeight.bold,
-              color: PdfColors.orange,
+              color: PdfColor.fromHex('#FFD700'),
             ),
             textAlign: pw.TextAlign.center,
           ),
@@ -130,31 +130,38 @@ class InventoryPdfService {
 
   /// Construir encabezado
   pw.Widget _buildHeader(pw.ImageProvider? logo) {
-    return pw.Row(
-      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-      children: [
-        if (logo != null)
-          pw.Image(logo, width: 60, height: 60)
-        else
-          pw.Container(width: 60, height: 60),
-        pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.end,
-          children: [
-            pw.Text(
-              'SU TODERO',
-              style: pw.TextStyle(
-                fontSize: 20,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColors.orange,
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(16),
+      decoration: pw.BoxDecoration(
+        color: PdfColor.fromHex('#000000'),
+        borderRadius: pw.BorderRadius.circular(8),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          if (logo != null)
+            pw.Image(logo, width: 50, height: 50)
+          else
+            pw.Container(width: 50, height: 50),
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            children: [
+              pw.Text(
+                'SU TODERO',
+                style: pw.TextStyle(
+                  fontSize: 20,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColor.fromHex('#FFD700'),
+                ),
               ),
-            ),
-            pw.Text(
-              'Gestión de Inventarios',
-              style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey700),
-            ),
-          ],
-        ),
-      ],
+              pw.Text(
+                'Gestión de Inventarios',
+                style: pw.TextStyle(fontSize: 12, color: PdfColor.fromHex('#FFFFFF')),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -168,7 +175,7 @@ class InventoryPdfService {
           style: pw.TextStyle(
             fontSize: 18,
             fontWeight: pw.FontWeight.bold,
-            color: PdfColors.orange900,
+            color: PdfColor.fromHex('#000000'),
           ),
         ),
         pw.SizedBox(height: 12),
@@ -218,7 +225,7 @@ class InventoryPdfService {
           style: pw.TextStyle(
             fontSize: 18,
             fontWeight: pw.FontWeight.bold,
-            color: PdfColors.orange900,
+            color: PdfColor.fromHex('#000000'),
           ),
         ),
         pw.SizedBox(height: 12),
@@ -405,21 +412,38 @@ class InventoryPdfService {
 
   /// Pie de página
   pw.Widget _buildFooter() {
-    return pw.Column(
-      children: [
-        pw.Divider(),
-        pw.SizedBox(height: 10),
-        pw.Text(
-          'SU TODERO - Gestión Profesional de Inventarios',
-          style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey),
-          textAlign: pw.TextAlign.center,
+    return pw.Container(
+      padding: const pw.EdgeInsets.symmetric(vertical: 12),
+      decoration: pw.BoxDecoration(
+        border: pw.Border(
+          top: pw.BorderSide(color: PdfColor.fromHex('#FFD700'), width: 2),
         ),
-        pw.Text(
-          'Generado el ${_formatDate(DateTime.now())}',
-          style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey),
-          textAlign: pw.TextAlign.center,
-        ),
-      ],
+      ),
+      child: pw.Column(
+        children: [
+          pw.Text(
+            'SU TODERO - Gestión Profesional de Inventarios',
+            style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColor.fromHex('#000000'),
+            ),
+            textAlign: pw.TextAlign.center,
+          ),
+          pw.SizedBox(height: 4),
+          pw.Text(
+            'Cra 14b #112-85 Segundo Piso, Bogotá, Colombia | Tel: (601) 703-9495 | www.sutodero.com',
+            style: pw.TextStyle(fontSize: 8, color: PdfColor.fromHex('#2C2C2C')),
+            textAlign: pw.TextAlign.center,
+          ),
+          pw.SizedBox(height: 4),
+          pw.Text(
+            'Generado el ${_formatDate(DateTime.now())}',
+            style: pw.TextStyle(fontSize: 8, color: PdfColor.fromHex('#2C2C2C')),
+            textAlign: pw.TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 

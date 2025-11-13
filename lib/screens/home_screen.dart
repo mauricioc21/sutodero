@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../config/app_theme.dart';
 import '../services/auth_service.dart';
 import 'inventory/inventories_screen.dart';
 import 'tickets/tickets_screen.dart';
 import 'tickets/dashboard_screen.dart';
 import 'auth/login_screen.dart';
 import 'qr/qr_scanner_screen.dart';
+import 'camera_360/camera_360_capture_screen.dart';
+import 'property_listing/property_listings_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -24,212 +27,44 @@ class HomeScreen extends StatelessWidget {
               height: 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFFFD700),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                color: AppTheme.dorado,
+                boxShadow: AppTheme.goldGlow,
               ),
               child: const Icon(
                 Icons.handyman,
-                color: Color(0xFF2C2C2C),
+                color: AppTheme.negro,
                 size: 24,
               ),
             ),
             const SizedBox(width: 12),
-            const Text(
-              'SU TODERO',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1,
-              ),
-            ),
+            const Text('SU TODERO'),
           ],
         ),
         actions: [
-          // Botón de cerrar sesión
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Cerrar Sesión',
-            onPressed: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Cerrar Sesión'),
-                  content: const Text('¿Estás seguro de cerrar sesión?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancelar'),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      style: TextButton.styleFrom(foregroundColor: Colors.red),
-                      child: const Text('Cerrar Sesión'),
-                    ),
-                  ],
-                ),
-              );
-              
-              if (confirm == true && context.mounted) {
-                await authService.logout();
-                if (context.mounted) {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  );
-                }
-              }
-            },
+            onPressed: () => _handleLogout(context, authService),
           ),
         ],
       ),
       body: Container(
-        color: Colors.black,
+        decoration: BoxDecoration(
+          gradient: AppTheme.gradientBackground,
+        ),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+            padding: AppTheme.paddingAll,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Tarjeta de bienvenida
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5E6C8),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    children: [
-                      Image.asset(
-                        'assets/images/logo_sutodero_transparente.png',
-                        height: 150, // Reducido de 200 a 150 para evitar overflow
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(
-                            Icons.handyman,
-                            size: 80, // Reducido de 100 a 80
-                            color: Color(0xFFFFD700),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        authService.currentUser?.obtenerSaludoPersonalizado() ?? 
-                        '¡Bienvenido/a!',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2C2C2C),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
+                // Tarjeta de bienvenida con logo
+                _buildWelcomeCard(context, authService),
+                
+                const SizedBox(height: AppTheme.spacingLarge),
+                
                 // Grid de funcionalidades
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  childAspectRatio: 1.0, // Ajustado de 0.85 a 1.0 para evitar overflow
-                  children: [
-                    _buildFeatureCard(
-                      context,
-                      icon: Icons.inventory_2,
-                      title: 'Inventarios',
-                      description: 'Gestiona propiedades y espacios',
-                      color: const Color(0xFFFFD700),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const InventoriesScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildFeatureCard(
-                      context,
-                      icon: Icons.build_circle,
-                      title: 'Tickets',
-                      description: 'Solicitudes de reparación',
-                      color: const Color(0xFFFF6B00),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const TicketsScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildFeatureCard(
-                      context,
-                      icon: Icons.dashboard,
-                      title: 'Dashboard',
-                      description: 'Estadísticas y métricas',
-                      color: const Color(0xFF9C27B0),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const DashboardScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildFeatureCard(
-                      context,
-                      icon: Icons.panorama_photosphere,
-                      title: 'Captura 360°',
-                      description: 'Toma fotos panorámicas',
-                      color: Colors.blue,
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Funcionalidad en desarrollo'),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildFeatureCard(
-                      context,
-                      icon: Icons.qr_code_scanner,
-                      title: 'Escanear QR',
-                      description: 'Escanea códigos QR',
-                      color: const Color(0xFF9C27B0), // Púrpura
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const QRScannerScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildFeatureCard(
-                      context,
-                      icon: Icons.architecture,
-                      title: 'Planos',
-                      description: 'Genera planos automáticos',
-                      color: Colors.green,
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Funcionalidad en desarrollo'),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
+                _buildFeaturesGrid(context),
               ],
             ),
           ),
@@ -238,64 +73,283 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  /// Tarjeta de bienvenida
+  Widget _buildWelcomeCard(BuildContext context, AuthService authService) {
+    return Container(
+      padding: AppTheme.paddingAll,
+      decoration: AppTheme.containerDecoration(
+        color: AppTheme.grisOscuro,
+        withBorder: true,
+        withShadow: true,
+      ),
+      child: Column(
+        children: [
+          // Logo
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: AppTheme.goldGlow,
+            ),
+            child: Image.asset(
+              'assets/images/logo_sutodero_transparente.png',
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppTheme.dorado.withValues(alpha: 0.2),
+                  ),
+                  child: const Icon(
+                    Icons.handyman,
+                    size: 60,
+                    color: AppTheme.dorado,
+                  ),
+                );
+              },
+            ),
+          ),
+          
+          const SizedBox(height: AppTheme.spacingLarge),
+          
+          // Saludo personalizado
+          Text(
+            authService.currentUser?.obtenerSaludoPersonalizado() ?? 
+            '¡Bienvenido/a!',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              color: AppTheme.dorado,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          
+          const SizedBox(height: AppTheme.spacingSmall),
+          
+          // Subtítulo
+          Text(
+            'Servicios de Reparación y Mantenimiento',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppTheme.grisClaro,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Grid de funcionalidades
+  Widget _buildFeaturesGrid(BuildContext context) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      mainAxisSpacing: AppTheme.spacingMedium,
+      crossAxisSpacing: AppTheme.spacingMedium,
+      childAspectRatio: 0.95,
+      children: [
+        _buildFeatureCard(
+          context,
+          icon: Icons.inventory_2,
+          title: 'Inventarios',
+          description: 'Gestiona propiedades y espacios',
+          iconColor: AppTheme.dorado,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const InventoriesScreen()),
+          ),
+        ),
+        _buildFeatureCard(
+          context,
+          icon: Icons.home_work,
+          title: 'Captación',
+          description: 'Inmuebles en venta/arriendo',
+          iconColor: const Color(0xFF4CAF50),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PropertyListingsScreen()),
+          ),
+        ),
+        _buildFeatureCard(
+          context,
+          icon: Icons.build_circle,
+          title: 'Tickets',
+          description: 'Solicitudes de reparación',
+          iconColor: const Color(0xFFFF6B00),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const TicketsScreen()),
+          ),
+        ),
+        _buildFeatureCard(
+          context,
+          icon: Icons.dashboard,
+          title: 'Dashboard',
+          description: 'Estadísticas y métricas',
+          iconColor: const Color(0xFF9C27B0),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const DashboardScreen()),
+          ),
+        ),
+        _buildFeatureCard(
+          context,
+          icon: Icons.panorama_photosphere,
+          title: 'Captura 360°',
+          description: 'Toma fotos panorámicas',
+          iconColor: const Color(0xFF2196F3),
+          onTap: () {
+            // Para HomeScreen necesitamos una propiedad genérica o ir a inventarios
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Selecciona una propiedad primero desde Inventarios'),
+                backgroundColor: AppTheme.warning,
+              ),
+            );
+          },
+        ),
+        _buildFeatureCard(
+          context,
+          icon: Icons.qr_code_scanner,
+          title: 'Escanear QR',
+          description: 'Escanea códigos QR',
+          iconColor: const Color(0xFF9C27B0),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const QRScannerScreen()),
+          ),
+        ),
+        _buildFeatureCard(
+          context,
+          icon: Icons.architecture,
+          title: 'Planos',
+          description: 'Genera planos automáticos',
+          iconColor: const Color(0xFF4CAF50),
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Selecciona una propiedad primero desde Inventarios'),
+                backgroundColor: AppTheme.warning,
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  /// Tarjeta de funcionalidad
   Widget _buildFeatureCard(
     BuildContext context, {
     required IconData icon,
     required String title,
     required String description,
-    required Color color,
+    required Color iconColor,
     required VoidCallback onTap,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5E6C8),
-        borderRadius: BorderRadius.circular(20),
-      ),
+    return Material(
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+        child: Container(
+          decoration: AppTheme.containerDecoration(
+            withBorder: false,
+          ),
+          padding: const EdgeInsets.all(16).copyWith(
+            top: AppTheme.spacingLarge,
+            bottom: AppTheme.spacingLarge,
+          ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Icono con fondo circular
               Container(
-                width: 64,
-                height: 64,
+                width: 70,
+                height: 70,
                 decoration: BoxDecoration(
-                  color: color,
+                  color: iconColor.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   icon,
-                  size: 32,
-                  color: Colors.white,
+                  size: 36,
+                  color: iconColor,
                 ),
               ),
-              const SizedBox(height: 16),
+              
+              const SizedBox(height: AppTheme.spacingMedium),
+              
+              // Título
               Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 18,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF2C2C2C),
+                  color: AppTheme.blanco,
                 ),
                 textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 8),
+              
+              const SizedBox(height: AppTheme.spacingSmall),
+              
+              // Descripción
               Text(
                 description,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Color(0xFF666666),
-                  height: 1.3,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.grisClaro,
                 ),
                 textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  /// Manejar cierre de sesión
+  Future<void> _handleLogout(BuildContext context, AuthService authService) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.grisOscuro,
+        title: const Text(
+          'Cerrar Sesión',
+          style: TextStyle(color: AppTheme.dorado),
+        ),
+        content: const Text(
+          '¿Estás seguro de cerrar sesión?',
+          style: TextStyle(color: AppTheme.blanco),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.error,
+              foregroundColor: AppTheme.blanco,
+            ),
+            child: const Text('Cerrar Sesión'),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirm == true && context.mounted) {
+      await authService.logout();
+      if (context.mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+      }
+    }
   }
 }

@@ -4,6 +4,7 @@ import '../../models/inventory_property.dart';
 import '../../services/inventory_service.dart';
 import 'property_detail_screen.dart';
 import 'add_edit_property_screen.dart';
+import '../../config/app_theme.dart';
 
 /// Pantalla principal de lista de inventarios
 class InventoriesScreen extends StatefulWidget {
@@ -67,8 +68,11 @@ class _InventoriesScreenState extends State<InventoriesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.negro,
       appBar: AppBar(
         title: const Text('Inventarios'),
+        backgroundColor: AppTheme.grisOscuro,
+        foregroundColor: AppTheme.dorado,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -81,16 +85,27 @@ class _InventoriesScreenState extends State<InventoriesScreen> {
         children: [
           // Barra de búsqueda
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(AppTheme.paddingMD),
             child: TextField(
+              style: const TextStyle(color: AppTheme.blanco),
               decoration: InputDecoration(
                 hintText: 'Buscar por dirección o cliente...',
-                prefixIcon: const Icon(Icons.search),
+                hintStyle: const TextStyle(color: Colors.grey),
+                prefixIcon: const Icon(Icons.search, color: AppTheme.dorado),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                  borderSide: BorderSide(color: AppTheme.dorado),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                  borderSide: BorderSide(color: AppTheme.grisClaro),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                  borderSide: BorderSide(color: AppTheme.dorado, width: 2),
                 ),
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: AppTheme.grisOscuro,
               ),
               onChanged: _searchProperties,
             ),
@@ -105,7 +120,7 @@ class _InventoriesScreenState extends State<InventoriesScreen> {
                     : RefreshIndicator(
                         onRefresh: _loadProperties,
                         child: ListView.builder(
-                          padding: const EdgeInsets.all(16),
+                          padding: EdgeInsets.all(AppTheme.paddingMD),
                           itemCount: _properties.length,
                           itemBuilder: (context, index) {
                             return _buildPropertyCard(_properties[index]);
@@ -119,8 +134,8 @@ class _InventoriesScreenState extends State<InventoriesScreen> {
         onPressed: () => _navigateToAddProperty(),
         icon: const Icon(Icons.add),
         label: const Text('Nueva Propiedad'),
-        backgroundColor: const Color(0xFFFFD700),
-        foregroundColor: const Color(0xFF2C2C2C),
+        backgroundColor: AppTheme.dorado,
+        foregroundColor: AppTheme.grisOscuro,
       ),
     );
   }
@@ -135,7 +150,7 @@ class _InventoriesScreenState extends State<InventoriesScreen> {
             size: 100,
             color: Colors.grey[300],
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: AppTheme.spacingXL),
           Text(
             _searchQuery.isEmpty
                 ? '¡No hay propiedades aún!'
@@ -146,7 +161,7 @@ class _InventoriesScreenState extends State<InventoriesScreen> {
               color: Colors.black54,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: AppTheme.spacingMD),
           Text(
             _searchQuery.isEmpty
                 ? 'Agrega tu primera propiedad para comenzar'
@@ -162,13 +177,17 @@ class _InventoriesScreenState extends State<InventoriesScreen> {
   }
 
   Widget _buildPropertyCard(InventoryProperty property) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 16),
+      decoration: AppTheme.containerDecoration(
+        color: AppTheme.grisOscuro,
+        withBorder: true,
+      ),
       child: InkWell(
         onTap: () => _navigateToPropertyDetail(property),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(AppTheme.paddingMD),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -177,15 +196,15 @@ class _InventoriesScreenState extends State<InventoriesScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFD700).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
+                      color: AppTheme.dorado.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                     ),
                     child: Text(
                       property.tipo.icon,
                       style: const TextStyle(fontSize: 24),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: AppTheme.spacingMD),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,6 +214,7 @@ class _InventoriesScreenState extends State<InventoriesScreen> {
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
+                            color: AppTheme.blanco,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -202,9 +222,9 @@ class _InventoriesScreenState extends State<InventoriesScreen> {
                         const SizedBox(height: 4),
                         Text(
                           property.tipo.displayName,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: AppTheme.grisClaro,
                           ),
                         ),
                       ],
@@ -217,11 +237,11 @@ class _InventoriesScreenState extends State<InventoriesScreen> {
                 ],
               ),
               if (property.clienteNombre != null) ...[
-                const SizedBox(height: 12),
+                SizedBox(height: AppTheme.spacingMD),
                 Row(
                   children: [
                     Icon(Icons.person, size: 16, color: Colors.grey[600]),
-                    const SizedBox(width: 8),
+                    SizedBox(width: AppTheme.spacingSM),
                     Text(
                       property.clienteNombre!,
                       style: TextStyle(
@@ -232,7 +252,7 @@ class _InventoriesScreenState extends State<InventoriesScreen> {
                   ],
                 ),
               ],
-              const SizedBox(height: 12),
+              SizedBox(height: AppTheme.spacingMD),
               Row(
                 children: [
                   if (property.numeroHabitaciones != null) ...[
@@ -242,7 +262,7 @@ class _InventoriesScreenState extends State<InventoriesScreen> {
                       '${property.numeroHabitaciones}',
                       style: TextStyle(color: Colors.grey[700]),
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: AppTheme.spacingMD),
                   ],
                   if (property.numeroBanos != null) ...[
                     Icon(Icons.bathroom, size: 16, color: Colors.grey[600]),
@@ -251,7 +271,7 @@ class _InventoriesScreenState extends State<InventoriesScreen> {
                       '${property.numeroBanos}',
                       style: TextStyle(color: Colors.grey[700]),
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: AppTheme.spacingMD),
                   ],
                   if (property.area != null) ...[
                     Icon(Icons.square_foot, size: 16, color: Colors.grey[600]),

@@ -93,6 +93,7 @@ extension PropertyTypeExtension on PropertyType {
 /// Modelo de propiedad en inventario
 class InventoryProperty {
   String id;
+  String userId; // ID del usuario propietario
   String direccion;
   String? clienteNombre;
   String? clienteTelefono;
@@ -110,6 +111,7 @@ class InventoryProperty {
 
   InventoryProperty({
     required this.id,
+    required this.userId,
     required this.direccion,
     this.clienteNombre,
     this.clienteTelefono,
@@ -131,6 +133,7 @@ class InventoryProperty {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'userId': userId,
       'direccion': direccion,
       'clienteNombre': clienteNombre,
       'clienteTelefono': clienteTelefono,
@@ -152,6 +155,7 @@ class InventoryProperty {
   factory InventoryProperty.fromMap(Map<String, dynamic> map) {
     return InventoryProperty(
       id: map['id'] ?? '',
+      userId: map['userId'] ?? '',
       direccion: map['direccion'] ?? '',
       clienteNombre: map['clienteNombre'],
       clienteTelefono: map['clienteTelefono'],
@@ -177,6 +181,7 @@ class InventoryProperty {
   /// Copia con modificaciones
   InventoryProperty copyWith({
     String? id,
+    String? userId,
     String? direccion,
     String? clienteNombre,
     String? clienteTelefono,
@@ -194,6 +199,7 @@ class InventoryProperty {
   }) {
     return InventoryProperty(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       direccion: direccion ?? this.direccion,
       clienteNombre: clienteNombre ?? this.clienteNombre,
       clienteTelefono: clienteTelefono ?? this.clienteTelefono,

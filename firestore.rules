@@ -1,0 +1,142 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Función auxiliar para verificar si el usuario está autenticado
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Función auxiliar para verificar si el usuario es administrador
+    function isAdmin() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol == 'admin';
+    }
+    
+    // Función auxiliar para verificar si es el propietario del recurso
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Reglas para colección de usuarios
+    match /users/{userId} {
+      // Permitir lectura si es el propio usuario o es admin
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Permitir crear solo su propio perfil durante registro
+      allow create: if isOwner(userId);
+      
+      // Permitir actualizar solo su propio perfil o si es admin
+      allow update: if isOwner(userId) || isAdmin();
+      
+      // Solo admins pueden eliminar usuarios
+      allow delete: if isAdmin();
+    }
+    
+    // Reglas para inventarios de propiedades
+    match /properties/{propertyId} {
+      // Los admins pueden ver todas las propiedades
+      // Los usuarios normales solo pueden ver sus propias propiedades
+      allow read: if isAdmin() || 
+                     (isAuthenticated() && resource.data.userId == request.auth.uid);
+      
+      // Solo el propietario puede crear propiedades
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      
+      // Solo el propietario o admin pueden actualizar
+      allow update: if isAdmin() || 
+                      (isAuthenticated() && resource.data.userId == request.auth.uid);
+      
+      // Solo el propietario o admin pueden eliminar
+      allow delete: if isAdmin() || 
+                      (isAuthenticated() && resource.data.userId == request.auth.uid);
+    }
+    
+    // Reglas para espacios de propiedades
+    match /rooms/{roomId} {
+      allow read: if isAdmin() || 
+                     (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin() || 
+                      (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin() || 
+                      (isAuthenticated() && resource.data.userId == request.auth.uid);
+    }
+    
+    // Reglas para tickets
+    match /tickets/{ticketId} {
+      // Los admins pueden ver todos los tickets
+      // Los técnicos pueden ver los tickets asignados
+      // Los clientes solo pueden ver sus propios tickets
+      allow read: if isAdmin() || 
+                     (isAuthenticated() && resource.data.userId == request.auth.uid) ||
+                     (isAuthenticated() && resource.data.tecnicoId == request.auth.uid);
+      
+      // Solo el cliente puede crear tickets
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      
+      // El propietario, técnico asignado o admin pueden actualizar
+      allow update: if isAdmin() || 
+                      (isAuthenticated() && resource.data.userId == request.auth.uid) ||
+                      (isAuthenticated() && resource.data.tecnicoId == request.auth.uid);
+      
+      // Solo admin o propietario pueden eliminar
+      allow delete: if isAdmin() || 
+                      (isAuthenticated() && resource.data.userId == request.auth.uid);
+    }
+    
+    // Reglas para captaciones de inmuebles (property_listings)
+    match /property_listings/{listingId} {
+      // Los admins pueden ver todas las captaciones
+      // Los usuarios normales solo pueden ver sus propias captaciones
+      allow read: if isAdmin() || 
+                     (isAuthenticated() && resource.data.userId == request.auth.uid);
+      
+      // Solo el usuario puede crear sus captaciones
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      
+      // Solo el propietario o admin pueden actualizar
+      allow update: if isAdmin() || 
+                      (isAuthenticated() && resource.data.userId == request.auth.uid);
+      
+      // Solo el propietario o admin pueden eliminar
+      allow delete: if isAdmin() || 
+                      (isAuthenticated() && resource.data.userId == request.auth.uid);
+    }
+    
+    // Reglas para actas de inventario
+    match /inventory_acts/{actId} {
+      allow read: if isAdmin() || 
+                     (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin() || 
+                      (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+    
+    // Reglas para tours virtuales
+    match /virtual_tours/{tourId} {
+      allow read: if isAdmin() || 
+                     (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin() || 
+                      (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin() || 
+                      (isAuthenticated() && resource.data.userId == request.auth.uid);
+    }
+    
+    // Reglas para chat de tickets
+    match /ticket_messages/{messageId} {
+      // Permitir lectura si es admin, propietario del ticket o técnico asignado
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    // Bloquear todas las demás colecciones por defecto
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

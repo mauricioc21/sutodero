@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:panorama_viewer/panorama_viewer.dart';
 import '../../models/virtual_tour_model.dart';
+import '../../config/app_theme.dart';
 
 /// Pantalla para visualizar tour virtual 360°
 /// Permite navegar entre múltiples fotos panorámicas
@@ -26,8 +27,8 @@ class _VirtualTourViewerScreenState extends State<VirtualTourViewerScreen> {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Tour Virtual'),
-          backgroundColor: const Color(0xFF2C2C2C),
-          foregroundColor: const Color(0xFFFFD700),
+          backgroundColor: AppTheme.grisOscuro,
+          foregroundColor: AppTheme.dorado,
         ),
         body: const Center(
           child: Column(
@@ -46,11 +47,11 @@ class _VirtualTourViewerScreenState extends State<VirtualTourViewerScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.negro,
       appBar: AppBar(
         title: Text(widget.tour.propertyName),
-        backgroundColor: const Color(0xFF2C2C2C),
-        foregroundColor: const Color(0xFFFFD700),
+        backgroundColor: AppTheme.grisOscuro,
+        foregroundColor: AppTheme.dorado,
         actions: [
           // Contador de fotos
           Center(
@@ -100,7 +101,7 @@ class _VirtualTourViewerScreenState extends State<VirtualTourViewerScreen> {
                       SizedBox(height: 16),
                       Text(
                         'Error al cargar la imagen 360°',
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: AppTheme.blanco),
                       ),
                     ],
                   ),
@@ -118,8 +119,8 @@ class _VirtualTourViewerScreenState extends State<VirtualTourViewerScreen> {
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.7),
-                  borderRadius: BorderRadius.circular(12),
+                  color: AppTheme.negro.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,12 +132,12 @@ class _VirtualTourViewerScreenState extends State<VirtualTourViewerScreen> {
                           color: Color(0xFFFFD700),
                           size: 20,
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: AppTheme.spacingSM),
                         Expanded(
                           child: Text(
                             widget.tour.description,
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: AppTheme.blanco,
                               fontSize: 14,
                             ),
                           ),
@@ -191,8 +192,8 @@ class _VirtualTourViewerScreenState extends State<VirtualTourViewerScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.7),
-                  borderRadius: BorderRadius.circular(8),
+                  color: AppTheme.negro.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
@@ -201,7 +202,7 @@ class _VirtualTourViewerScreenState extends State<VirtualTourViewerScreen> {
                     SizedBox(width: 8),
                     Text(
                       'Arrastra para explorar',
-                      style: TextStyle(color: Colors.white, fontSize: 12),
+                      style: TextStyle(color: AppTheme.blanco, fontSize: 12),
                     ),
                   ],
                 ),
@@ -222,12 +223,12 @@ class _VirtualTourViewerScreenState extends State<VirtualTourViewerScreen> {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: onPressed != null
-            ? const Color(0xFFFFD700)
+            ? AppTheme.dorado
             : Colors.grey.withValues(alpha: 0.5),
         boxShadow: onPressed != null
             ? [
                 BoxShadow(
-                  color: const Color(0xFFFFD700).withValues(alpha: 0.5),
+                  color: AppTheme.dorado.withValues(alpha: 0.5),
                   blurRadius: 12,
                   spreadRadius: 2,
                 )
@@ -236,7 +237,7 @@ class _VirtualTourViewerScreenState extends State<VirtualTourViewerScreen> {
       ),
       child: IconButton(
         icon: Icon(icon),
-        color: const Color(0xFF2C2C2C),
+        color: AppTheme.grisOscuro,
         iconSize: 32,
         onPressed: onPressed,
       ),

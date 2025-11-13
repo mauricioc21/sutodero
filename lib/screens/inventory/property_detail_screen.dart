@@ -22,6 +22,7 @@ import 'sign_inventory_act_screen.dart';
 import '../camera_360/camera_360_capture_screen.dart';
 import '../virtual_tour/virtual_tour_viewer_screen.dart';
 import '../../models/virtual_tour_model.dart';
+import '../../config/app_theme.dart';
 
 class PropertyDetailScreen extends StatefulWidget {
   final InventoryProperty property;
@@ -349,8 +350,11 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.negro,
       appBar: AppBar(
         title: const Text('Detalle de Propiedad'),
+        backgroundColor: AppTheme.grisOscuro,
+        foregroundColor: AppTheme.dorado,
         actions: [
           // Botón Acta de Inventario
           IconButton(
@@ -414,8 +418,8 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
         onPressed: _addRoom,
         icon: const Icon(Icons.add),
         label: const Text('Agregar Espacio'),
-        backgroundColor: const Color(0xFFFFD700),
-        foregroundColor: const Color(0xFF2C2C2C),
+        backgroundColor: AppTheme.dorado,
+        foregroundColor: AppTheme.grisOscuro,
       ),
     );
   }
@@ -423,16 +427,16 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   Widget _buildPropertyHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(AppTheme.paddingLG),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFFFFD700), Color(0xFFFF6B00)],
+          colors: [AppTheme.dorado, AppTheme.grisOscuro],
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: AppTheme.negro.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -447,7 +451,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                 widget.property.tipo.icon,
                 style: const TextStyle(fontSize: 48),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: AppTheme.spacingMD),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -457,14 +461,14 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF2C2C2C),
+                        color: AppTheme.negro,
                       ),
                     ),
                     Text(
                       widget.property.tipo.displayName,
                       style: const TextStyle(
                         fontSize: 16,
-                        color: Color(0xFF2C2C2C),
+                        color: AppTheme.negro,
                       ),
                     ),
                   ],
@@ -478,8 +482,13 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   }
 
   Widget _buildPropertyInfo() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
+    return Container(
+      margin: EdgeInsets.all(AppTheme.paddingMD),
+      padding: EdgeInsets.all(AppTheme.paddingMD),
+      decoration: AppTheme.containerDecoration(
+        color: AppTheme.grisOscuro,
+        withBorder: true,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -488,9 +497,10 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
+              color: AppTheme.dorado,
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: AppTheme.spacingMD),
           if (widget.property.clienteNombre != null)
             _buildInfoRow(Icons.person, 'Cliente', widget.property.clienteNombre!),
           if (widget.property.clienteTelefono != null)
@@ -504,19 +514,19 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
           if (widget.property.numeroBanos != null)
             _buildInfoRow(Icons.bathroom, 'Baños', '${widget.property.numeroBanos}'),
           if (widget.property.descripcion != null) ...[
-            const SizedBox(height: 8),
-            Text(
+            SizedBox(height: AppTheme.spacingSM),
+            const Text(
               'Descripción',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey[700],
+                color: AppTheme.dorado,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               widget.property.descripcion!,
-              style: TextStyle(color: Colors.grey[600]),
+              style: const TextStyle(color: AppTheme.blanco),
             ),
           ],
         ],
@@ -529,14 +539,14 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: const Color(0xFFFFD700)),
-          const SizedBox(width: 12),
+          Icon(icon, size: 20, color: AppTheme.dorado),
+          SizedBox(width: AppTheme.spacingMD),
           Text(
             '$label: ',
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.blanco),
           ),
           Expanded(
-            child: Text(value),
+            child: Text(value, style: const TextStyle(color: AppTheme.grisClaro)),
           ),
         ],
       ),
@@ -545,7 +555,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
 
   Widget _buildRoomsSection() {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(AppTheme.paddingMD),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -557,18 +567,19 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
+                  color: AppTheme.dorado,
                 ),
               ),
               Text(
                 '${_rooms.length} espacios',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 14,
-                  color: Colors.grey[600],
+                  color: AppTheme.grisClaro,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: AppTheme.spacingMD),
           
           // Botón generar plano completo
           if (_rooms.isNotEmpty)
@@ -582,7 +593,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(AppTheme.blanco),
                         ),
                       )
                     : const Icon(Icons.maps_home_work),
@@ -590,8 +601,8 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                     ? 'Generando Plano Completo...'
                     : 'Generar Plano Completo de la Propiedad'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFD700),
-                  foregroundColor: const Color(0xFF2C2C2C),
+                  backgroundColor: AppTheme.dorado,
+                  foregroundColor: AppTheme.grisOscuro,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   minimumSize: const Size(double.infinity, 50),
                 ),
@@ -626,12 +637,12 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
               size: 64,
               color: Colors.grey[300],
             ),
-            const SizedBox(height: 16),
-            Text(
+            SizedBox(height: AppTheme.spacingMD),
+            const Text(
               'No hay espacios agregados',
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.grey[600],
+                color: AppTheme.grisClaro,
               ),
             ),
           ],
@@ -641,25 +652,29 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   }
 
   Widget _buildRoomCard(PropertyRoom room) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
+      decoration: AppTheme.containerDecoration(
+        color: AppTheme.grisOscuro,
+        withBorder: true,
+      ),
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: _getConditionColor(room.estado).withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
           ),
           child: Text(room.tipo.icon, style: const TextStyle(fontSize: 24)),
         ),
         title: Text(
           room.nombre,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.blanco),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(room.tipo.displayName),
+            Text(room.tipo.displayName, style: const TextStyle(color: AppTheme.grisClaro)),
             Row(
               children: [
                 Text(room.estado.emoji),
@@ -675,7 +690,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
             ),
           ],
         ),
-        trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+        trailing: const Icon(Icons.chevron_right, color: AppTheme.dorado),
         onTap: () => _viewRoomDetail(room),
       ),
     );
@@ -769,14 +784,14 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
 
   Widget _buildRelatedTicketsSection() {
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.all(AppTheme.paddingMD),
+      padding: EdgeInsets.all(AppTheme.paddingMD),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: AppTheme.blanco,
+        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: AppTheme.negro.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -788,7 +803,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
           Row(
             children: [
               const Icon(Icons.assignment, color: Color(0xFFFF6B00), size: 24),
-              const SizedBox(width: 8),
+              SizedBox(width: AppTheme.spacingSM),
               Text(
                 'Tickets Relacionados (${_relatedTickets.length})',
                 style: const TextStyle(
@@ -799,15 +814,15 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: AppTheme.spacingMD),
           ..._relatedTickets.take(5).map((ticket) {
             return Container(
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFFF5E6C8).withOpacity(0.3),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.3)),
+                color: AppTheme.beigeClaro.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                border: Border.all(color: AppTheme.dorado.withOpacity(0.3)),
               ),
               child: Row(
                 children: [
@@ -819,7 +834,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                       shape: BoxShape.circle,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: AppTheme.spacingMD),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -848,7 +863,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: _getTicketStatusColor(ticket.estado).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                     ),
                     child: Text(
                       ticket.estado.displayName,
@@ -883,7 +898,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   Color _getTicketStatusColor(TicketStatus status) {
     switch (status) {
       case TicketStatus.nuevo:
-        return const Color(0xFFFFD700);
+        return AppTheme.dorado;
       case TicketStatus.pendiente:
         return const Color(0xFFFF9800);
       case TicketStatus.enProgreso:
@@ -968,17 +983,17 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
           child: Center(
             child: Card(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(AppTheme.paddingLG),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const CircularProgressIndicator(color: Color(0xFFFFD700)),
-                    const SizedBox(height: 16),
+                    SizedBox(height: AppTheme.spacingMD),
                     const Text(
                       'Generando PDF del acta...',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: AppTheme.spacingSM),
                     Text(
                       'Descargando ${act.photoUrls.length} fotos',
                       style: const TextStyle(fontSize: 12),
@@ -1074,7 +1089,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   /// Sección de tours virtuales 360°
   Widget _buildVirtualToursSection() {
     return Padding(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(AppTheme.paddingLG),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1086,8 +1101,8 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFD700).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
+                      color: AppTheme.dorado.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                     ),
                     child: const Icon(
                       Icons.panorama_photosphere,
@@ -1095,7 +1110,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                       size: 24,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: AppTheme.spacingMD),
                   const Text(
                     'Tours Virtuales 360°',
                     style: TextStyle(
@@ -1108,20 +1123,20 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFD700),
-                  borderRadius: BorderRadius.circular(12),
+                  color: AppTheme.dorado,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                 ),
                 child: Text(
                   '${_virtualTours.length}',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: AppTheme.negro,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: AppTheme.spacingMD),
           ListView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -1132,13 +1147,13 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                 margin: const EdgeInsets.only(bottom: 12),
                 elevation: 2,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                 ),
                 child: InkWell(
                   onTap: () => _openVirtualTour(tour),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(AppTheme.paddingMD),
                     child: Row(
                       children: [
                         Container(
@@ -1146,7 +1161,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                           height: 80,
                           decoration: BoxDecoration(
                             color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                             image: tour.photo360Urls.isNotEmpty
                                 ? DecorationImage(
                                     image: NetworkImage(tour.photo360Urls.first),
@@ -1158,7 +1173,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                               ? const Icon(Icons.panorama, size: 40, color: Colors.grey)
                               : null,
                         ),
-                        const SizedBox(width: 16),
+                        SizedBox(width: AppTheme.spacingMD),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1296,7 +1311,7 @@ class _ActClientInfoDialogState extends State<_ActClientInfoDialog> {
                   color: Color(0xFF9C27B0),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: AppTheme.spacingMD),
               TextFormField(
                 controller: _clientNameController,
                 decoration: const InputDecoration(
@@ -1310,7 +1325,7 @@ class _ActClientInfoDialogState extends State<_ActClientInfoDialog> {
                   return null;
                 },
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: AppTheme.spacingMD),
               TextFormField(
                 controller: _clientIdController,
                 decoration: const InputDecoration(
@@ -1318,7 +1333,7 @@ class _ActClientInfoDialogState extends State<_ActClientInfoDialog> {
                   border: OutlineInputBorder(),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: AppTheme.spacingMD),
               TextFormField(
                 controller: _clientPhoneController,
                 decoration: const InputDecoration(
@@ -1327,7 +1342,7 @@ class _ActClientInfoDialogState extends State<_ActClientInfoDialog> {
                 ),
                 keyboardType: TextInputType.phone,
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: AppTheme.spacingMD),
               TextFormField(
                 controller: _clientEmailController,
                 decoration: const InputDecoration(
@@ -1336,7 +1351,7 @@ class _ActClientInfoDialogState extends State<_ActClientInfoDialog> {
                 ),
                 keyboardType: TextInputType.emailAddress,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: AppTheme.spacingXL),
               const Text(
                 'DATOS DEL INSPECTOR',
                 style: TextStyle(
@@ -1344,7 +1359,7 @@ class _ActClientInfoDialogState extends State<_ActClientInfoDialog> {
                   color: Color(0xFFFF6B00),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: AppTheme.spacingMD),
               TextFormField(
                 controller: _inspectorNameController,
                 decoration: const InputDecoration(
@@ -1352,7 +1367,7 @@ class _ActClientInfoDialogState extends State<_ActClientInfoDialog> {
                   border: OutlineInputBorder(),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: AppTheme.spacingMD),
               TextFormField(
                 controller: _inspectorRoleController,
                 decoration: const InputDecoration(
@@ -1360,14 +1375,14 @@ class _ActClientInfoDialogState extends State<_ActClientInfoDialog> {
                   border: OutlineInputBorder(),
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: AppTheme.spacingXL),
               const Text(
                 'OBSERVACIONES',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: AppTheme.spacingMD),
               TextFormField(
                 controller: _observationsController,
                 decoration: const InputDecoration(
@@ -1400,8 +1415,8 @@ class _ActClientInfoDialogState extends State<_ActClientInfoDialog> {
             }
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFFFD700),
-            foregroundColor: Colors.black,
+            backgroundColor: AppTheme.dorado,
+            foregroundColor: AppTheme.negro,
           ),
           child: const Text('Continuar'),
         ),

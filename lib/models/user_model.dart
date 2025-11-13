@@ -88,6 +88,15 @@ class UserModel {
     return 'neutro';
   }
   
+  /// Verifica si el usuario es administrador
+  bool get isAdmin => rol.toLowerCase() == 'admin';
+  
+  /// Verifica si el usuario es técnico
+  bool get isTecnico => rol.toLowerCase() == 'tecnico';
+  
+  /// Verifica si el usuario es cliente
+  bool get isCliente => rol.toLowerCase() == 'cliente';
+  
   /// Genera un saludo personalizado según el género y hora del día
   String obtenerSaludoPersonalizado() {
     final genero = detectarGenero();

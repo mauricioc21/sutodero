@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
-import '../home_screen.dart';
+import '../../config/app_theme.dart';
+import 'biometric_registration_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -47,15 +48,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = false);
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✅ Cuenta creada exitosamente'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      
-      // Navegar al login
-      Navigator.of(context).pop();
+      // Preguntar si desea activar reconocimiento facial
+      _showBiometricOptionDialog();
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -66,92 +60,176 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  void _showBiometricOptionDialog() {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final user = authService.currentUser;
+    
+    if (user == null) {
+      // Si no hay usuario, navegar al login
+      Navigator.of(context).pop();
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.grisOscuro,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.face, color: AppTheme.dorado, size: 32),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Reconocimiento Facial',
+                style: TextStyle(color: AppTheme.blanco, fontSize: 20),
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          '¿Deseas activar el reconocimiento facial para ingresar con más facilidad sin tener que ingresar tus datos cada vez?',
+          style: TextStyle(color: AppTheme.blanco, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Cerrar diálogo
+              Navigator.of(context).pop(); // Volver al login
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('✅ Cuenta creada exitosamente'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+            child: const Text(
+              'AHORA NO',
+              style: TextStyle(color: AppTheme.grisClaro),
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.of(context).pop(); // Cerrar diálogo
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (_) => BiometricRegistrationScreen(
+                    userId: user.uid,
+                    userName: user.nombre,
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.face),
+            label: const Text('SÍ, ACTIVAR'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.dorado,
+              foregroundColor: AppTheme.grisOscuro,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A1A),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFFFFD700)),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Logo pequeño
-                Center(
-                  child: Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFFFD700).withValues(alpha: 0.3),
-                          blurRadius: 20,
-                          spreadRadius: 5,
+      body: Container(
+        decoration: BoxDecoration(gradient: AppTheme.gradientBackground),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // AppBar custom
+              Padding(
+                padding: EdgeInsets.all(AppTheme.spacingMD),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.arrow_back, color: AppTheme.dorado),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              // Contenido
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppTheme.spacingXL,
+                    vertical: AppTheme.spacingLG,
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Logo pequeño
+                        Center(
+                          child: Container(
+                            width: 120,
+                            height: 120,
+                            decoration: BoxDecoration(
+                              boxShadow: AppTheme.goldGlow,
+                            ),
+                            child: Image.asset(
+                              'assets/images/maestro_todero_nobg.png',
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Icon(
+                                  Icons.handyman,
+                                  size: 60,
+                                  color: AppTheme.dorado,
+                                );
+                              },
+                            ),
+                          ),
                         ),
-                      ],
-                    ),
-                    child: Image.asset(
-                      'assets/images/maestro_todero_nobg.png',
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(
-                          Icons.handyman,
-                          size: 60,
-                          color: Color(0xFFFFD700),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                
-                const SizedBox(height: 24),
-                
-                // Título
-                const Text(
-                  'CREAR CUENTA',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 1,
-                  ),
-                ),
-                
-                const SizedBox(height: 8),
-                
-                // Subtexto
-                const Text(
-                  'Regístrate para comenzar',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white60,
-                  ),
-                ),
-                
-                const SizedBox(height: 32),
+                        
+                        SizedBox(height: AppTheme.spacingXL),
+                        
+                        // Título
+                        Text(
+                          'CREAR CUENTA',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.blanco,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        
+                        SizedBox(height: AppTheme.spacingSM),
+                        
+                        // Subtexto
+                        Text(
+                          'Regístrate para comenzar',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppTheme.blanco.withValues(alpha: 0.6),
+                          ),
+                        ),
+                        
+                        SizedBox(height: AppTheme.spacingXL),
                 
                 // Campo de nombre completo
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2C2C2C),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppTheme.grisOscuro,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   ),
                   child: TextFormField(
                     controller: _nombreController,
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: AppTheme.blanco),
                     decoration: InputDecoration(
                       hintText: 'Nombre Completo',
-                      hintStyle: TextStyle(color: Colors.grey[600]),
+                      hintStyle: TextStyle(color: AppTheme.grisClaro),
                       prefixIcon: const Icon(Icons.person, color: Color(0xFFFFD700)),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
@@ -171,21 +249,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 
-                const SizedBox(height: 16),
+                SizedBox(height: AppTheme.spacingMD),
                 
                 // Campo de correo electrónico
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2C2C2C),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppTheme.grisOscuro,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   ),
                   child: TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: AppTheme.blanco),
                     decoration: InputDecoration(
                       hintText: 'Correo Electrónico',
-                      hintStyle: TextStyle(color: Colors.grey[600]),
+                      hintStyle: TextStyle(color: AppTheme.grisClaro),
                       prefixIcon: const Icon(Icons.email, color: Color(0xFFFFD700)),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
@@ -205,21 +283,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 
-                const SizedBox(height: 16),
+                SizedBox(height: AppTheme.spacingMD),
                 
                 // Campo de teléfono
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2C2C2C),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppTheme.grisOscuro,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   ),
                   child: TextFormField(
                     controller: _telefonoController,
                     keyboardType: TextInputType.phone,
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: AppTheme.blanco),
                     decoration: InputDecoration(
                       hintText: 'Teléfono',
-                      hintStyle: TextStyle(color: Colors.grey[600]),
+                      hintStyle: TextStyle(color: AppTheme.grisClaro),
                       prefixIcon: const Icon(Icons.phone, color: Color(0xFFFFD700)),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
@@ -239,26 +317,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 
-                const SizedBox(height: 16),
+                SizedBox(height: AppTheme.spacingMD),
                 
                 // Campo de contraseña
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2C2C2C),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppTheme.grisOscuro,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   ),
                   child: TextFormField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: AppTheme.blanco),
                     decoration: InputDecoration(
                       hintText: 'Contraseña',
-                      hintStyle: TextStyle(color: Colors.grey[600]),
+                      hintStyle: TextStyle(color: AppTheme.grisClaro),
                       prefixIcon: const Icon(Icons.lock, color: Color(0xFFFFD700)),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                          color: Colors.grey[600],
+                          color: AppTheme.grisClaro,
                         ),
                         onPressed: () {
                           setState(() => _obscurePassword = !_obscurePassword);
@@ -282,26 +360,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 
-                const SizedBox(height: 16),
+                SizedBox(height: AppTheme.spacingMD),
                 
                 // Campo de confirmar contraseña
                 Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2C2C2C),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppTheme.grisOscuro,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   ),
                   child: TextFormField(
                     controller: _confirmPasswordController,
                     obscureText: _obscureConfirmPassword,
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: AppTheme.blanco),
                     decoration: InputDecoration(
                       hintText: 'Confirmar Contraseña',
-                      hintStyle: TextStyle(color: Colors.grey[600]),
+                      hintStyle: TextStyle(color: AppTheme.grisClaro),
                       prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFFFFD700)),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
-                          color: Colors.grey[600],
+                          color: AppTheme.grisClaro,
                         ),
                         onPressed: () {
                           setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
@@ -325,7 +403,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
                 
-                const SizedBox(height: 32),
+                SizedBox(height: AppTheme.spacingXL),
                 
                 // Botón de crear cuenta
                 SizedBox(
@@ -333,10 +411,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _handleRegister,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFD700),
-                      foregroundColor: const Color(0xFF2C2C2C),
+                      backgroundColor: AppTheme.dorado,
+                      foregroundColor: AppTheme.grisOscuro,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                       ),
                       elevation: 0,
                     ),
@@ -373,14 +451,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: AppTheme.grisClaro,
                         height: 1.4,
                       ),
                     ),
                   ),
                 ),
-              ],
-            ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

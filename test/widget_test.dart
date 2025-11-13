@@ -8,7 +8,7 @@ import 'package:sutodero/main.dart';
 void main() {
   testWidgets('SUTODERO app smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const SutoderoApp());
+    await tester.pumpWidget(const SuToderoApp());
 
     // Verificar que el splash screen se muestra
     expect(find.text('SUTODERO'), findsOneWidget);

@@ -7,6 +7,7 @@ import '../../services/ticket_service.dart';
 import '../inventory/property_detail_screen.dart';
 import '../inventory/room_detail_screen.dart';
 import '../tickets/ticket_detail_screen.dart';
+import '../../config/app_theme.dart';
 
 /// Pantalla para escanear códigos QR
 class QRScannerScreen extends StatefulWidget {
@@ -164,18 +165,18 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
     // En Web, mostrar mensaje informativo en lugar de cámara
     if (kIsWeb) {
       return Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: AppTheme.negro,
         appBar: AppBar(
           title: const Text('Escanear QR'),
-          backgroundColor: const Color(0xFF2C2C2C),
-          foregroundColor: const Color(0xFFFFD700),
+          backgroundColor: AppTheme.grisOscuro,
+          foregroundColor: AppTheme.dorado,
         ),
         body: Center(
           child: Container(
             padding: const EdgeInsets.all(32),
-            margin: const EdgeInsets.all(24),
+            margin: EdgeInsets.all(AppTheme.paddingLG),
             decoration: BoxDecoration(
-              color: const Color(0xFF2C2C2C),
+              color: AppTheme.grisOscuro,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Column(
@@ -186,7 +187,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                   size: 80,
                   color: Color(0xFFFFD700),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: AppTheme.spacingXL),
                 const Text(
                   'Escaneo QR',
                   style: TextStyle(
@@ -195,7 +196,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: AppTheme.spacingMD),
                 const Text(
                   'El escaneo de códigos QR con cámara está disponible en la versión móvil de la aplicación.',
                   style: TextStyle(
@@ -204,7 +205,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: AppTheme.spacingXL),
                 const Text(
                   '📱 Para escanear QR, descarga la app en Android.',
                   style: TextStyle(
@@ -223,7 +224,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
 
     // En móvil, mostrar cámara QR
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.negro,
       body: Stack(
         children: [
           // Vista de cámara QR con MobileScanner
@@ -241,13 +242,13 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
           // Header
           SafeArea(
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(AppTheme.paddingMD),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withValues(alpha: 0.7),
+                    AppTheme.negro.withValues(alpha: 0.7),
                     Colors.transparent,
                   ],
                 ),
@@ -255,13 +256,13 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    icon: const Icon(Icons.arrow_back, color: AppTheme.blanco),
                     onPressed: () => Navigator.pop(context),
                   ),
                   const Text(
                     'Escanear QR',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.blanco,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
@@ -269,12 +270,12 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                   const Spacer(),
                   // Botón de linterna
                   IconButton(
-                    icon: const Icon(Icons.flash_off, color: Colors.white),
+                    icon: const Icon(Icons.flash_off, color: AppTheme.blanco),
                     onPressed: () => controller?.toggleTorch(),
                   ),
                   // Botón de cambiar cámara
                   IconButton(
-                    icon: const Icon(Icons.flip_camera_ios, color: Colors.white),
+                    icon: const Icon(Icons.flip_camera_ios, color: AppTheme.blanco),
                     onPressed: () => controller?.switchCamera(),
                   ),
                 ],
@@ -288,11 +289,11 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
             left: 0,
             right: 0,
             child: Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(AppTheme.paddingLG),
               margin: const EdgeInsets.symmetric(horizontal: 32),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.7),
-                borderRadius: BorderRadius.circular(16),
+                color: AppTheme.negro.withValues(alpha: 0.7),
+                borderRadius: BorderRadius.circular(AppTheme.radiusLG),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -307,7 +308,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                         Text(
                           'Procesando...',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppTheme.blanco,
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -318,13 +319,13 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                     const Text(
                       'Apunta la cámara al código QR',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.blanco,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: AppTheme.spacingSM),
                   const Text(
                     'El escaneo es automático',
                     style: TextStyle(
@@ -354,7 +355,7 @@ class ScannerOverlayPainter extends CustomPainter {
 
     // Pintar área oscura alrededor del área de escaneo
     final Paint backgroundPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.5);
+      ..color = AppTheme.negro.withValues(alpha: 0.5);
     
     canvas.drawPath(
       Path()
@@ -366,7 +367,7 @@ class ScannerOverlayPainter extends CustomPainter {
 
     // Pintar borde del área de escaneo
     final Paint borderPaint = Paint()
-      ..color = const Color(0xFFFFD700)
+      ..color = AppTheme.dorado
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4;
 
@@ -377,7 +378,7 @@ class ScannerOverlayPainter extends CustomPainter {
 
     // Pintar esquinas
     final Paint cornerPaint = Paint()
-      ..color = const Color(0xFFFFD700)
+      ..color = AppTheme.dorado
       ..style = PaintingStyle.stroke
       ..strokeWidth = 6
       ..strokeCap = StrokeCap.round;

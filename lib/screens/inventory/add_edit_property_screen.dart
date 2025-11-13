@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/inventory_property.dart';
 import '../../services/inventory_service.dart';
+import '../../services/auth_service.dart';
+import '../../config/app_theme.dart';
 
 class AddEditPropertyScreen extends StatefulWidget {
   final InventoryProperty? property;
@@ -40,7 +43,7 @@ class _AddEditPropertyScreenState extends State<AddEditPropertyScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(AppTheme.paddingMD),
           children: [
             TextFormField(
               controller: _direccionController,
@@ -50,7 +53,7 @@ class _AddEditPropertyScreenState extends State<AddEditPropertyScreen> {
               ),
               validator: (v) => v?.isEmpty == true ? 'Requerido' : null,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: AppTheme.spacingMD),
             DropdownButtonFormField<PropertyType>(
               value: _selectedType,
               decoration: const InputDecoration(
@@ -65,7 +68,7 @@ class _AddEditPropertyScreenState extends State<AddEditPropertyScreen> {
               }).toList(),
               onChanged: (v) => setState(() => _selectedType = v!),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: AppTheme.spacingMD),
             TextFormField(
               controller: _clienteNombreController,
               decoration: const InputDecoration(
@@ -73,7 +76,7 @@ class _AddEditPropertyScreenState extends State<AddEditPropertyScreen> {
                 border: OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: AppTheme.spacingMD),
             TextFormField(
               controller: _clienteTelefonoController,
               decoration: const InputDecoration(
@@ -81,7 +84,7 @@ class _AddEditPropertyScreenState extends State<AddEditPropertyScreen> {
                 border: OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: AppTheme.spacingMD),
             TextFormField(
               controller: _descripcionController,
               decoration: const InputDecoration(
@@ -90,7 +93,7 @@ class _AddEditPropertyScreenState extends State<AddEditPropertyScreen> {
               ),
               maxLines: 3,
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: AppTheme.spacingXL),
             ElevatedButton(
               onPressed: _isSaving ? null : _save,
               child: _isSaving
@@ -117,7 +120,13 @@ class _AddEditPropertyScreenState extends State<AddEditPropertyScreen> {
         );
         await _inventoryService.updateProperty(updated);
       } else {
+        final authService = Provider.of<AuthService>(context, listen: false);
+        final user = authService.currentUser;
+        if (user == null) {
+          throw Exception('Usuario no autenticado');
+        }
         await _inventoryService.createProperty(
+          userId: user.uid,
           direccion: _direccionController.text,
           clienteNombre: _clienteNombreController.text.isEmpty ? null : _clienteNombreController.text,
           clienteTelefono: _clienteTelefonoController.text.isEmpty ? null : _clienteTelefonoController.text,

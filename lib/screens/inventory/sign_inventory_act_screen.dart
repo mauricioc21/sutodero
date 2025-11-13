@@ -6,6 +6,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import '../../models/inventory_act.dart';
 import '../../services/inventory_act_service.dart';
+import '../../config/app_theme.dart';
 
 /// Pantalla para firmar y autenticar acta de inventario
 /// con reconocimiento facial
@@ -25,8 +26,8 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
   final InventoryActService _actService = InventoryActService();
   final SignatureController _signatureController = SignatureController(
     penStrokeWidth: 3,
-    penColor: Colors.black,
-    exportBackgroundColor: Colors.white,
+    penColor: AppTheme.negro,
+    exportBackgroundColor: AppTheme.blanco,
   );
 
   final ImagePicker _imagePicker = ImagePicker();
@@ -198,11 +199,11 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5E6C8),
+      backgroundColor: AppTheme.beigeClaro,
       appBar: AppBar(
         title: const Text('Firmar Acta de Inventario'),
-        backgroundColor: Colors.black,
-        foregroundColor: const Color(0xFFFFD700),
+        backgroundColor: AppTheme.negro,
+        foregroundColor: AppTheme.dorado,
         actions: [
           if (_signatureCompleted && _facialCompleted)
             IconButton(
@@ -231,21 +232,21 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
               ),
             )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(AppTheme.paddingMD),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Información del acta
                   _buildActInfo(),
-                  const SizedBox(height: 24),
+                  SizedBox(height: AppTheme.spacingXL),
 
                   // Sección de Firma Digital
                   _buildSignatureSection(),
-                  const SizedBox(height: 24),
+                  SizedBox(height: AppTheme.spacingXL),
 
                   // Sección de Reconocimiento Facial
                   _buildFacialSection(),
-                  const SizedBox(height: 32),
+                  SizedBox(height: AppTheme.spacingXL),
 
                   // Botón de completar
                   _buildCompleteButton(),
@@ -257,13 +258,13 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
 
   Widget _buildActInfo() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(AppTheme.paddingMD),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: AppTheme.blanco,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: AppTheme.negro.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -275,7 +276,7 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
           Row(
             children: [
               const Icon(Icons.description, color: Color(0xFFFF6B00)),
-              const SizedBox(width: 8),
+              SizedBox(width: AppTheme.spacingSM),
               Text(
                 'Acta de Inventario',
                 style: TextStyle(
@@ -326,13 +327,13 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
 
   Widget _buildSignatureSection() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(AppTheme.paddingMD),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: AppTheme.blanco,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: AppTheme.negro.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -347,7 +348,7 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
                 _signatureCompleted ? Icons.check_circle : Icons.edit,
                 color: _signatureCompleted ? Colors.green : const Color(0xFF9C27B0),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: AppTheme.spacingSM),
               Text(
                 'Firma Digital',
                 style: TextStyle(
@@ -368,7 +369,7 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
                 ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: AppTheme.spacingMD),
           Container(
             height: 200,
             decoration: BoxDecoration(
@@ -376,7 +377,7 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
                 color: _signatureCompleted ? Colors.green : Colors.grey.shade300,
                 width: 2,
               ),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppTheme.radiusSM),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(6),
@@ -386,7 +387,7 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: AppTheme.spacingMD),
           if (!_signatureCompleted)
             ElevatedButton.icon(
               onPressed: _saveSignature,
@@ -394,7 +395,7 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
               label: const Text('Guardar Firma'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF9C27B0),
-                foregroundColor: Colors.white,
+                foregroundColor: AppTheme.blanco,
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
             )
@@ -403,7 +404,7 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.green.shade50,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                 border: Border.all(color: Colors.green),
               ),
               child: const Row(
@@ -427,13 +428,13 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
 
   Widget _buildFacialSection() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(AppTheme.paddingMD),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: AppTheme.blanco,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: AppTheme.negro.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -448,7 +449,7 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
                 _facialCompleted ? Icons.check_circle : Icons.face,
                 color: _facialCompleted ? Colors.green : const Color(0xFFFF6B00),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: AppTheme.spacingSM),
               const Text(
                 'Reconocimiento Facial',
                 style: TextStyle(
@@ -459,13 +460,13 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: AppTheme.spacingMD),
           if (_facialPhoto != null)
             Container(
               height: 250,
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.green, width: 2),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppTheme.radiusSM),
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(6),
@@ -481,7 +482,7 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
               decoration: BoxDecoration(
                 color: Colors.grey.shade100,
                 border: Border.all(color: Colors.grey.shade300, width: 2),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppTheme.radiusSM),
               ),
               child: const Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -499,7 +500,7 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
                 ],
               ),
             ),
-          const SizedBox(height: 12),
+          SizedBox(height: AppTheme.spacingMD),
           if (!_facialCompleted)
             ElevatedButton.icon(
               onPressed: _captureFacialPhoto,
@@ -507,7 +508,7 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
               label: const Text('Capturar Rostro'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF6B00),
-                foregroundColor: Colors.white,
+                foregroundColor: AppTheme.blanco,
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
             )
@@ -519,7 +520,7 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                       border: Border.all(color: Colors.green),
                     ),
                     child: const Row(
@@ -539,7 +540,7 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: AppTheme.spacingSM),
                 IconButton(
                   onPressed: () {
                     setState(() {
@@ -572,11 +573,11 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
         ),
       ),
       style: ElevatedButton.styleFrom(
-        backgroundColor: canComplete ? const Color(0xFFFFD700) : Colors.grey,
-        foregroundColor: Colors.black,
+        backgroundColor: canComplete ? AppTheme.dorado : Colors.grey,
+        foregroundColor: AppTheme.negro,
         padding: const EdgeInsets.symmetric(vertical: 16),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
         ),
       ),
     );

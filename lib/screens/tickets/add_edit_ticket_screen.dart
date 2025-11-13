@@ -9,6 +9,7 @@ import '../../services/ticket_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/inventory_service.dart';
 import '../../services/storage_service.dart';
+import '../../config/app_theme.dart';
 
 class AddEditTicketScreen extends StatefulWidget {
   final TicketModel? ticket;
@@ -148,7 +149,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
               primary: Color(0xFFFFD700),
               onPrimary: Color(0xFF2C2C2C),
               surface: Color(0xFF2C2C2C),
-              onSurface: Colors.white,
+              onSurface: AppTheme.blanco,
             ),
           ),
           child: child!,
@@ -174,7 +175,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
               primary: Color(0xFFFFD700),
               onPrimary: Color(0xFF2C2C2C),
               surface: Color(0xFF2C2C2C),
-              onSurface: Colors.white,
+              onSurface: AppTheme.blanco,
             ),
           ),
           child: child!,
@@ -194,12 +195,12 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: const Color(0xFF2C2C2C),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: AppTheme.grisOscuro,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusLG)),
           title: Row(
             children: [
               const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 32),
-              const SizedBox(width: 12),
+              SizedBox(width: AppTheme.spacingMD),
               const Expanded(
                 child: Text(
                   '⚠️ EMERGENCIA URGENTE',
@@ -225,7 +226,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                     fontSize: 16,
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: AppTheme.spacingMD),
                 
                 // Emergencia de agua
                 _buildEmergencyItem(
@@ -237,7 +238,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                     'Retirar objetos de valor de la zona',
                   ],
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: AppTheme.spacingMD),
                 
                 // Emergencia de gas
                 _buildEmergencyItem(
@@ -250,7 +251,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                     'Evacuar el área y llamar a emergencias',
                   ],
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: AppTheme.spacingMD),
                 
                 // Emergencia eléctrica
                 _buildEmergencyItem(
@@ -269,7 +270,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.orange.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                     border: Border.all(color: Colors.orange),
                   ),
                   child: Column(
@@ -278,7 +279,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                       Row(
                         children: [
                           const Icon(Icons.schedule, color: Colors.orange, size: 20),
-                          const SizedBox(width: 8),
+                          SizedBox(width: AppTheme.spacingSM),
                           const Expanded(
                             child: Text(
                               'Horario de Atención',
@@ -290,7 +291,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: AppTheme.spacingSM),
                       Text(
                         '• Emergencias en fin de semana o horario nocturno: '
                         'Se enviará personal al día siguiente apenas se confirme la asistencia.\n\n'
@@ -331,7 +332,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.red.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
         border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
       ),
       child: Column(
@@ -340,7 +341,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
           Row(
             children: [
               Icon(icon, color: Colors.red, size: 20),
-              const SizedBox(width: 8),
+              SizedBox(width: AppTheme.spacingSM),
               Expanded(
                 child: Text(
                   title,
@@ -353,7 +354,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: AppTheme.spacingSM),
           ...instructions.map((instruction) => Padding(
                 padding: const EdgeInsets.only(left: 8, bottom: 4),
                 child: Row(
@@ -451,12 +452,12 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
               child: Center(
                 child: Card(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(AppTheme.paddingLG),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         const CircularProgressIndicator(color: Color(0xFFFFD700)),
-                        const SizedBox(height: 16),
+                        SizedBox(height: AppTheme.spacingMD),
                         Text('Subiendo ${_fotos.length} foto(s)...'),
                         const Text(
                           'Esto puede tomar unos momentos',
@@ -483,6 +484,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
       }
       
       await _ticketService.createTicket(
+        userId: user.uid,
         titulo: tituloCompleto,
         descripcion: _descripcionController.text.trim(),
         tipoServicio: _tipoServicio,
@@ -530,86 +532,86 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppTheme.negro,
       appBar: AppBar(
         title: Text(widget.ticket == null ? 'Nuevo Ticket' : 'Editar Ticket'),
-        backgroundColor: const Color(0xFF2C2C2C),
-        foregroundColor: const Color(0xFFFFD700),
+        backgroundColor: AppTheme.grisOscuro,
+        foregroundColor: AppTheme.dorado,
       ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(AppTheme.paddingMD),
           children: [
             // Título
             TextFormField(
               controller: _tituloController,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppTheme.blanco),
               decoration: InputDecoration(
                 labelText: 'Título del Trabajo *',
                 labelStyle: const TextStyle(color: Color(0xFFFFD700)),
                 hintText: 'Ej: Reparar tubería del baño',
                 hintStyle: TextStyle(color: Colors.grey[600]),
                 filled: true,
-                fillColor: const Color(0xFF2C2C2C),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                fillColor: AppTheme.grisOscuro,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMD)),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   borderSide: BorderSide(color: Colors.grey[800]!),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   borderSide: const BorderSide(color: Color(0xFFFFD700)),
                 ),
               ),
               validator: (value) =>
                   value?.isEmpty ?? true ? 'Ingresa un título' : null,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: AppTheme.spacingMD),
 
             // Código de inmueble (opcional)
             TextFormField(
               controller: _codigoInmuebleController,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppTheme.blanco),
               decoration: InputDecoration(
                 labelText: 'Código de Inmueble (Opcional)',
                 labelStyle: const TextStyle(color: Color(0xFFFFD700)),
                 hintText: 'Ej: INM-001, APT-205',
                 hintStyle: TextStyle(color: Colors.grey[600]),
                 filled: true,
-                fillColor: const Color(0xFF2C2C2C),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                fillColor: AppTheme.grisOscuro,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMD)),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   borderSide: BorderSide(color: Colors.grey[800]!),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   borderSide: const BorderSide(color: Color(0xFFFFD700)),
                 ),
                 prefixIcon: const Icon(Icons.tag, color: Color(0xFFFFD700)),
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: AppTheme.spacingMD),
 
             // Dirección
             TextFormField(
               controller: _direccionController,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppTheme.blanco),
               decoration: InputDecoration(
                 labelText: 'Dirección del Inmueble *',
                 labelStyle: const TextStyle(color: Color(0xFFFFD700)),
                 hintText: 'Calle, número, piso, apto',
                 hintStyle: TextStyle(color: Colors.grey[600]),
                 filled: true,
-                fillColor: const Color(0xFF2C2C2C),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                fillColor: AppTheme.grisOscuro,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMD)),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   borderSide: BorderSide(color: Colors.grey[800]!),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   borderSide: const BorderSide(color: Color(0xFFFFD700)),
                 ),
                 prefixIcon: const Icon(Icons.location_on, color: Color(0xFFFFD700)),
@@ -617,26 +619,26 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
               validator: (value) =>
                   value?.isEmpty ?? true ? 'Ingresa la dirección' : null,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: AppTheme.spacingMD),
 
             // Barrio
             TextFormField(
               controller: _barrioController,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppTheme.blanco),
               decoration: InputDecoration(
                 labelText: 'Barrio *',
                 labelStyle: const TextStyle(color: Color(0xFFFFD700)),
                 hintText: 'Nombre del barrio o zona',
                 hintStyle: TextStyle(color: Colors.grey[600]),
                 filled: true,
-                fillColor: const Color(0xFF2C2C2C),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                fillColor: AppTheme.grisOscuro,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMD)),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   borderSide: BorderSide(color: Colors.grey[800]!),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   borderSide: const BorderSide(color: Color(0xFFFFD700)),
                 ),
                 prefixIcon: const Icon(Icons.map, color: Color(0xFFFFD700)),
@@ -644,12 +646,12 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
               validator: (value) =>
                   value?.isEmpty ?? true ? 'Ingresa el barrio' : null,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: AppTheme.spacingMD),
 
             // Teléfono de contacto
             TextFormField(
               controller: _telefonoController,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppTheme.blanco),
               keyboardType: TextInputType.phone,
               decoration: InputDecoration(
                 labelText: 'Teléfono de Contacto *',
@@ -657,14 +659,14 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                 hintText: 'Número para coordinar la visita',
                 hintStyle: TextStyle(color: Colors.grey[600]),
                 filled: true,
-                fillColor: const Color(0xFF2C2C2C),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                fillColor: AppTheme.grisOscuro,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMD)),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   borderSide: BorderSide(color: Colors.grey[800]!),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   borderSide: const BorderSide(color: Color(0xFFFFD700)),
                 ),
                 prefixIcon: const Icon(Icons.phone, color: Color(0xFFFFD700)),
@@ -672,19 +674,19 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
               validator: (value) =>
                   value?.isEmpty ?? true ? 'Ingresa un teléfono' : null,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: AppTheme.spacingMD),
 
             // Tipo de servicio
             DropdownButtonFormField<ServiceType>(
               value: _tipoServicio,
-              dropdownColor: const Color(0xFF2C2C2C),
-              style: const TextStyle(color: Colors.white),
+              dropdownColor: AppTheme.grisOscuro,
+              style: const TextStyle(color: AppTheme.blanco),
               decoration: InputDecoration(
                 labelText: 'Tipo de Servicio *',
                 labelStyle: const TextStyle(color: Color(0xFFFFD700)),
                 filled: true,
-                fillColor: const Color(0xFF2C2C2C),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                fillColor: AppTheme.grisOscuro,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMD)),
               ),
               items: ServiceType.values
                   .map((type) => DropdownMenuItem(
@@ -694,19 +696,19 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                   .toList(),
               onChanged: (value) => setState(() => _tipoServicio = value!),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: AppTheme.spacingMD),
 
             // Prioridad
             DropdownButtonFormField<TicketPriority>(
               value: _prioridad,
-              dropdownColor: const Color(0xFF2C2C2C),
-              style: const TextStyle(color: Colors.white),
+              dropdownColor: AppTheme.grisOscuro,
+              style: const TextStyle(color: AppTheme.blanco),
               decoration: InputDecoration(
                 labelText: 'Prioridad *',
                 labelStyle: const TextStyle(color: Color(0xFFFFD700)),
                 filled: true,
-                fillColor: const Color(0xFF2C2C2C),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                fillColor: AppTheme.grisOscuro,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMD)),
               ),
               items: TicketPriority.values
                   .map((priority) => DropdownMenuItem(
@@ -727,12 +729,12 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                 }
               },
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: AppTheme.spacingMD),
 
             // Descripción
             TextFormField(
               controller: _descripcionController,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppTheme.blanco),
               maxLines: 5,
               decoration: InputDecoration(
                 labelText: 'Descripción del Problema *',
@@ -740,14 +742,14 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                 hintText: 'Describe detalladamente el trabajo a realizar...',
                 hintStyle: TextStyle(color: Colors.grey[600]),
                 filled: true,
-                fillColor: const Color(0xFF2C2C2C),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                fillColor: AppTheme.grisOscuro,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMD)),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   borderSide: BorderSide(color: Colors.grey[800]!),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   borderSide: const BorderSide(color: Color(0xFFFFD700)),
                 ),
                 alignLabelWithHint: true,
@@ -755,14 +757,14 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
               validator: (value) =>
                   value?.isEmpty ?? true ? 'Ingresa una descripción' : null,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: AppTheme.spacingMD),
 
             // Fecha y hora preferida para visita
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(AppTheme.paddingMD),
               decoration: BoxDecoration(
-                color: const Color(0xFF2C2C2C),
-                borderRadius: BorderRadius.circular(12),
+                color: AppTheme.grisOscuro,
+                borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                 border: Border.all(color: Colors.grey[800]!),
               ),
               child: Column(
@@ -771,7 +773,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                   Row(
                     children: [
                       const Icon(Icons.calendar_today, color: Color(0xFFFFD700), size: 20),
-                      const SizedBox(width: 8),
+                      SizedBox(width: AppTheme.spacingSM),
                       const Text(
                         'Fecha y Hora Preferida para Visita',
                         style: TextStyle(
@@ -782,7 +784,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: AppTheme.spacingMD),
                   Row(
                     children: [
                       Expanded(
@@ -795,13 +797,13 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                                 : '${_fechaVisitaPreferida!.day}/${_fechaVisitaPreferida!.month}/${_fechaVisitaPreferida!.year}',
                           ),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFFFFD700),
+                            foregroundColor: AppTheme.dorado,
                             side: const BorderSide(color: Color(0xFFFFD700)),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: AppTheme.spacingSM),
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: _selectHoraVisita,
@@ -812,7 +814,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                                 : '${_horaVisitaPreferida!.hour.toString().padLeft(2, '0')}:${_horaVisitaPreferida!.minute.toString().padLeft(2, '0')}',
                           ),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFFFFD700),
+                            foregroundColor: AppTheme.dorado,
                             side: const BorderSide(color: Color(0xFFFFD700)),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
@@ -821,7 +823,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                     ],
                   ),
                   if (_fechaVisitaPreferida != null || _horaVisitaPreferida != null) ...[
-                    const SizedBox(height: 8),
+                    SizedBox(height: AppTheme.spacingSM),
                     Text(
                       'Nota: Esta es una preferencia. El técnico confirmará la disponibilidad.',
                       style: TextStyle(
@@ -834,22 +836,22 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: AppTheme.spacingMD),
 
             // Selector de propiedad
             if (_propiedades.isNotEmpty)
               DropdownButtonFormField<InventoryProperty>(
                 value: _propiedadSeleccionada,
-                dropdownColor: const Color(0xFF2C2C2C),
-                style: const TextStyle(color: Colors.white),
+                dropdownColor: AppTheme.grisOscuro,
+                style: const TextStyle(color: AppTheme.blanco),
                 decoration: InputDecoration(
                   labelText: 'Propiedad (Opcional)',
                   labelStyle: const TextStyle(color: Color(0xFFFFD700)),
                   hintText: 'Selecciona una propiedad',
                   hintStyle: TextStyle(color: Colors.grey[600]),
                   filled: true,
-                  fillColor: const Color(0xFF2C2C2C),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  fillColor: AppTheme.grisOscuro,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMD)),
                   prefixIcon: const Icon(Icons.home, color: Color(0xFFFFD700)),
                 ),
                 items: _propiedades
@@ -864,14 +866,14 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                     .toList(),
                 onChanged: (value) => setState(() => _propiedadSeleccionada = value),
               ),
-            if (_propiedades.isNotEmpty) const SizedBox(height: 16),
+            if (_propiedades.isNotEmpty) SizedBox(height: AppTheme.spacingMD),
 
             // Fotos de los daños
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(AppTheme.paddingMD),
               decoration: BoxDecoration(
-                color: const Color(0xFF2C2C2C),
-                borderRadius: BorderRadius.circular(12),
+                color: AppTheme.grisOscuro,
+                borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                 border: Border.all(color: Colors.grey[800]!),
               ),
               child: Column(
@@ -880,7 +882,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                   Row(
                     children: [
                       const Icon(Icons.photo_camera, color: Color(0xFFFFD700), size: 20),
-                      const SizedBox(width: 8),
+                      SizedBox(width: AppTheme.spacingSM),
                       const Text(
                         'Fotos de los Daños',
                         style: TextStyle(color: Color(0xFFFFD700), fontSize: 16, fontWeight: FontWeight.bold),
@@ -892,12 +894,12 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: AppTheme.spacingSM),
                   Text(
                     'Sube fotos del problema que necesitas arreglar',
                     style: TextStyle(color: Colors.grey[400], fontSize: 12),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: AppTheme.spacingMD),
                   Row(
                     children: [
                       Expanded(
@@ -906,19 +908,19 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                           icon: const Icon(Icons.image),
                           label: const Text('Galería'),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFFFFD700),
+                            foregroundColor: AppTheme.dorado,
                             side: const BorderSide(color: Color(0xFFFFD700)),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: AppTheme.spacingSM),
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: _fotos.length < 10 ? _takePhoto : null,
                           icon: const Icon(Icons.camera_alt),
                           label: const Text('Cámara'),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFFFFD700),
+                            foregroundColor: AppTheme.dorado,
                             side: const BorderSide(color: Color(0xFFFFD700)),
                           ),
                         ),
@@ -926,7 +928,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                     ],
                   ),
                   if (_fotos.isNotEmpty) ...[
-                    const SizedBox(height: 16),
+                    SizedBox(height: AppTheme.spacingMD),
                     SizedBox(
                       height: 100,
                       child: ListView.builder(
@@ -938,7 +940,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                             child: Stack(
                               children: [
                                 ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(AppTheme.radiusSM),
                                   child: Image.network(
                                     _fotos[index],
                                     width: 100,
@@ -968,7 +970,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                                       child: const Icon(
                                         Icons.close,
                                         size: 16,
-                                        color: Colors.white,
+                                        color: AppTheme.blanco,
                                       ),
                                     ),
                                   ),
@@ -983,26 +985,26 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: AppTheme.spacingMD),
 
             // Presupuesto estimado
             TextFormField(
               controller: _presupuestoController,
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppTheme.blanco),
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
                 labelText: 'Presupuesto Estimado (Opcional)',
                 labelStyle: const TextStyle(color: Color(0xFFFFD700)),
                 prefixText: '\$ ',
-                prefixStyle: const TextStyle(color: Colors.white),
+                prefixStyle: const TextStyle(color: AppTheme.blanco),
                 hintText: '0.00',
                 hintStyle: TextStyle(color: Colors.grey[600]),
                 filled: true,
-                fillColor: const Color(0xFF2C2C2C),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                fillColor: AppTheme.grisOscuro,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMD)),
               ),
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: AppTheme.spacingXL),
 
             // Botón guardar
             SizedBox(
@@ -1010,10 +1012,10 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _saveTicket,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFD700),
-                  foregroundColor: const Color(0xFF2C2C2C),
+                  backgroundColor: AppTheme.dorado,
+                  foregroundColor: AppTheme.grisOscuro,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                   ),
                 ),
                 child: _isLoading

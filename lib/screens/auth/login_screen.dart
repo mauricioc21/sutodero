@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../services/auth_service.dart';
 import '../../services/face_recognition_service.dart';
+import '../../config/app_theme.dart';
 import '../home_screen.dart';
 import 'register_screen.dart';
 
@@ -66,6 +67,67 @@ class _LoginScreenState extends State<LoginScreen> {
   /// Login con reconocimiento facial
   Future<void> _handleFacialLogin() async {
     try {
+      setState(() => _isLoading = true);
+      
+      // Mostrar diálogo de instrucciones
+      if (!mounted) return;
+      final shouldContinue = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: AppTheme.grisOscuro,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.face, color: AppTheme.dorado, size: 32),
+              const SizedBox(width: 12),
+              const Text(
+                'Reconocimiento Facial',
+                style: TextStyle(color: AppTheme.blanco, fontSize: 18),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Instrucciones:',
+                style: TextStyle(
+                  color: AppTheme.blanco,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildInstructionRow('Busca buena iluminación'),
+              _buildInstructionRow('Mira de frente a la cámara'),
+              _buildInstructionRow('Mantén expresión neutral'),
+              _buildInstructionRow('No uses gafas de sol'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('CANCELAR', style: TextStyle(color: AppTheme.grisClaro)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.dorado,
+                foregroundColor: AppTheme.grisOscuro,
+              ),
+              child: const Text('CONTINUAR'),
+            ),
+          ],
+        ),
+      );
+      
+      if (shouldContinue != true) {
+        setState(() => _isLoading = false);
+        return;
+      }
+
       // Solicitar permiso y capturar foto
       final XFile? photo = await _imagePicker.pickImage(
         source: ImageSource.camera,
@@ -73,46 +135,96 @@ class _LoginScreenState extends State<LoginScreen> {
         imageQuality: 85,
       );
 
-      if (photo == null) return;
+      if (photo == null) {
+        setState(() => _isLoading = false);
+        return;
+      }
 
-      setState(() => _isLoading = true);
+      // Mostrar progreso
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Dialog(
+          backgroundColor: AppTheme.grisOscuro,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(AppTheme.spacingXL),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(color: AppTheme.dorado),
+                SizedBox(height: AppTheme.spacingLG),
+                const Text(
+                  'Procesando rostro...',
+                  style: TextStyle(color: AppTheme.blanco, fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
 
       // Autenticar con reconocimiento facial
-      final userId = await _faceRecognitionService.authenticateUser(photo.path);
+      final userId = await _faceRecognitionService.authenticateWithFace(
+        imagePath: photo.path,
+      );
+
+      // Cerrar diálogo de progreso
+      if (mounted) Navigator.pop(context);
 
       if (userId != null && mounted) {
-        // Buscar usuario en Firebase por ID
+        // Login exitoso con reconocimiento facial
         final authService = Provider.of<AuthService>(context, listen: false);
-        // En producción, deberías tener un método para login con userId
-        // Por ahora mostrar éxito
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('✅ Reconocimiento facial exitoso para usuario: $userId'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        // Autenticar usando el userId reconocido
+        final success = await authService.loginWithUserId(userId);
+        
+        if (success && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.white),
+                  SizedBox(width: 12),
+                  Text('✅ Reconocimiento facial exitoso'),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
 
-        // Aquí deberías implementar la lógica de login con userId
-        // Simulación de navegación exitosa
-        await Future.delayed(const Duration(seconds: 1));
-        if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
+          await Future.delayed(const Duration(milliseconds: 500));
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const HomeScreen()),
+            );
+          }
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❌ Error al autenticar usuario'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('❌ No se reconoció el rostro. Intenta de nuevo.'),
+            content: Text('❌ No se reconoció el rostro. Por favor, intenta de nuevo o usa tu contraseña.'),
             backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
+            duration: Duration(seconds: 4),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
+        // Cerrar cualquier diálogo abierto
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('❌ Error: ${e.toString()}'),
@@ -127,19 +239,41 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Widget _buildInstructionRow(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          const Icon(Icons.check, color: AppTheme.dorado, size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(color: AppTheme.blanco, fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 20),
+      body: Container(
+        decoration: BoxDecoration(gradient: AppTheme.gradientBackground),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppTheme.spacingXL,
+              vertical: AppTheme.spacing2XL,
+            ),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                SizedBox(height: AppTheme.spacingLG),
                 
                 // Logo del maestro todero con efecto moderno de resplandor
                 Center(
@@ -148,20 +282,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     height: 220,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      boxShadow: [
-                        // Resplandor dorado suave y difuso
-                        BoxShadow(
-                          color: const Color(0xFFFFD700).withValues(alpha: 0.3),
-                          blurRadius: 60,
-                          spreadRadius: 20,
-                        ),
-                        // Segundo nivel de resplandor más intenso
-                        BoxShadow(
-                          color: const Color(0xFFFFD700).withValues(alpha: 0.2),
-                          blurRadius: 100,
-                          spreadRadius: 40,
-                        ),
-                      ],
+                      boxShadow: AppTheme.goldGlow,
                     ),
                     child: Center(
                       child: Image.asset(
@@ -170,10 +291,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: 200,
                         fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) {
-                          return const Icon(
+                          return Icon(
                             Icons.handyman,
                             size: 100,
-                            color: Color(0xFFFFD700),
+                            color: AppTheme.dorado,
                           );
                         },
                       ),
@@ -181,72 +302,71 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 
-                  const SizedBox(height: 24),
+                  SizedBox(height: AppTheme.spacingXL),
                   
-                  const Text(
+                  Text(
                     'SU TODERO',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFFFFD700),
+                      color: AppTheme.dorado,
                       letterSpacing: 2,
                     ),
                   ),
                   
-                  const SizedBox(height: 8),
+                  SizedBox(height: AppTheme.spacingSM),
                   
-                  const Text(
+                  Text(
                     'Servicios de Reparación y Mantenimiento',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.white70,
+                      color: AppTheme.blanco.withValues(alpha: 0.7),
                       letterSpacing: 0.5,
                     ),
                   ),
                   
-                  const SizedBox(height: 48),
+                  SizedBox(height: AppTheme.spacing3XL),
                   
-                  const Text(
+                  Text(
                     'INICIAR SESIÓN',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppTheme.blanco,
                       letterSpacing: 1,
                     ),
                   ),
                   
-                  const SizedBox(height: 8),
+                  SizedBox(height: AppTheme.spacingSM),
                   
-                  const Text(
+                  Text(
                     'Accede a tu cuenta',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.white60,
+                      color: AppTheme.blanco.withValues(alpha: 0.6),
                     ),
                   ),
                   
-                  const SizedBox(height: 32),
+                  SizedBox(height: AppTheme.spacingXL),
                   
                   Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2C2C2C),
-                      borderRadius: BorderRadius.circular(12),
+                    decoration: AppTheme.containerDecoration(
+                      color: AppTheme.grisOscuro,
                     ),
                     child: TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: AppTheme.blanco),
                       decoration: InputDecoration(
                         hintText: 'Correo Electrónico',
-                        hintStyle: TextStyle(color: Colors.grey[600]),
-                        prefixIcon: const Icon(Icons.email, color: Color(0xFFFFD700)),
+                        hintStyle: TextStyle(color: AppTheme.grisClaro),
+                        prefixIcon: Icon(Icons.email, color: AppTheme.dorado),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 18,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: AppTheme.spacingLG,
+                          vertical: AppTheme.spacingMD,
                         ),
                       ),
                       validator: (value) {
@@ -261,34 +381,33 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppTheme.spacingMD),
                   
                   Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2C2C2C),
-                      borderRadius: BorderRadius.circular(12),
+                    decoration: AppTheme.containerDecoration(
+                      color: AppTheme.grisOscuro,
                     ),
                     child: TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: AppTheme.blanco),
                       decoration: InputDecoration(
                         hintText: 'Contraseña',
-                        hintStyle: TextStyle(color: Colors.grey[600]),
-                        prefixIcon: const Icon(Icons.lock, color: Color(0xFFFFD700)),
+                        hintStyle: TextStyle(color: AppTheme.grisClaro),
+                        prefixIcon: Icon(Icons.lock, color: AppTheme.dorado),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                            color: Colors.grey[600],
+                            color: AppTheme.grisClaro,
                           ),
                           onPressed: () {
                             setState(() => _obscurePassword = !_obscurePassword);
                           },
                         ),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 18,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: AppTheme.spacingLG,
+                          vertical: AppTheme.spacingMD,
                         ),
                       ),
                       validator: (value) {
@@ -303,7 +422,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppTheme.spacingMD),
                   
                   // Checkbox "Recordarme"
                   Row(
@@ -313,12 +432,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           checkboxTheme: CheckboxThemeData(
                             fillColor: WidgetStateProperty.resolveWith<Color>((states) {
                               if (states.contains(WidgetState.selected)) {
-                                return const Color(0xFFFFD700);
+                                return AppTheme.dorado;
                               }
                               return Colors.transparent;
                             }),
-                            checkColor: WidgetStateProperty.all(const Color(0xFF2C2C2C)),
-                            side: const BorderSide(color: Color(0xFFFFD700), width: 2),
+                            checkColor: WidgetStateProperty.all(AppTheme.grisOscuro),
+                            side: BorderSide(color: AppTheme.dorado, width: 2),
                           ),
                         ),
                         child: Checkbox(
@@ -328,38 +447,38 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                         ),
                       ),
-                      const Text(
+                      Text(
                         'Recordarme',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AppTheme.blanco,
                           fontSize: 14,
                         ),
                       ),
                     ],
                   ),
                   
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppTheme.spacingMD),
                   
                   SizedBox(
                     height: 56,
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _handleLogin,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFD700),
-                        foregroundColor: const Color(0xFF2C2C2C),
+                        backgroundColor: AppTheme.dorado,
+                        foregroundColor: AppTheme.grisOscuro,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                         ),
                         elevation: 0,
                       ),
                       child: _isLoading
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 24,
                               height: 24,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  Color(0xFF2C2C2C),
+                                  AppTheme.grisOscuro,
                                 ),
                               ),
                             )
@@ -374,26 +493,26 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   
-                  const SizedBox(height: 24),
+                  SizedBox(height: AppTheme.spacingXL),
                   
                   Row(
                     children: [
-                      Expanded(child: Divider(color: Colors.grey[700])),
+                      Expanded(child: Divider(color: AppTheme.grisClaro)),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: EdgeInsets.symmetric(horizontal: AppTheme.spacingMD),
                         child: Text(
                           'O',
                           style: TextStyle(
-                            color: Colors.grey[600],
+                            color: AppTheme.grisClaro,
                             fontSize: 14,
                           ),
                         ),
                       ),
-                      Expanded(child: Divider(color: Colors.grey[700])),
+                      Expanded(child: Divider(color: AppTheme.grisClaro)),
                     ],
                   ),
                   
-                  const SizedBox(height: 24),
+                  SizedBox(height: AppTheme.spacingXL),
                   
                   // Botón de reconocimiento facial
                   SizedBox(
@@ -401,12 +520,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: OutlinedButton.icon(
                       onPressed: _isLoading ? null : _handleFacialLogin,
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFFFFD700),
-                        side: const BorderSide(color: Color(0xFFFFD700), width: 2),
+                        foregroundColor: AppTheme.dorado,
+                        side: BorderSide(color: AppTheme.dorado, width: 2),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                         ),
-                        backgroundColor: const Color(0xFF1A1A1A),
+                        backgroundColor: AppTheme.negro,
                       ),
                       icon: const Icon(Icons.face, size: 28),
                       label: const Text(
@@ -420,17 +539,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   
-                  const SizedBox(height: 16),
+                  SizedBox(height: AppTheme.spacingMD),
                   
                   OutlinedButton(
                     onPressed: _navigateToRegister,
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFFFD700),
-                      side: const BorderSide(color: Color(0xFFFFD700), width: 2),
+                      foregroundColor: AppTheme.dorado,
+                      side: BorderSide(color: AppTheme.dorado, width: 2),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: EdgeInsets.symmetric(vertical: AppTheme.spacingMD),
                     ),
                     child: const Text(
                       'CREAR CUENTA',
@@ -442,7 +561,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   
-                  const SizedBox(height: 32),
+                  SizedBox(height: AppTheme.spacingXL),
                   
                   Center(
                     child: TextButton(
@@ -453,10 +572,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         );
                       },
-                      child: const Text(
+                      child: Text(
                         '¿Olvidaste tu contraseña?',
                         style: TextStyle(
-                          color: Color(0xFFFFD700),
+                          color: AppTheme.dorado,
                           fontSize: 14,
                         ),
                       ),
@@ -467,6 +586,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
+      ),
     );
   }
 }
