@@ -306,7 +306,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(gradient: AppTheme.gradientBackground),
+        color: AppTheme.negro, // Fondo negro puro igual al logo
         child: SafeArea(
           child: SingleChildScrollView(
             padding: EdgeInsets.symmetric(
@@ -517,9 +517,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   width: 20,
                                   height: 20,
                                   child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                                    strokeWidth: 3,
                                     valueColor: AlwaysStoppedAnimation<Color>(
-                                      AppTheme.grisOscuro,
+                                      AppTheme.negro, // Negro sobre botón dorado = alta visibilidad
                                     ),
                                   ),
                                 ),
@@ -546,52 +546,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   
                   SizedBox(height: AppTheme.spacingXL),
-                  
-                  Row(
-                    children: [
-                      Expanded(child: Divider(color: AppTheme.grisClaro)),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: AppTheme.spacingMD),
-                        child: Text(
-                          'O',
-                          style: TextStyle(
-                            color: AppTheme.grisClaro,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                      Expanded(child: Divider(color: AppTheme.grisClaro)),
-                    ],
-                  ),
-                  
-                  SizedBox(height: AppTheme.spacingXL),
-                  
-                  // Botón de reconocimiento facial
-                  SizedBox(
-                    height: 56,
-                    child: OutlinedButton.icon(
-                      onPressed: _isLoading ? null : _handleFacialLogin,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTheme.dorado,
-                        side: BorderSide(color: AppTheme.dorado, width: 2),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-                        ),
-                        backgroundColor: AppTheme.negro,
-                      ),
-                      icon: const Icon(Icons.face, size: 28),
-                      label: const Text(
-                        'RECONOCIMIENTO FACIAL',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                    ),
-                  ),
-                  
-                  SizedBox(height: AppTheme.spacingMD),
                   
                   OutlinedButton(
                     onPressed: _navigateToRegister,
