@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
 
 /// Servicio universal para captura de fotos 360°
@@ -76,22 +77,50 @@ class Camera360Service {
     _detectedCameras.clear();
 
     try {
-      // Verificar si Bluetooth está disponible
+      // PASO 1: Solicitar permisos de Bluetooth y ubicación
+      final permissionsGranted = await _requestBluetoothPermissions();
+      if (!permissionsGranted) {
+        if (kDebugMode) {
+          debugPrint('❌ Permisos de Bluetooth denegados');
+        }
+        throw PermissionException(
+          'Se necesitan permisos de Bluetooth y ubicación para escanear cámaras 360°. '
+          'Por favor, activa estos permisos en Ajustes del dispositivo.',
+        );
+      }
+
+      // PASO 2: Verificar que Location Services estén activados
+      final locationServiceEnabled = await Permission.location.serviceStatus.isEnabled;
+      if (!locationServiceEnabled) {
+        if (kDebugMode) {
+          debugPrint('❌ Servicios de ubicación desactivados');
+        }
+        throw LocationServiceException(
+          'Para escanear dispositivos Bluetooth, debes activar la Ubicación en Ajustes. '
+          'Android requiere esto por seguridad.',
+        );
+      }
+
+      // PASO 3: Verificar si Bluetooth está disponible
       final isBluetoothAvailable = await FlutterBluePlus.isSupported;
       if (!isBluetoothAvailable) {
         if (kDebugMode) {
           debugPrint('⚠️ Bluetooth no disponible en este dispositivo');
         }
-        return [];
+        throw BluetoothNotSupportedException(
+          'Este dispositivo no soporta Bluetooth.',
+        );
       }
 
-      // Verificar si Bluetooth está encendido
+      // PASO 4: Verificar si Bluetooth está encendido
       final bluetoothState = await FlutterBluePlus.adapterState.first;
       if (bluetoothState != BluetoothAdapterState.on) {
         if (kDebugMode) {
           debugPrint('⚠️ Bluetooth está apagado');
         }
-        return [];
+        throw BluetoothOffException(
+          'Activa Bluetooth en Ajustes del dispositivo para escanear cámaras 360°.',
+        );
       }
 
       if (kDebugMode) {
@@ -145,6 +174,50 @@ class Camera360Service {
         debugPrint('❌ Error al escanear cámaras 360°: $e');
       }
       return [];
+    }
+  }
+
+  /// Solicitar permisos necesarios para Bluetooth
+  Future<bool> _requestBluetoothPermissions() async {
+    try {
+      // Solicitar permisos necesarios para Bluetooth en Android 12+
+      final Map<Permission, PermissionStatus> statuses = await [
+        Permission.bluetoothScan,    // Escanear dispositivos Bluetooth
+        Permission.bluetoothConnect, // Conectar a dispositivos Bluetooth
+        Permission.location,         // Requerido por Android para Bluetooth scanning
+      ].request();
+
+      // Verificar que todos los permisos fueron concedidos
+      final allGranted = statuses.values.every(
+        (status) => status.isGranted || status.isLimited,
+      );
+
+      if (!allGranted) {
+        if (kDebugMode) {
+          debugPrint('⚠️ Algunos permisos no fueron concedidos:');
+          statuses.forEach((permission, status) {
+            debugPrint('  - ${permission.toString()}: ${status.toString()}');
+          });
+        }
+      }
+
+      return allGranted;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error al solicitar permisos de Bluetooth: $e');
+      }
+      return false;
+    }
+  }
+
+  /// Abrir configuración del sistema para permisos
+  Future<void> openSettings() async {
+    try {
+      await openAppSettings();
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error al abrir ajustes: $e');
+      }
     }
   }
 
@@ -286,4 +359,42 @@ class CaptureResult {
     this.photoPath,
     this.requiresManualCapture = false,
   });
+}
+
+/// Excepciones específicas para Bluetooth 360°
+
+/// Error de permisos denegados
+class PermissionException implements Exception {
+  final String message;
+  PermissionException(this.message);
+  
+  @override
+  String toString() => message;
+}
+
+/// Error de servicios de ubicación desactivados
+class LocationServiceException implements Exception {
+  final String message;
+  LocationServiceException(this.message);
+  
+  @override
+  String toString() => message;
+}
+
+/// Error de Bluetooth no soportado
+class BluetoothNotSupportedException implements Exception {
+  final String message;
+  BluetoothNotSupportedException(this.message);
+  
+  @override
+  String toString() => message;
+}
+
+/// Error de Bluetooth apagado
+class BluetoothOffException implements Exception {
+  final String message;
+  BluetoothOffException(this.message);
+  
+  @override
+  String toString() => message;
 }
