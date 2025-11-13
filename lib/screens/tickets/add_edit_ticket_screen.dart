@@ -930,32 +930,15 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                     style: TextStyle(color: Colors.grey[400], fontSize: 12),
                   ),
                   SizedBox(height: AppTheme.spacingMD),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _fotos.length < 10 ? _pickImage : null,
-                          icon: const Icon(Icons.image),
-                          label: const Text('Galería'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppTheme.dorado,
-                            side: const BorderSide(color: Color(0xFFFAB334)),
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: AppTheme.spacingSM),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _fotos.length < 10 ? _takePhoto : null,
-                          icon: const Icon(Icons.camera_alt),
-                          label: const Text('Cámara'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppTheme.dorado,
-                            side: const BorderSide(color: Color(0xFFFAB334)),
-                          ),
-                        ),
-                      ),
-                    ],
+                  // Botón unificado para agregar fotos (cámara o galería)
+                  ElevatedButton.icon(
+                    onPressed: _fotos.length < 10 ? _pickImage : null,
+                    icon: const Icon(Icons.add_photo_alternate),
+                    label: const Text('Agregar Fotos (máx. 10)'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.dorado,
+                      foregroundColor: AppTheme.negro,
+                    ),
                   ),
                   if (_fotos.isNotEmpty) ...[
                     SizedBox(height: AppTheme.spacingMD),
