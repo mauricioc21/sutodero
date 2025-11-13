@@ -322,11 +322,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 
                 // Logo completo de Su Todero con personaje y texto corporativo
                 Center(
-                  child: Container(
+                  child: Padding(
                     padding: EdgeInsets.all(AppTheme.spacingLG),
-                    decoration: BoxDecoration(
-                      color: Colors.transparent, // Fondo transparente para evitar recuadros
-                    ),
                     child: Image.asset(
                       'assets/images/sutodero_login_logo.png',
                       width: MediaQuery.of(context).size.width * 0.85,
