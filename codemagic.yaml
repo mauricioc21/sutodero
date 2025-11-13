@@ -1,0 +1,97 @@
+workflows:
+  ios-workflow:
+    name: iOS Build & Deploy
+    max_build_duration: 60
+    instance_type: mac_mini_m1
+    
+    environment:
+      groups:
+        # Agregar tu Apple Developer credentials aquí
+        - app_store_credentials
+      vars:
+        XCODE_WORKSPACE: "ios/Runner.xcworkspace"
+        XCODE_SCHEME: "Runner"
+        BUNDLE_ID: "sutodero.app"
+        APP_STORE_APP_ID: 1234567890  # Reemplazar con tu App ID
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    
+    scripts:
+      - name: Set up code signing settings on Xcode project
+        script: |
+          xcode-project use-profiles
+      
+      - name: Get Flutter packages
+        script: |
+          flutter packages pub get
+      
+      - name: Install CocoaPods dependencies
+        script: |
+          cd ios
+          pod install
+          cd ..
+      
+      - name: Flutter analyze
+        script: |
+          flutter analyze
+      
+      - name: Flutter build IPA
+        script: |
+          flutter build ipa --release \
+            --export-options-plist=/Users/builder/export_options.plist
+    
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
+    
+    publishing:
+      email:
+        recipients:
+          - tu_email@ejemplo.com  # Reemplazar con tu email
+        notify:
+          success: true
+          failure: true
+      
+      app_store_connect:
+        # Descomenta estas líneas cuando configures App Store Connect
+        # api_key: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        # key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        # issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        
+        # Opciones de distribución
+        submit_to_testflight: true
+        beta_groups:
+          - Beta Testers
+        submit_to_app_store: false
+
+  # Workflow para Android (ya funcional)
+  android-workflow:
+    name: Android Build
+    max_build_duration: 60
+    instance_type: linux_x2
+    
+    environment:
+      flutter: stable
+      java: 17
+    
+    scripts:
+      - name: Get Flutter packages
+        script: |
+          flutter packages pub get
+      
+      - name: Build APK
+        script: |
+          flutter build apk --release
+    
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
+    
+    publishing:
+      email:
+        recipients:
+          - tu_email@ejemplo.com
+        notify:
+          success: true
+          failure: true
