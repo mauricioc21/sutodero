@@ -3,6 +3,8 @@ import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import '../../models/property_listing.dart';
 import '../../services/property_listing_service.dart';
+import '../../widgets/panorama_360_viewer.dart';
+import '../../config/app_theme.dart';
 import 'add_edit_property_listing_screen.dart';
 
 /// Pantalla de detalle completa de una captación inmobiliaria
@@ -489,13 +491,34 @@ class _PropertyListingDetailScreenState extends State<PropertyListingDetailScree
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.threesixty, color: Color(0xFFFFD700)),
-              SizedBox(width: 8),
-              Text(
+              Icon(Icons.threesixty, color: AppTheme.dorado),
+              const SizedBox(width: 8),
+              const Text(
                 'Fotos 360°',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.blanco,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.dorado.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.dorado),
+                ),
+                child: Text(
+                  '${_listing.fotos360.length} vistas',
+                  style: const TextStyle(
+                    color: AppTheme.dorado,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
               ),
             ],
           ),
@@ -508,32 +531,79 @@ class _PropertyListingDetailScreenState extends State<PropertyListingDetailScree
               itemBuilder: (context, index) {
                 return GestureDetector(
                   onTap: () {
-                    // TODO: Abrir visor 360°
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Visor 360° en desarrollo')),
+                    // Abrir visor 360°
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => Panorama360Viewer(
+                          imageUrls: _listing.fotos360,
+                          initialIndex: index,
+                        ),
+                      ),
                     );
                   },
-                  child: Container(
-                    width: 120,
-                    margin: const EdgeInsets.only(right: 8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      image: DecorationImage(
-                        image: NetworkImage(_listing.fotos360[index]),
-                        fit: BoxFit.cover,
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: 120,
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppTheme.dorado, width: 2),
+                          image: DecorationImage(
+                            image: NetworkImage(_listing.fotos360[index]),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
                       ),
-                    ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.threesixty,
-                        size: 40,
-                        color: Colors.white,
+                      // 360° Badge overlay
+                      Positioned(
+                        top: 8,
+                        right: 16,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppTheme.dorado,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            '360°',
+                            style: TextStyle(
+                              color: AppTheme.negro,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                      // Center icon
+                      const Center(
+                        child: Icon(
+                          Icons.threesixty,
+                          size: 40,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 );
               },
             ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.info_outline, size: 14, color: AppTheme.grisClaro),
+              const SizedBox(width: 6),
+              const Text(
+                'Toca una vista para explorar en 360°',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.grisClaro,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
           ),
         ],
       ),
