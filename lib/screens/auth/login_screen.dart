@@ -36,25 +36,69 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
 
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final success = await authService.login(
-      _emailController.text.trim(),
-      _passwordController.text,
-    );
-
-    setState(() => _isLoading = false);
-
-    if (success && mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      
+      // Login con timeout de 15 segundos
+      final success = await authService.login(
+        _emailController.text.trim(),
+        _passwordController.text,
+      ).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('⏱️ Tiempo de espera agotado. Verifica tu conexión.'),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 4),
+              ),
+            );
+          }
+          return false;
+        },
       );
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authService.errorMessage ?? 'Error al iniciar sesión'),
-          backgroundColor: Colors.red,
-        ),
-      );
+
+      if (!mounted) return;
+      
+      setState(() => _isLoading = false);
+
+      if (success) {
+        // Guardar preferencia de "Recordarme"
+        if (_rememberMe) {
+          // TODO: Implementar guardado de email en SharedPreferences
+          if (kDebugMode) {
+            debugPrint('✅ Guardando preferencia de recordar usuario');
+          }
+        }
+        
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const HomeScreen()),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(authService.errorMessage ?? 'Error al iniciar sesión'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error inesperado: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
     }
   }
 
@@ -279,10 +323,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 Center(
                   child: Container(
                     padding: EdgeInsets.all(AppTheme.spacingLG),
+                    decoration: BoxDecoration(
+                      color: Colors.transparent, // Fondo transparente para evitar recuadros
+                    ),
                     child: Image.asset(
                       'assets/images/sutodero_login_logo.png',
                       width: MediaQuery.of(context).size.width * 0.85,
                       fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
                       errorBuilder: (context, error, stackTrace) {
                         // Fallback al logo antiguo si hay error
                         return Column(
@@ -464,15 +512,29 @@ class _LoginScreenState extends State<LoginScreen> {
                         elevation: 0,
                       ),
                       child: _isLoading
-                          ? SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppTheme.grisOscuro,
+                          ? Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      AppTheme.grisOscuro,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                SizedBox(width: 12),
+                                Text(
+                                  'Autenticando...',
+                                  style: TextStyle(
+                                    color: AppTheme.grisOscuro,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             )
                           : const Text(
                               'INICIAR SESIÓN',

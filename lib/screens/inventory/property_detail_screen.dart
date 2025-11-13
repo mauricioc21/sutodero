@@ -1300,7 +1300,9 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     // Obtener fotos 360° de todos los rooms
     final List<String> all360Photos = [];
     for (final room in _rooms) {
-      all360Photos.addAll(room.fotos360);
+      if (room.foto360Url != null && room.foto360Url!.isNotEmpty) {
+        all360Photos.add(room.foto360Url!);
+      }
     }
 
     if (all360Photos.isEmpty) {
@@ -1360,7 +1362,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
 
                 // Contador de fotos
                 Container(
-                  padding: EdgeInsets.all(AppTheme.paddingSM),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: AppTheme.dorado.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(AppTheme.radiusSM),
