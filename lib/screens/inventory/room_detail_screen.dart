@@ -421,26 +421,50 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
             ),
             SizedBox(height: AppTheme.spacingMD),
 
-            // Dimensiones
+            // Dimensiones y Visualización 3D
             if (_room!.ancho != null || _room!.largo != null || _room!.altura != null) ...[
               const Text(
-                'Dimensiones',
+                'Dimensiones y Visualización 3D',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: AppTheme.spacingSM),
+              
+              // Visualización 3D (si hay todas las dimensiones)
+              if (_room!.ancho != null && _room!.largo != null && _room!.altura != null) ...[
+                Card(
+                  elevation: 4,
+                  child: Container(
+                    height: 200,
+                    padding: EdgeInsets.all(AppTheme.paddingMD),
+                    child: CustomPaint(
+                      painter: Room3DPainter(
+                        ancho: _room!.ancho!,
+                        largo: _room!.largo!,
+                        altura: _room!.altura!,
+                      ),
+                      child: Container(),
+                    ),
+                  ),
+                ),
+                SizedBox(height: AppTheme.spacingSM),
+              ],
+              
               Card(
                 child: Padding(
                   padding: EdgeInsets.all(AppTheme.paddingMD),
                   child: Column(
                     children: [
                       if (_room!.ancho != null)
-                        _buildInfoRow('Ancho', '${_room!.ancho} m'),
+                        _buildInfoRow('↔ Ancho', '${_room!.ancho} m'),
                       if (_room!.largo != null)
-                        _buildInfoRow('Largo', '${_room!.largo} m'),
+                        _buildInfoRow('↕ Largo', '${_room!.largo} m'),
                       if (_room!.altura != null)
-                        _buildInfoRow('Altura', '${_room!.altura} m'),
+                        _buildInfoRow('⬆ Altura', '${_room!.altura} m'),
                       if (_room!.area != null)
-                        _buildInfoRow('Área', '${_room!.area!.toStringAsFixed(2)} m²',
+                        _buildInfoRow('📐 Área', '${_room!.area!.toStringAsFixed(2)} m²',
+                            highlight: true),
+                      if (_room!.volumen != null)
+                        _buildInfoRow('🧊 Volumen', '${_room!.volumen!.toStringAsFixed(2)} m³',
                             highlight: true),
                     ],
                   ),
@@ -632,5 +656,172 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
         ],
       ),
     );
+  }
+}
+
+/// Painter para renderizar vista 3D isométrica del espacio
+class Room3DPainter extends CustomPainter {
+  final double ancho;
+  final double largo;
+  final double altura;
+  
+  Room3DPainter({
+    required this.ancho,
+    required this.largo,
+    required this.altura,
+  });
+  
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Escala para que el espacio quepa en el canvas
+    final maxDimension = [ancho, largo, altura].reduce((a, b) => a > b ? a : b);
+    final scale = (size.width * 0.6) / maxDimension;
+    
+    // Centro del canvas
+    final centerX = size.width / 2;
+    final centerY = size.height / 2;
+    
+    // Dimensiones escaladas
+    final w = ancho * scale;
+    final l = largo * scale;
+    final h = altura * scale;
+    
+    // Ángulo isométrico (30 grados)
+    final angle = 3.14159 / 6; // 30 grados en radianes
+    final cosAngle = 0.866; // cos(30°)
+    final sinAngle = 0.5;   // sin(30°)
+    
+    // Transformación isométrica
+    Offset iso(double x, double y, double z) {
+      return Offset(
+        centerX + (x - y) * cosAngle,
+        centerY + (x + y) * sinAngle - z,
+      );
+    }
+    
+    // Definir vértices del cubo (espacio 3D)
+    final v1 = iso(0, 0, 0);        // Base frontal izquierda
+    final v2 = iso(w, 0, 0);        // Base frontal derecha
+    final v3 = iso(w, l, 0);        // Base trasera derecha
+    final v4 = iso(0, l, 0);        // Base trasera izquierda
+    final v5 = iso(0, 0, h);        // Techo frontal izquierda
+    final v6 = iso(w, 0, h);        // Techo frontal derecha
+    final v7 = iso(w, l, h);        // Techo trasera derecha
+    final v8 = iso(0, l, h);        // Techo trasera izquierda
+    
+    // Pinturas
+    final paintFloor = Paint()
+      ..color = const Color(0xFFE8E8E8)
+      ..style = PaintingStyle.fill;
+      
+    final paintWallLeft = Paint()
+      ..color = const Color(0xFFD0D0D0)
+      ..style = PaintingStyle.fill;
+      
+    final paintWallRight = Paint()
+      ..color = const Color(0xFFB8B8B8)
+      ..style = PaintingStyle.fill;
+      
+    final paintEdges = Paint()
+      ..color = const Color(0xFF000000)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+      
+    final paintDimensions = Paint()
+      ..color = const Color(0xFFFFD700)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    
+    // Dibujar cara inferior (piso)
+    final pathFloor = Path()
+      ..moveTo(v1.dx, v1.dy)
+      ..lineTo(v2.dx, v2.dy)
+      ..lineTo(v3.dx, v3.dy)
+      ..lineTo(v4.dx, v4.dy)
+      ..close();
+    canvas.drawPath(pathFloor, paintFloor);
+    canvas.drawPath(pathFloor, paintEdges);
+    
+    // Dibujar cara izquierda
+    final pathLeft = Path()
+      ..moveTo(v1.dx, v1.dy)
+      ..lineTo(v4.dx, v4.dy)
+      ..lineTo(v8.dx, v8.dy)
+      ..lineTo(v5.dx, v5.dy)
+      ..close();
+    canvas.drawPath(pathLeft, paintWallLeft);
+    canvas.drawPath(pathLeft, paintEdges);
+    
+    // Dibujar cara derecha
+    final pathRight = Path()
+      ..moveTo(v2.dx, v2.dy)
+      ..lineTo(v1.dx, v1.dy)
+      ..lineTo(v5.dx, v5.dy)
+      ..lineTo(v6.dx, v6.dy)
+      ..close();
+    canvas.drawPath(pathRight, paintWallRight);
+    canvas.drawPath(pathRight, paintEdges);
+    
+    // Dibujar aristas restantes
+    canvas.drawLine(v3, v7, paintEdges);
+    canvas.drawLine(v4, v8, paintEdges);
+    canvas.drawLine(v5, v6, paintEdges);
+    canvas.drawLine(v6, v7, paintEdges);
+    canvas.drawLine(v7, v8, paintEdges);
+    
+    // Dibujar líneas de dimensiones
+    // Ancho (frontal)
+    canvas.drawLine(
+      Offset(v1.dx, v1.dy + 20),
+      Offset(v2.dx, v2.dy + 20),
+      paintDimensions,
+    );
+    _drawText(canvas, '${ancho.toStringAsFixed(1)}m', 
+      Offset((v1.dx + v2.dx) / 2, v1.dy + 30), 12);
+    
+    // Largo (lateral)
+    canvas.drawLine(
+      Offset(v4.dx - 20, v4.dy),
+      Offset(v8.dx - 20, v8.dy),
+      paintDimensions,
+    );
+    _drawText(canvas, '${largo.toStringAsFixed(1)}m',
+      Offset(v4.dx - 30, (v4.dy + v8.dy) / 2), 12);
+    
+    // Altura (vertical)
+    canvas.drawLine(
+      Offset(v1.dx - 20, v1.dy),
+      Offset(v5.dx - 20, v5.dy),
+      paintDimensions,
+    );
+    _drawText(canvas, '${altura.toStringAsFixed(1)}m',
+      Offset(v1.dx - 35, (v1.dy + v5.dy) / 2), 12);
+    
+    // Etiqueta del espacio
+    _drawText(canvas, 'Vista Isométrica 3D', 
+      Offset(centerX, 20), 14, bold: true);
+  }
+  
+  void _drawText(Canvas canvas, String text, Offset position, double fontSize, {bool bold = false}) {
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: const Color(0xFF000000),
+          fontSize: fontSize,
+          fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(canvas, position - Offset(textPainter.width / 2, textPainter.height / 2));
+  }
+  
+  @override
+  bool shouldRepaint(covariant Room3DPainter oldDelegate) {
+    return oldDelegate.ancho != ancho ||
+           oldDelegate.largo != largo ||
+           oldDelegate.altura != altura;
   }
 }

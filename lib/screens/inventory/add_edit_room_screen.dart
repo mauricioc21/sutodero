@@ -77,6 +77,44 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
     return null;
   }
 
+  /// Calcula el volumen en m³ (ancho × largo × altura)
+  double? get _volumenCalculado {
+    final ancho = double.tryParse(_anchoController.text);
+    final largo = double.tryParse(_largoController.text);
+    final altura = double.tryParse(_alturaController.text);
+    if (ancho != null && largo != null && altura != null && 
+        ancho > 0 && largo > 0 && altura > 0) {
+      return ancho * largo * altura;
+    }
+    return null;
+  }
+
+  /// Valida que las dimensiones estén en rangos razonables
+  String? _validarDimension(String? value, String dimensionName, {double min = 0.1, double max = 50.0}) {
+    if (value == null || value.isEmpty) {
+      return null; // Las dimensiones son opcionales
+    }
+    
+    final dimension = double.tryParse(value);
+    if (dimension == null) {
+      return 'Ingresa un número válido';
+    }
+    
+    if (dimension <= 0) {
+      return '$dimensionName debe ser mayor a 0';
+    }
+    
+    if (dimension < min) {
+      return '$dimensionName muy pequeño (mín: ${min}m)';
+    }
+    
+    if (dimension > max) {
+      return '⚠️ $dimensionName inusual (máx: ${max}m). ¿Estás seguro?';
+    }
+    
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.room != null;
@@ -162,8 +200,10 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.swap_horiz),
                       hintText: 'Ej: 3.5',
+                      helperText: 'Rango: 0.1m - 50m',
                     ),
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    validator: (v) => _validarDimension(v, 'Ancho'),
                     onChanged: (_) => setState(() {}), // Para actualizar el área
                   ),
                 ),
@@ -176,8 +216,10 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.swap_vert),
                       hintText: 'Ej: 4.2',
+                      helperText: 'Rango: 0.1m - 50m',
                     ),
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    validator: (v) => _validarDimension(v, 'Largo'),
                     onChanged: (_) => setState(() {}), // Para actualizar el área
                   ),
                 ),
@@ -195,8 +237,11 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.height),
                       hintText: 'Ej: 2.7',
+                      helperText: 'Rango: 1.8m - 10m',
                     ),
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    validator: (v) => _validarDimension(v, 'Altura', min: 1.8, max: 10.0),
+                    onChanged: (_) => setState(() {}), // Para actualizar el volumen
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -232,6 +277,41 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 16),
+            
+            // Volumen calculado (si hay altura)
+            if (_volumenCalculado != null)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.purple.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.purple.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.view_in_ar, color: Colors.purple),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Volumen (espacio 3D)',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      '${_volumenCalculado!.toStringAsFixed(2)} m³',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.purple,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             const SizedBox(height: 24),
             
             // Sección de características detalladas
