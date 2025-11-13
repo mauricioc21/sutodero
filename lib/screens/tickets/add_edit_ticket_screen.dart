@@ -89,45 +89,75 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
   }
 
   Future<void> _pickImage() async {
+    // Mostrar diálogo para elegir entre cámara o galería
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Agregar Foto'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: AppTheme.dorado),
+              title: const Text('Tomar Foto'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: AppTheme.dorado),
+              title: const Text('Galería'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
     try {
-      final XFile? image = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1920,
-        maxHeight: 1080,
-        imageQuality: 85,
-      );
-      
-      if (image != null) {
-        setState(() {
-          _fotos.add(image.path);
-        });
+      if (source == ImageSource.camera) {
+        // Tomar foto con cámara
+        final XFile? photo = await _imagePicker.pickImage(
+          source: ImageSource.camera,
+          maxWidth: 1920,
+          maxHeight: 1080,
+          imageQuality: 85,
+        );
+        
+        if (photo != null) {
+          setState(() {
+            _fotos.add(photo.path);
+          });
+        }
+      } else {
+        // Seleccionar de galería (permite múltiples)
+        final List<XFile> images = await _imagePicker.pickMultiImage(
+          maxWidth: 1920,
+          maxHeight: 1080,
+          imageQuality: 85,
+        );
+        
+        if (images.isNotEmpty) {
+          setState(() {
+            for (final image in images) {
+              _fotos.add(image.path);
+            }
+          });
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al seleccionar imagen: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error con fotos: $e')),
+        );
+      }
     }
   }
 
+  // Método _takePhoto() ya no es necesario - unificado en _pickImage()
+  @Deprecated('Usar _pickImage() que incluye ambas opciones')
   Future<void> _takePhoto() async {
-    try {
-      final XFile? photo = await _imagePicker.pickImage(
-        source: ImageSource.camera,
-        maxWidth: 1920,
-        maxHeight: 1080,
-        imageQuality: 85,
-      );
-      
-      if (photo != null) {
-        setState(() {
-          _fotos.add(photo.path);
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al tomar foto: $e')),
-      );
-    }
+    await _pickImage();
   }
 
   void _removePhoto(int index) {

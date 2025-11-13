@@ -112,66 +112,120 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     }
   }
 
-  Future<void> _takePhoto() async {
+  Future<void> _addRoomPhotos() async {
+    // Mostrar diálogo para elegir entre cámara o galería
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Agregar Fotos'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: AppTheme.dorado),
+              title: const Text('Tomar Foto'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: AppTheme.dorado),
+              title: const Text('Galería'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null || _room == null) return;
+
     try {
-      final XFile? photo = await _imagePicker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 85,
-      );
-      
-      if (photo != null && _room != null) {
-        // Agregar foto a la lista
-        await _inventoryService.addRoomPhoto(_room!.id, photo.path);
-        await _loadRoom();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Foto agregada correctamente')),
-          );
+      if (source == ImageSource.camera) {
+        // Tomar foto con cámara
+        final XFile? photo = await _imagePicker.pickImage(
+          source: ImageSource.camera,
+          imageQuality: 85,
+        );
+        
+        if (photo != null) {
+          await _inventoryService.addRoomPhoto(_room!.id, photo.path);
+          await _loadRoom();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('✅ Foto agregada correctamente')),
+            );
+          }
+        }
+      } else {
+        // Seleccionar múltiples de galería
+        final List<XFile> photos = await _imagePicker.pickMultiImage(
+          imageQuality: 85,
+        );
+        
+        if (photos.isNotEmpty) {
+          for (final photo in photos) {
+            await _inventoryService.addRoomPhoto(_room!.id, photo.path);
+          }
+          await _loadRoom();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('✅ ${photos.length} fotos agregadas')),
+            );
+          }
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al tomar foto: $e')),
+          SnackBar(content: Text('Error con fotos: $e')),
         );
       }
     }
   }
 
+  // Métodos deprecados - mantener por compatibilidad pero redirigir al nuevo
+  @Deprecated('Usar _addRoomPhotos() que incluye ambas opciones')
+  Future<void> _takePhoto() async {
+    await _addRoomPhotos();
+  }
+
+  @Deprecated('Usar _addRoomPhotos() que incluye ambas opciones')
   Future<void> _pickFromGallery() async {
-    try {
-      final List<XFile> photos = await _imagePicker.pickMultiImage(
-        imageQuality: 85,
-      );
-      
-      if (photos.isNotEmpty && _room != null) {
-        for (final photo in photos) {
-          await _inventoryService.addRoomPhoto(_room!.id, photo.path);
-        }
-        await _loadRoom();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('✅ ${photos.length} fotos agregadas')),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al seleccionar fotos: $e')),
-        );
-      }
-    }
+    await _addRoomPhotos();
   }
 
   Future<void> _take360Photo() async {
+    // Mostrar diálogo para elegir entre cámara o galería para foto 360°
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Agregar Foto 360°'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: AppTheme.dorado),
+              title: const Text('Tomar Foto'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: AppTheme.dorado),
+              title: const Text('Galería'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null || _room == null) return;
+
     try {
       final XFile? photo = await _imagePicker.pickImage(
-        source: ImageSource.camera,
+        source: source,
         imageQuality: 85,
       );
       
-      if (photo != null && _room != null) {
+      if (photo != null) {
         await _inventoryService.setRoom360Photo(_room!.id, photo.path);
         await _loadRoom();
         if (mounted) {
@@ -183,7 +237,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al tomar foto 360°: $e')),
+          SnackBar(content: Text('Error con foto 360°: $e')),
         );
       }
     }
@@ -541,33 +595,15 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
             ),
             SizedBox(height: AppTheme.spacingSM),
             
-            // Botones de captura
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _takePhoto,
-                    icon: const Icon(Icons.camera_alt),
-                    label: const Text('Tomar Foto'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: AppTheme.blanco,
-                    ),
-                  ),
-                ),
-                SizedBox(width: AppTheme.spacingSM),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _pickFromGallery,
-                    icon: const Icon(Icons.photo_library),
-                    label: const Text('Galería'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: AppTheme.blanco,
-                    ),
-                  ),
-                ),
-              ],
+            // Botón unificado de captura de fotos
+            ElevatedButton.icon(
+              onPressed: _addRoomPhotos,
+              icon: const Icon(Icons.add_photo_alternate),
+              label: const Text('Agregar Fotos'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.dorado,
+                foregroundColor: AppTheme.negro,
+              ),
             ),
             SizedBox(height: AppTheme.spacingSM),
             
