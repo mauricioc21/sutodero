@@ -193,4 +193,121 @@ class StorageService {
       return false;
     }
   }
+
+  // ============================================================================
+  // PROPERTY LISTING PHOTO MANAGEMENT
+  // ============================================================================
+
+  /// Sube una foto de captación de inmueble
+  /// 
+  /// [listingId] - ID de la captación
+  /// [filePath] - Ruta local del archivo a subir
+  /// [photoType] - Tipo de foto: 'regular', '360', 'plan2d', 'plan3d'
+  Future<String?> uploadPropertyListingPhoto({
+    required String listingId,
+    required String filePath,
+    required String photoType,
+  }) async {
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) {
+        if (kDebugMode) {
+          debugPrint('❌ Archivo no existe: $filePath');
+        }
+        return null;
+      }
+
+      final fileName = '${_uuid.v4()}.jpg';
+      final storageRef = _storage.ref().child('property_listings/$listingId/$photoType/$fileName');
+
+      if (kDebugMode) {
+        debugPrint('📤 Subiendo foto de captación: property_listings/$listingId/$photoType/$fileName');
+      }
+
+      final uploadTask = storageRef.putFile(file);
+      final snapshot = await uploadTask.timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Timeout al subir foto después de 30 segundos');
+        },
+      );
+
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+      
+      if (kDebugMode) {
+        debugPrint('✅ Foto de captación subida: $downloadUrl');
+      }
+
+      return downloadUrl;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error subiendo foto de captación: $e');
+      }
+      return null;
+    }
+  }
+
+  /// Sube múltiples fotos de captación
+  /// 
+  /// [listingId] - ID de la captación
+  /// [filePaths] - Lista de rutas de archivos
+  /// [photoType] - Tipo de foto: 'regular', '360', 'plan2d', 'plan3d'
+  /// [onProgress] - Callback para reportar progreso (current, total)
+  Future<List<String>> uploadPropertyListingPhotos({
+    required String listingId,
+    required List<String> filePaths,
+    required String photoType,
+    Function(int current, int total)? onProgress,
+  }) async {
+    final urls = <String>[];
+    
+    if (kDebugMode) {
+      debugPrint('📤 Subiendo ${filePaths.length} fotos de captación ($photoType)...');
+    }
+
+    for (int i = 0; i < filePaths.length; i++) {
+      if (onProgress != null) {
+        onProgress(i + 1, filePaths.length);
+      }
+
+      final url = await uploadPropertyListingPhoto(
+        listingId: listingId,
+        filePath: filePaths[i],
+        photoType: photoType,
+      );
+
+      if (url != null) {
+        urls.add(url);
+      } else {
+        if (kDebugMode) {
+          debugPrint('⚠️ No se pudo subir foto ${i + 1}: ${filePaths[i]}');
+        }
+      }
+    }
+
+    if (kDebugMode) {
+      debugPrint('✅ ${urls.length}/${filePaths.length} fotos de captación subidas');
+    }
+
+    return urls;
+  }
+
+  /// Elimina todas las fotos de una captación
+  Future<bool> deletePropertyListingPhotos(String listingId) async {
+    try {
+      final ref = _storage.ref().child('property_listings/$listingId');
+      await ref.delete();
+      
+      if (kDebugMode) {
+        debugPrint('✅ Fotos de captación eliminadas: $listingId');
+      }
+      
+      return true;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error eliminando fotos de captación: $e');
+      }
+      return false;
+    }
+  }
 }
