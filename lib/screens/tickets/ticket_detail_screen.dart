@@ -76,7 +76,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
         context: context,
         barrierDismissible: false,
         builder: (context) => const Center(
-          child: CircularProgressIndicator(color: Color(0xFFFFD700)),
+          child: CircularProgressIndicator(color: Color(0xFFFAB334)),
         ),
       );
       
@@ -161,7 +161,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
           foregroundColor: AppTheme.dorado,
         ),
         body: const Center(
-          child: CircularProgressIndicator(color: Color(0xFFFFD700)),
+          child: CircularProgressIndicator(color: Color(0xFFFAB334)),
         ),
       );
     }
@@ -375,7 +375,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                   child: Text(
                     _ticket!.prioridad.displayName,
                     style: const TextStyle(
-                      color: Color(0xFFFFD700),
+                      color: Color(0xFFFAB334),
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
@@ -401,7 +401,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
           Text(
             _ticket!.tipoServicio.displayName,
             style: const TextStyle(
-              color: Color(0xFFFFD700),
+              color: Color(0xFFFAB334),
               fontSize: 16,
             ),
           ),
@@ -466,12 +466,12 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.history, color: Color(0xFFFFD700), size: 20),
+                    const Icon(Icons.history, color: Color(0xFFFAB334), size: 20),
                     SizedBox(width: AppTheme.spacingSM),
                     const Text(
                       'Historial de Cambios',
                       style: TextStyle(
-                        color: Color(0xFFFFD700),
+                        color: Color(0xFFFAB334),
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -505,7 +505,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
               Text(
                 title,
                 style: const TextStyle(
-                  color: Color(0xFFFFD700),
+                  color: Color(0xFFFAB334),
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                 ),

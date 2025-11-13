@@ -230,7 +230,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     decoration: InputDecoration(
                       hintText: 'Nombre Completo',
                       hintStyle: TextStyle(color: AppTheme.grisClaro),
-                      prefixIcon: const Icon(Icons.person, color: Color(0xFFFFD700)),
+                      prefixIcon: const Icon(Icons.person, color: Color(0xFFFAB334)),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 20,
@@ -264,7 +264,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     decoration: InputDecoration(
                       hintText: 'Correo Electrónico',
                       hintStyle: TextStyle(color: AppTheme.grisClaro),
-                      prefixIcon: const Icon(Icons.email, color: Color(0xFFFFD700)),
+                      prefixIcon: const Icon(Icons.email, color: Color(0xFFFAB334)),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 20,
@@ -298,7 +298,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     decoration: InputDecoration(
                       hintText: 'Teléfono',
                       hintStyle: TextStyle(color: AppTheme.grisClaro),
-                      prefixIcon: const Icon(Icons.phone, color: Color(0xFFFFD700)),
+                      prefixIcon: const Icon(Icons.phone, color: Color(0xFFFAB334)),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 20,
@@ -332,7 +332,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     decoration: InputDecoration(
                       hintText: 'Contraseña',
                       hintStyle: TextStyle(color: AppTheme.grisClaro),
-                      prefixIcon: const Icon(Icons.lock, color: Color(0xFFFFD700)),
+                      prefixIcon: const Icon(Icons.lock, color: Color(0xFFFAB334)),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscurePassword ? Icons.visibility_off : Icons.visibility,
@@ -375,7 +375,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     decoration: InputDecoration(
                       hintText: 'Confirmar Contraseña',
                       hintStyle: TextStyle(color: AppTheme.grisClaro),
-                      prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFFFFD700)),
+                      prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFFFAB334)),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,

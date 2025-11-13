@@ -148,7 +148,7 @@ class PropertyRoom {
         problemas = problemas ?? [],
         fechaCreacion = fechaCreacion ?? DateTime.now();
 
-  /// Área calculada (ancho × largo)
+  /// Área calculada (ancho × largo) - Igual a área de piso
   double? get area {
     if (ancho != null && largo != null) {
       return ancho! * largo!;
@@ -160,6 +160,31 @@ class PropertyRoom {
   double? get volumen {
     if (ancho != null && largo != null && altura != null) {
       return ancho! * largo! * altura!;
+    }
+    return null;
+  }
+
+  /// Área de piso (ancho × largo) - Útil para calcular materiales de piso
+  double? get areaPiso {
+    if (ancho != null && largo != null) {
+      return ancho! * largo!;
+    }
+    return null;
+  }
+
+  /// Área de paredes y techo (2 paredes anchas + 2 paredes largas + techo)
+  /// Útil para calcular pintura o revestimientos
+  /// Fórmula: 2(ancho × altura) + 2(largo × altura) + (ancho × largo)
+  double? get areaParedes {
+    if (ancho != null && largo != null && altura != null) {
+      // Dos paredes anchas
+      final paredAncha = 2 * (ancho! * altura!);
+      // Dos paredes largas
+      final paredLarga = 2 * (largo! * altura!);
+      // Techo
+      final techo = ancho! * largo!;
+      
+      return paredAncha + paredLarga + techo;
     }
     return null;
   }

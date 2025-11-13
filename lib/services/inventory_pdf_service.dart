@@ -20,13 +20,27 @@ class InventoryPdfService {
   ) async {
     final pdf = pw.Document();
     
-    // Cargar logo si existe
+    // Cargar logo corporativo Su Todero
     pw.ImageProvider? logoImage;
     try {
-      logoImage = await imageFromAssetBundle('assets/icons/app_icon.png');
+      logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_yellow.png');
+      if (kDebugMode) {
+        debugPrint('✅ Logo corporativo SU TODERO cargado exitosamente (amarillo)');
+      }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('⚠️ No se pudo cargar el logo: $e');
+        debugPrint('⚠️ No se pudo cargar el logo amarillo: $e');
+      }
+      // Intentar con logo blanco como fallback
+      try {
+        logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_white.png');
+        if (kDebugMode) {
+          debugPrint('✅ Logo alternativo (blanco) cargado');
+        }
+      } catch (e2) {
+        if (kDebugMode) {
+          debugPrint('⚠️ No se pudo cargar ningún logo corporativo: $e2');
+        }
       }
     }
 
@@ -45,7 +59,7 @@ class InventoryPdfService {
             style: pw.TextStyle(
               fontSize: 24,
               fontWeight: pw.FontWeight.bold,
-              color: PdfColor.fromHex('#FFD700'),
+              color: PdfColor.fromHex('#FAB334'),
             ),
             textAlign: pw.TextAlign.center,
           ),
@@ -80,12 +94,27 @@ class InventoryPdfService {
   ) async {
     final pdf = pw.Document();
     
+    // Cargar logo corporativo Su Todero
     pw.ImageProvider? logoImage;
     try {
-      logoImage = await imageFromAssetBundle('assets/icons/app_icon.png');
+      logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_yellow.png');
+      if (kDebugMode) {
+        debugPrint('✅ Logo corporativo SU TODERO cargado exitosamente (amarillo)');
+      }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('⚠️ No se pudo cargar el logo: $e');
+        debugPrint('⚠️ No se pudo cargar el logo amarillo: $e');
+      }
+      // Intentar con logo blanco como fallback
+      try {
+        logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_white.png');
+        if (kDebugMode) {
+          debugPrint('✅ Logo alternativo (blanco) cargado');
+        }
+      } catch (e2) {
+        if (kDebugMode) {
+          debugPrint('⚠️ No se pudo cargar ningún logo corporativo: $e2');
+        }
       }
     }
 
@@ -102,7 +131,7 @@ class InventoryPdfService {
             style: pw.TextStyle(
               fontSize: 24,
               fontWeight: pw.FontWeight.bold,
-              color: PdfColor.fromHex('#FFD700'),
+              color: PdfColor.fromHex('#FAB334'),
             ),
             textAlign: pw.TextAlign.center,
           ),
@@ -138,22 +167,22 @@ class InventoryPdfService {
       ),
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: pw.CrossAxisAlignment.center,
         children: [
           if (logo != null)
-            pw.Image(logo, width: 50, height: 50)
+            pw.Image(logo, height: 35, fit: pw.BoxFit.contain)
           else
-            pw.Container(width: 50, height: 50),
+            pw.Text(
+              'SU TODERO',
+              style: pw.TextStyle(
+                fontSize: 20,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColor.fromHex('#FAB334'),
+              ),
+            ),
           pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: [
-              pw.Text(
-                'SU TODERO',
-                style: pw.TextStyle(
-                  fontSize: 20,
-                  fontWeight: pw.FontWeight.bold,
-                  color: PdfColor.fromHex('#FFD700'),
-                ),
-              ),
               pw.Text(
                 'Gestión de Inventarios',
                 style: pw.TextStyle(fontSize: 12, color: PdfColor.fromHex('#FFFFFF')),
@@ -416,7 +445,7 @@ class InventoryPdfService {
       padding: const pw.EdgeInsets.symmetric(vertical: 12),
       decoration: pw.BoxDecoration(
         border: pw.Border(
-          top: pw.BorderSide(color: PdfColor.fromHex('#FFD700'), width: 2),
+          top: pw.BorderSide(color: PdfColor.fromHex('#FAB334'), width: 2),
         ),
       ),
       child: pw.Column(

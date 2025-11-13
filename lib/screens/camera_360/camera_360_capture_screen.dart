@@ -47,7 +47,7 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFFFFD700),
+                    color: Color(0xFFFAB334),
                   ),
                 ),
               ),
@@ -103,7 +103,7 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.home, color: Color(0xFFFFD700), size: 32),
+              const Icon(Icons.home, color: Color(0xFFFAB334), size: 32),
               SizedBox(width: AppTheme.spacingMD),
               Expanded(
                 child: Column(
@@ -144,7 +144,7 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Color(0xFFFFD700),
+            color: Color(0xFFFAB334),
             letterSpacing: 1,
           ),
         ),
@@ -255,7 +255,7 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
                     ],
                   ),
                 ),
-                const Icon(Icons.arrow_forward_ios, color: Color(0xFFFFD700)),
+                const Icon(Icons.arrow_forward_ios, color: Color(0xFFFAB334)),
               ],
             ),
           ),
@@ -277,13 +277,13 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFFFFD700),
+                color: Color(0xFFFAB334),
                 letterSpacing: 1,
               ),
             ),
             if (!_isScanning)
               IconButton(
-                icon: const Icon(Icons.refresh, color: Color(0xFFFFD700)),
+                icon: const Icon(Icons.refresh, color: Color(0xFFFAB334)),
                 onPressed: _scanForCameras,
               ),
           ],
@@ -294,7 +294,7 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
           const Center(
             child: Column(
               children: [
-                CircularProgressIndicator(color: Color(0xFFFFD700)),
+                CircularProgressIndicator(color: Color(0xFFFAB334)),
                 SizedBox(height: 16),
                 Text(
                   'Escaneando cámaras 360°...',
@@ -322,10 +322,10 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
                 SizedBox(height: AppTheme.spacingSM),
                 TextButton.icon(
                   onPressed: _scanForCameras,
-                  icon: const Icon(Icons.search, color: Color(0xFFFFD700)),
+                  icon: const Icon(Icons.search, color: Color(0xFFFAB334)),
                   label: const Text(
                     'Escanear',
-                    style: TextStyle(color: Color(0xFFFFD700)),
+                    style: TextStyle(color: Color(0xFFFAB334)),
                   ),
                 ),
               ],
@@ -349,7 +349,7 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.camera, color: Color(0xFFFFD700), size: 40),
+          const Icon(Icons.camera, color: Color(0xFFFAB334), size: 40),
           SizedBox(width: AppTheme.spacingMD),
           Expanded(
             child: Column(
@@ -404,7 +404,7 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Color(0xFFFFD700),
+            color: Color(0xFFFAB334),
             letterSpacing: 1,
           ),
         ),

@@ -160,10 +160,10 @@ class _TicketsScreenState extends State<TicketsScreen> {
               decoration: InputDecoration(
                 hintText: 'Buscar tickets...',
                 hintStyle: TextStyle(color: Colors.grey[600]),
-                prefixIcon: const Icon(Icons.search, color: Color(0xFFFFD700)),
+                prefixIcon: const Icon(Icons.search, color: Color(0xFFFAB334)),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear, color: Color(0xFFFFD700)),
+                        icon: const Icon(Icons.clear, color: Color(0xFFFAB334)),
                         onPressed: () {
                           _searchController.clear();
                         },
@@ -184,11 +184,11 @@ class _TicketsScreenState extends State<TicketsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                const Icon(Icons.sort, color: Color(0xFFFFD700), size: 20),
+                const Icon(Icons.sort, color: Color(0xFFFAB334), size: 20),
                 SizedBox(width: AppTheme.spacingSM),
                 const Text(
                   'Ordenar:',
-                  style: TextStyle(color: Color(0xFFFFD700), fontWeight: FontWeight.bold),
+                  style: TextStyle(color: Color(0xFFFAB334), fontWeight: FontWeight.bold),
                 ),
                 SizedBox(width: AppTheme.spacingSM),
                 Expanded(
@@ -241,7 +241,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
           // Lista de tickets
           Expanded(
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFFFFD700)))
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFFFAB334)))
                 : _filteredTickets.isEmpty
                     ? Center(
                         child: Column(

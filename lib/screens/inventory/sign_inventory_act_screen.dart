@@ -64,7 +64,7 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('✓ Foto de reconocimiento facial capturada'),
-              backgroundColor: Color(0xFFFFD700),
+              backgroundColor: Color(0xFFFAB334),
               duration: Duration(seconds: 2),
             ),
           );
@@ -104,7 +104,7 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('✓ Firma capturada correctamente'),
-            backgroundColor: Color(0xFFFFD700),
+            backgroundColor: Color(0xFFFAB334),
             duration: Duration(seconds: 2),
           ),
         );
@@ -218,7 +218,7 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(color: Color(0xFFFFD700)),
+                  CircularProgressIndicator(color: Color(0xFFFAB334)),
                   SizedBox(height: 24),
                   Text(
                     'Procesando autenticación...',

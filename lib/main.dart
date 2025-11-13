@@ -137,7 +137,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                           decoration: BoxDecoration(
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFFFD700).withValues(alpha: 0.4),
+                                color: const Color(0xFFFAB334).withValues(alpha: 0.4),
                                 blurRadius: 40,
                                 spreadRadius: 15,
                               ),
@@ -152,7 +152,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                                 child: const Icon(
                                   Icons.handyman,
                                   size: 120,
-                                  color: Color(0xFFFFD700),
+                                  color: Color(0xFFFAB334),
                                 ),
                               );
                             },
@@ -165,7 +165,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                           style: TextStyle(
                             fontSize: 48,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFFFFD700),
+                            color: Color(0xFFFAB334),
                             letterSpacing: 2,
                             shadows: [
                               Shadow(
@@ -200,7 +200,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 FadeTransition(
                   opacity: _fadeAnimation,
                   child: const CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFFD700)),
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFAB334)),
                     strokeWidth: 3,
                   ),
                 ),

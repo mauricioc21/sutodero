@@ -18,16 +18,27 @@ class PdfService {
   Future<Uint8List> generateTicketPdf(TicketModel ticket) async {
     final pdf = pw.Document();
     
-    // Cargar logo SU TODERO
+    // Cargar logo corporativo SU TODERO (texto amarillo)
     pw.ImageProvider? logoImage;
     try {
-      logoImage = await imageFromAssetBundle('assets/images/logo_sutodero_transparente.png');
+      logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_yellow.png');
       if (kDebugMode) {
-        debugPrint('✅ Logo SU TODERO cargado exitosamente');
+        debugPrint('✅ Logo corporativo SU TODERO cargado exitosamente');
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('⚠️ No se pudo cargar el logo: $e');
+        debugPrint('⚠️ No se pudo cargar el logo corporativo: $e');
+      }
+      // Intentar con logo blanco como fallback
+      try {
+        logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_white.png');
+        if (kDebugMode) {
+          debugPrint('✅ Logo alternativo (blanco) cargado');
+        }
+      } catch (e2) {
+        if (kDebugMode) {
+          debugPrint('⚠️ No se pudo cargar ningún logo: $e2');
+        }
       }
     }
 
@@ -116,7 +127,7 @@ class PdfService {
             style: pw.TextStyle(
               fontSize: 24,
               fontWeight: pw.FontWeight.bold,
-              color: PdfColor.fromHex('#FFD700'), // Dorado corporativo
+              color: PdfColor.fromHex('#FAB334'), // Dorado corporativo
             ),
             textAlign: pw.TextAlign.center,
           ),
@@ -130,7 +141,7 @@ class PdfService {
               _buildStatusBadge(ticket.estado),
             ],
           ),
-          pw.Divider(thickness: 2, color: PdfColor.fromHex('#FFD700')),
+          pw.Divider(thickness: 2, color: PdfColor.fromHex('#FAB334')),
           pw.SizedBox(height: 20),
           
           // Información del ticket
@@ -274,7 +285,7 @@ class PdfService {
                   style: pw.TextStyle(
                     fontSize: 12,
                     fontWeight: pw.FontWeight.bold,
-                    color: PdfColor.fromHex('#FFD700'),
+                    color: PdfColor.fromHex('#FAB334'),
                   ),
                   textAlign: pw.TextAlign.center,
                 ),
@@ -332,7 +343,7 @@ class PdfService {
               width: 80,
               height: 80,
               decoration: pw.BoxDecoration(
-                color: PdfColor.fromHex('#FFD700'), // Dorado
+                color: PdfColor.fromHex('#FAB334'), // Dorado
                 shape: pw.BoxShape.circle,
               ),
               child: pw.Center(
@@ -353,7 +364,7 @@ class PdfService {
                   style: pw.TextStyle(
                     fontSize: 24,
                     fontWeight: pw.FontWeight.bold,
-                    color: PdfColor.fromHex('#FFD700'), // Dorado corporativo
+                    color: PdfColor.fromHex('#FAB334'), // Dorado corporativo
                   ),
                 ),
                 pw.SizedBox(height: 4),
@@ -422,7 +433,7 @@ class PdfService {
             style: pw.TextStyle(
               fontSize: 14,
               fontWeight: pw.FontWeight.bold,
-              color: PdfColor.fromHex('#FFD700'), // Dorado corporativo
+              color: PdfColor.fromHex('#FAB334'), // Dorado corporativo
             ),
           ),
         ),
@@ -431,7 +442,7 @@ class PdfService {
           padding: const pw.EdgeInsets.all(12),
           decoration: pw.BoxDecoration(
             color: PdfColor.fromHex('#F5E6C8'), // Beige claro
-            border: pw.Border.all(color: PdfColor.fromHex('#FFD700'), width: 1),
+            border: pw.Border.all(color: PdfColor.fromHex('#FAB334'), width: 1),
             borderRadius: pw.BorderRadius.circular(8),
           ),
           child: pw.Column(

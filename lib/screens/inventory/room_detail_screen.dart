@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' show cos, sin;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../models/property_room.dart';
@@ -81,7 +82,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
         context: context,
         barrierDismissible: false,
         builder: (context) => const Center(
-          child: CircularProgressIndicator(color: Color(0xFFFFD700)),
+          child: CircularProgressIndicator(color: Color(0xFFFAB334)),
         ),
       );
       
@@ -306,6 +307,24 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     }
   }
 
+  /// Muestra la vista isométrica 3D en un diálogo flotante interactivo
+  void _show3DVisualization() {
+    if (_room == null || _room!.ancho == null || _room!.largo == null || _room!.altura == null) {
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Interactive3DViewer(
+        ancho: _room!.ancho!,
+        largo: _room!.largo!,
+        altura: _room!.altura!,
+        roomName: _room!.nombre,
+      ),
+    );
+  }
+
   Future<void> _editRoom() async {
     if (_room == null) return;
     final result = await Navigator.push<bool>(
@@ -429,21 +448,16 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
               ),
               SizedBox(height: AppTheme.spacingSM),
               
-              // Visualización 3D (si hay todas las dimensiones)
+              // Botón para abrir Vista Isométrica 3D (si hay todas las dimensiones)
               if (_room!.ancho != null && _room!.largo != null && _room!.altura != null) ...[
-                Card(
-                  elevation: 4,
-                  child: Container(
-                    height: 200,
-                    padding: EdgeInsets.all(AppTheme.paddingMD),
-                    child: CustomPaint(
-                      painter: Room3DPainter(
-                        ancho: _room!.ancho!,
-                        largo: _room!.largo!,
-                        altura: _room!.altura!,
-                      ),
-                      child: Container(),
-                    ),
+                ElevatedButton.icon(
+                  onPressed: () => _show3DVisualization(),
+                  icon: const Icon(Icons.view_in_ar),
+                  label: const Text('Vista Isométrica 3D'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.dorado,
+                    foregroundColor: AppTheme.grisOscuro,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   ),
                 ),
                 SizedBox(height: AppTheme.spacingSM),
@@ -466,6 +480,12 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                       if (_room!.volumen != null)
                         _buildInfoRow('🧊 Volumen', '${_room!.volumen!.toStringAsFixed(2)} m³',
                             highlight: true),
+                      if (_room!.areaPiso != null)
+                        _buildInfoRow('🔲 Área de piso (materiales)', '${_room!.areaPiso!.toStringAsFixed(2)} m²',
+                            highlight: true, color: Colors.orange),
+                      if (_room!.areaParedes != null)
+                        _buildInfoRow('🎨 Área paredes + techo (pintura)', '${_room!.areaParedes!.toStringAsFixed(2)} m²',
+                            highlight: true, color: Colors.green),
                     ],
                   ),
                 ),
@@ -633,17 +653,20 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value, {bool highlight = false}) {
+  Widget _buildInfoRow(String label, String value, {bool highlight = false, Color? color}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontWeight: highlight ? FontWeight.bold : FontWeight.normal,
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: color ?? Colors.grey[600],
+                fontWeight: highlight ? FontWeight.bold : FontWeight.normal,
+                fontSize: 13,
+              ),
             ),
           ),
           Text(
@@ -651,6 +674,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
             style: TextStyle(
               fontWeight: highlight ? FontWeight.bold : FontWeight.normal,
               fontSize: highlight ? 16 : 14,
+              color: color,
             ),
           ),
         ],
@@ -728,7 +752,7 @@ class Room3DPainter extends CustomPainter {
       ..strokeWidth = 2.0;
       
     final paintDimensions = Paint()
-      ..color = const Color(0xFFFFD700)
+      ..color = const Color(0xFFFAB334)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
     
@@ -823,5 +847,488 @@ class Room3DPainter extends CustomPainter {
     return oldDelegate.ancho != ancho ||
            oldDelegate.largo != largo ||
            oldDelegate.altura != altura;
+  }
+}
+
+/// Widget interactivo para visualizar el espacio en 3D con controles de rotación
+class Interactive3DViewer extends StatefulWidget {
+  final double ancho;
+  final double largo;
+  final double altura;
+  final String roomName;
+
+  const Interactive3DViewer({
+    super.key,
+    required this.ancho,
+    required this.largo,
+    required this.altura,
+    required this.roomName,
+  });
+
+  @override
+  State<Interactive3DViewer> createState() => _Interactive3DViewerState();
+}
+
+class _Interactive3DViewerState extends State<Interactive3DViewer> {
+  double _rotationAngle = 0.0; // Ángulo de rotación en grados (0-360)
+  
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(20),
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.9,
+        height: MediaQuery.of(context).size.height * 0.75,
+        decoration: BoxDecoration(
+          color: AppTheme.grisOscuro,
+          borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+          border: Border.all(color: AppTheme.dorado, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.dorado.withValues(alpha: 0.3),
+              blurRadius: 20,
+              spreadRadius: 5,
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // Header con título y botón de cerrar
+            Container(
+              padding: EdgeInsets.all(AppTheme.paddingMD),
+              decoration: BoxDecoration(
+                color: AppTheme.negro,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(AppTheme.radiusLG),
+                  topRight: Radius.circular(AppTheme.radiusLG),
+                ),
+                border: Border(
+                  bottom: BorderSide(color: AppTheme.dorado, width: 2),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.view_in_ar, color: AppTheme.dorado, size: 28),
+                  SizedBox(width: AppTheme.spacingSM),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Vista Isométrica 3D',
+                          style: TextStyle(
+                            color: AppTheme.dorado,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          widget.roomName,
+                          style: TextStyle(
+                            color: AppTheme.blanco.withValues(alpha: 0.7),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Botón cerrar (X)
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                    color: AppTheme.blanco,
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.red.withValues(alpha: 0.2),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    tooltip: 'Cerrar',
+                  ),
+                ],
+              ),
+            ),
+            
+            // Área de visualización 3D
+            Expanded(
+              child: Container(
+                padding: EdgeInsets.all(AppTheme.paddingLG),
+                child: CustomPaint(
+                  painter: Rotatable3DPainter(
+                    ancho: widget.ancho,
+                    largo: widget.largo,
+                    altura: widget.altura,
+                    rotationAngle: _rotationAngle,
+                  ),
+                  child: Container(),
+                ),
+              ),
+            ),
+            
+            // Panel de información de dimensiones (scrollable)
+            Container(
+              padding: EdgeInsets.symmetric(
+                vertical: AppTheme.paddingMD,
+              ),
+              decoration: BoxDecoration(
+                color: AppTheme.negro.withValues(alpha: 0.5),
+              ),
+              height: 100,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.symmetric(horizontal: AppTheme.spacingSM),
+                children: [
+                  _buildDimensionChip('↔ Ancho', widget.ancho),
+                  SizedBox(width: AppTheme.spacingSM),
+                  _buildDimensionChip('↕ Largo', widget.largo),
+                  SizedBox(width: AppTheme.spacingSM),
+                  _buildDimensionChip('⬆ Altura', widget.altura),
+                  SizedBox(width: AppTheme.spacingSM),
+                  _buildDimensionChip('📐 Área', widget.ancho * widget.largo, suffix: 'm²'),
+                  SizedBox(width: AppTheme.spacingSM),
+                  _buildDimensionChip('🧊 Volumen', widget.ancho * widget.largo * widget.altura, suffix: 'm³'),
+                  SizedBox(width: AppTheme.spacingSM),
+                  _buildDimensionChip('🔲 Piso', widget.ancho * widget.largo, suffix: 'm²', color: Colors.orange),
+                  SizedBox(width: AppTheme.spacingSM),
+                  _buildDimensionChip('🎨 Paredes', 
+                    2 * (widget.ancho * widget.altura) + 2 * (widget.largo * widget.altura) + (widget.ancho * widget.largo), 
+                    suffix: 'm²', 
+                    color: Colors.green),
+                ],
+              ),
+            ),
+            
+            // Controles de rotación
+            Container(
+              padding: EdgeInsets.all(AppTheme.paddingLG),
+              decoration: BoxDecoration(
+                color: AppTheme.negro,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(AppTheme.radiusLG),
+                  bottomRight: Radius.circular(AppTheme.radiusLG),
+                ),
+                border: Border(
+                  top: BorderSide(color: AppTheme.dorado.withValues(alpha: 0.3), width: 1),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.rotate_right, color: AppTheme.dorado, size: 20),
+                      SizedBox(width: AppTheme.spacingSM),
+                      Text(
+                        'Rotación: ${_rotationAngle.toInt()}°',
+                        style: TextStyle(
+                          color: AppTheme.blanco,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: AppTheme.spacingSM),
+                  Row(
+                    children: [
+                      // Botón rotar izquierda
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _rotationAngle = (_rotationAngle - 15) % 360;
+                          });
+                        },
+                        icon: const Icon(Icons.rotate_left),
+                        color: AppTheme.dorado,
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppTheme.grisOscuro,
+                          padding: const EdgeInsets.all(12),
+                        ),
+                        tooltip: 'Rotar -15°',
+                      ),
+                      
+                      // Slider de rotación
+                      Expanded(
+                        child: SliderTheme(
+                          data: SliderThemeData(
+                            activeTrackColor: AppTheme.dorado,
+                            inactiveTrackColor: AppTheme.grisClaro,
+                            thumbColor: AppTheme.dorado,
+                            overlayColor: AppTheme.dorado.withValues(alpha: 0.2),
+                            trackHeight: 4,
+                          ),
+                          child: Slider(
+                            value: _rotationAngle,
+                            min: 0,
+                            max: 360,
+                            divisions: 24, // 15 grados por división
+                            onChanged: (value) {
+                              setState(() {
+                                _rotationAngle = value;
+                              });
+                            },
+                          ),
+                        ),
+                      ),
+                      
+                      // Botón rotar derecha
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _rotationAngle = (_rotationAngle + 15) % 360;
+                          });
+                        },
+                        icon: const Icon(Icons.rotate_right),
+                        color: AppTheme.dorado,
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppTheme.grisOscuro,
+                          padding: const EdgeInsets.all(12),
+                        ),
+                        tooltip: 'Rotar +15°',
+                      ),
+                      
+                      // Botón reset
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _rotationAngle = 0;
+                          });
+                        },
+                        icon: const Icon(Icons.refresh),
+                        color: AppTheme.blanco,
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppTheme.dorado,
+                          padding: const EdgeInsets.all(12),
+                        ),
+                        tooltip: 'Resetear vista',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildDimensionChip(String label, double value, {String suffix = 'm', Color? color}) {
+    final chipColor = color ?? AppTheme.dorado;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppTheme.grisOscuro,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: chipColor.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: AppTheme.grisClaro,
+              fontSize: 10,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '${value.toStringAsFixed(1)} $suffix',
+            style: TextStyle(
+              color: chipColor,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Painter para vista 3D con capacidad de rotación
+class Rotatable3DPainter extends CustomPainter {
+  final double ancho;
+  final double largo;
+  final double altura;
+  final double rotationAngle; // En grados
+
+  Rotatable3DPainter({
+    required this.ancho,
+    required this.largo,
+    required this.altura,
+    required this.rotationAngle,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Escala para que el espacio quepa en el canvas
+    final maxDimension = [ancho, largo, altura].reduce((a, b) => a > b ? a : b);
+    final scale = (size.width * 0.5) / maxDimension;
+    
+    // Centro del canvas
+    final centerX = size.width / 2;
+    final centerY = size.height / 2;
+    
+    // Dimensiones escaladas
+    final w = ancho * scale;
+    final l = largo * scale;
+    final h = altura * scale;
+    
+    // Convertir ángulo a radianes
+    final rotationRad = rotationAngle * 3.14159 / 180;
+    
+    // Transformación isométrica con rotación
+    Offset iso(double x, double y, double z) {
+      // Aplicar rotación alrededor del eje Y
+      final xRot = x * cos(rotationRad) - y * sin(rotationRad);
+      final yRot = x * sin(rotationRad) + y * cos(rotationRad);
+      
+      // Proyección isométrica
+      final cosAngle = 0.866; // cos(30°)
+      final sinAngle = 0.5;   // sin(30°)
+      
+      return Offset(
+        centerX + (xRot - yRot) * cosAngle,
+        centerY + (xRot + yRot) * sinAngle - z,
+      );
+    }
+    
+    // Definir vértices del cubo
+    final v1 = iso(0, 0, 0);        // Base frontal izquierda
+    final v2 = iso(w, 0, 0);        // Base frontal derecha
+    final v3 = iso(w, l, 0);        // Base trasera derecha
+    final v4 = iso(0, l, 0);        // Base trasera izquierda
+    final v5 = iso(0, 0, h);        // Techo frontal izquierda
+    final v6 = iso(w, 0, h);        // Techo frontal derecha
+    final v7 = iso(w, l, h);        // Techo trasera derecha
+    final v8 = iso(0, l, h);        // Techo trasera izquierda
+    
+    // Pinturas con variación de color según rotación
+    final baseColor = 220 - (rotationAngle / 360 * 40).toInt();
+    
+    final paintFloor = Paint()
+      ..color = Color.fromRGBO(baseColor + 30, baseColor + 30, baseColor + 30, 1)
+      ..style = PaintingStyle.fill;
+      
+    final paintWallLeft = Paint()
+      ..color = Color.fromRGBO(baseColor + 10, baseColor + 10, baseColor + 10, 1)
+      ..style = PaintingStyle.fill;
+      
+    final paintWallRight = Paint()
+      ..color = Color.fromRGBO(baseColor - 10, baseColor - 10, baseColor - 10, 1)
+      ..style = PaintingStyle.fill;
+      
+    final paintEdges = Paint()
+      ..color = const Color(0xFF000000)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5;
+      
+    final paintDimensions = Paint()
+      ..color = const Color(0xFFFAB334)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+    
+    // Dibujar caras (orden depende de la rotación para correcto z-ordering)
+    _drawFaces(canvas, v1, v2, v3, v4, v5, v6, v7, v8, 
+               paintFloor, paintWallLeft, paintWallRight, paintEdges);
+    
+    // Dibujar líneas de dimensiones
+    _drawDimensions(canvas, v1, v2, v4, v5, v8, paintDimensions);
+  }
+  
+  void _drawFaces(Canvas canvas, Offset v1, Offset v2, Offset v3, Offset v4,
+                  Offset v5, Offset v6, Offset v7, Offset v8,
+                  Paint paintFloor, Paint paintWallLeft, Paint paintWallRight, Paint paintEdges) {
+    // Dibujar cara inferior (piso)
+    final pathFloor = Path()
+      ..moveTo(v1.dx, v1.dy)
+      ..lineTo(v2.dx, v2.dy)
+      ..lineTo(v3.dx, v3.dy)
+      ..lineTo(v4.dx, v4.dy)
+      ..close();
+    canvas.drawPath(pathFloor, paintFloor);
+    canvas.drawPath(pathFloor, paintEdges);
+    
+    // Dibujar cara izquierda
+    final pathLeft = Path()
+      ..moveTo(v1.dx, v1.dy)
+      ..lineTo(v4.dx, v4.dy)
+      ..lineTo(v8.dx, v8.dy)
+      ..lineTo(v5.dx, v5.dy)
+      ..close();
+    canvas.drawPath(pathLeft, paintWallLeft);
+    canvas.drawPath(pathLeft, paintEdges);
+    
+    // Dibujar cara derecha/frontal
+    final pathRight = Path()
+      ..moveTo(v2.dx, v2.dy)
+      ..lineTo(v1.dx, v1.dy)
+      ..lineTo(v5.dx, v5.dy)
+      ..lineTo(v6.dx, v6.dy)
+      ..close();
+    canvas.drawPath(pathRight, paintWallRight);
+    canvas.drawPath(pathRight, paintEdges);
+    
+    // Dibujar aristas restantes
+    canvas.drawLine(v3, v7, paintEdges);
+    canvas.drawLine(v4, v8, paintEdges);
+    canvas.drawLine(v5, v6, paintEdges);
+    canvas.drawLine(v6, v7, paintEdges);
+    canvas.drawLine(v7, v8, paintEdges);
+  }
+  
+  void _drawDimensions(Canvas canvas, Offset v1, Offset v2, Offset v4, Offset v5, Offset v8, Paint paint) {
+    // Ancho (frontal)
+    canvas.drawLine(
+      Offset(v1.dx, v1.dy + 20),
+      Offset(v2.dx, v2.dy + 20),
+      paint,
+    );
+    _drawText(canvas, '${ancho.toStringAsFixed(1)}m', 
+      Offset((v1.dx + v2.dx) / 2, v1.dy + 35), 13, bold: true);
+    
+    // Largo (lateral)
+    canvas.drawLine(
+      Offset(v4.dx - 20, v4.dy),
+      Offset(v8.dx - 20, v8.dy),
+      paint,
+    );
+    _drawText(canvas, '${largo.toStringAsFixed(1)}m',
+      Offset(v4.dx - 40, (v4.dy + v8.dy) / 2), 13, bold: true);
+    
+    // Altura (vertical)
+    canvas.drawLine(
+      Offset(v1.dx - 20, v1.dy),
+      Offset(v5.dx - 20, v5.dy),
+      paint,
+    );
+    _drawText(canvas, '${altura.toStringAsFixed(1)}m',
+      Offset(v1.dx - 45, (v1.dy + v5.dy) / 2), 13, bold: true);
+  }
+  
+  void _drawText(Canvas canvas, String text, Offset position, double fontSize, {bool bold = false}) {
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: const Color(0xFFFAB334),
+          fontSize: fontSize,
+          fontWeight: bold ? FontWeight.bold : FontWeight.w600,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(canvas, position - Offset(textPainter.width / 2, textPainter.height / 2));
+  }
+
+  @override
+  bool shouldRepaint(covariant Rotatable3DPainter oldDelegate) {
+    return oldDelegate.ancho != ancho ||
+           oldDelegate.largo != largo ||
+           oldDelegate.altura != altura ||
+           oldDelegate.rotationAngle != rotationAngle;
   }
 }

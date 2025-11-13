@@ -102,7 +102,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
         context: context,
         barrierDismissible: false,
         builder: (context) => const Center(
-          child: CircularProgressIndicator(color: Color(0xFFFFD700)),
+          child: CircularProgressIndicator(color: Color(0xFFFAB334)),
         ),
       );
       
@@ -168,7 +168,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircularProgressIndicator(color: Color(0xFFFFD700)),
+                    CircularProgressIndicator(color: Color(0xFFFAB334)),
                     SizedBox(height: 16),
                     Text('Generando plano 2D...'),
                     Text(
@@ -264,7 +264,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircularProgressIndicator(color: Color(0xFFFFD700)),
+                    CircularProgressIndicator(color: Color(0xFFFAB334)),
                     SizedBox(height: 16),
                     Text('Generando plano 3D isométrico...'),
                     Text(
@@ -987,7 +987,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const CircularProgressIndicator(color: Color(0xFFFFD700)),
+                    const CircularProgressIndicator(color: Color(0xFFFAB334)),
                     SizedBox(height: AppTheme.spacingMD),
                     const Text(
                       'Generando PDF del acta...',
@@ -1106,7 +1106,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                     ),
                     child: const Icon(
                       Icons.panorama_photosphere,
-                      color: Color(0xFFFFD700),
+                      color: Color(0xFFFAB334),
                       size: 24,
                     ),
                   ),
@@ -1210,7 +1210,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                         ),
                         const Icon(
                           Icons.play_circle_filled,
-                          color: Color(0xFFFFD700),
+                          color: Color(0xFFFAB334),
                           size: 32,
                         ),
                       ],

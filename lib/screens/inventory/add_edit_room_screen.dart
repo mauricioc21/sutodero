@@ -89,6 +89,36 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
     return null;
   }
 
+  /// Calcula el área de piso en m² (ancho × largo)
+  /// Útil para calcular materiales de piso (cerámica, madera, etc.)
+  double? get _areaPisoCalculada {
+    final ancho = double.tryParse(_anchoController.text);
+    final largo = double.tryParse(_largoController.text);
+    if (ancho != null && largo != null && ancho > 0 && largo > 0) {
+      return ancho * largo;
+    }
+    return null;
+  }
+
+  /// Calcula el área de paredes y techo en m²
+  /// Fórmula: 2(ancho × altura) + 2(largo × altura) + (ancho × largo)
+  /// Útil para calcular pintura o revestimientos
+  double? get _areaParedesCalculada {
+    final ancho = double.tryParse(_anchoController.text);
+    final largo = double.tryParse(_largoController.text);
+    final altura = double.tryParse(_alturaController.text);
+    if (ancho != null && largo != null && altura != null &&
+        ancho > 0 && largo > 0 && altura > 0) {
+      // Dos paredes anchas + dos paredes largas + techo
+      final paredAncha = 2 * (ancho * altura);
+      final paredLarga = 2 * (largo * altura);
+      final techo = ancho * largo;
+      
+      return paredAncha + paredLarga + techo;
+    }
+    return null;
+  }
+
   /// Valida que las dimensiones estén en rangos razonables
   String? _validarDimension(String? value, String dimensionName, {double min = 0.1, double max = 50.0}) {
     if (value == null || value.isEmpty) {
@@ -307,6 +337,95 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Colors.purple,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 16),
+            
+            // Área de piso (para calcular materiales)
+            if (_areaPisoCalculada != null)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.grid_on, color: Colors.orange),
+                        const SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Área de piso',
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              'Material de piso (cerámica, madera, etc.)',
+                              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Text(
+                      '${_areaPisoCalculada!.toStringAsFixed(2)} m²',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (_areaPisoCalculada != null)
+              const SizedBox(height: 16),
+            
+            // Área de paredes y techo (para pintura)
+            if (_areaParedesCalculada != null)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.format_paint, color: Colors.green),
+                        const SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Área paredes + techo',
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              'Pintura y revestimientos',
+                              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Text(
+                      '${_areaParedesCalculada!.toStringAsFixed(2)} m²',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
                       ),
                     ),
                   ],

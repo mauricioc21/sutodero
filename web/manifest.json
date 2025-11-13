@@ -1,11 +1,11 @@
 {
-    "name": "sutodero",
-    "short_name": "sutodero",
+    "name": "SU TODERO",
+    "short_name": "SU TODERO",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FAB334",
+    "theme_color": "#000000",
+    "description": "Gestión profesional de inventarios, reparaciones y mantenimiento con SU TODERO",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

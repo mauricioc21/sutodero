@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
 /// Tema corporativo unificado de SU TODERO
-/// Colores: Negro, Blanco, Gris, Dorado
+/// Colores: Negro, Blanco, Gris, Amarillo Corporativo
 class AppTheme {
   // Colores Corporativos
   static const Color negro = Color(0xFF000000);
   static const Color blanco = Color(0xFFFFFFFF);
   static const Color grisOscuro = Color(0xFF2C2C2C);
   static const Color grisClaro = Color(0xFF757575);
-  static const Color dorado = Color(0xFFFFD700);
+  static const Color dorado = Color(0xFFFAB334); // Amarillo corporativo Su Todero
   static const Color beigeClaro = Color(0xFFF5E6C8);
   
   // Colores de Estado

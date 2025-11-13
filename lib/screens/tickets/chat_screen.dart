@@ -119,7 +119,7 @@ class _ChatScreenState extends State<ChatScreen> {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
-                    child: CircularProgressIndicator(color: Color(0xFFFFD700)),
+                    child: CircularProgressIndicator(color: Color(0xFFFAB334)),
                   );
                 }
 
@@ -267,7 +267,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     child: Text(
                       message.senderName,
                       style: const TextStyle(
-                        color: Color(0xFFFFD700),
+                        color: Color(0xFFFAB334),
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -340,7 +340,7 @@ class _ChatScreenState extends State<ChatScreen> {
               child: Text(
                 message.senderName[0].toUpperCase(),
                 style: const TextStyle(
-                  color: Color(0xFFFFD700),
+                  color: Color(0xFFFAB334),
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                 ),

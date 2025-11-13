@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:flutter/services.dart';
+import 'package:printing/printing.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:flutter/foundation.dart';
@@ -20,6 +21,30 @@ class InventoryActPdfService {
     List<PropertyRoom>? rooms,
   }) async {
     final pdf = pw.Document();
+
+    // Cargar logo corporativo Su Todero
+    pw.ImageProvider? logoImage;
+    try {
+      logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_yellow.png');
+      if (kDebugMode) {
+        debugPrint('✅ Logo corporativo SU TODERO cargado exitosamente (amarillo)');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ No se pudo cargar el logo amarillo: $e');
+      }
+      // Intentar con logo blanco como fallback
+      try {
+        logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_white.png');
+        if (kDebugMode) {
+          debugPrint('✅ Logo alternativo (blanco) cargado');
+        }
+      } catch (e2) {
+        if (kDebugMode) {
+          debugPrint('⚠️ No se pudo cargar ningún logo corporativo: $e2');
+        }
+      }
+    }
 
     // Descargar imágenes necesarias
     final signatureImage = act.digitalSignatureUrl != null
@@ -49,7 +74,7 @@ class InventoryActPdfService {
         build: (context) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            _buildHeader(),
+            _buildHeader(logoImage),
             pw.SizedBox(height: 20),
             _buildActInfo(act),
             pw.SizedBox(height: 20),
@@ -187,32 +212,51 @@ class InventoryActPdfService {
   }
 
   /// Header principal del documento
-  pw.Widget _buildHeader() {
+  pw.Widget _buildHeader(pw.ImageProvider? logo) {
     return pw.Container(
       padding: const pw.EdgeInsets.all(16),
       decoration: pw.BoxDecoration(
         color: PdfColor.fromHex('#000000'),
         borderRadius: pw.BorderRadius.circular(8),
       ),
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: pw.CrossAxisAlignment.center,
         children: [
-          pw.Text(
-            'ACTA DE INVENTARIO',
-            style: pw.TextStyle(
-              fontSize: 24,
-              fontWeight: pw.FontWeight.bold,
-              color: PdfColor.fromHex('#FFD700'),
+          pw.Expanded(
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  'ACTA DE INVENTARIO',
+                  style: pw.TextStyle(
+                    fontSize: 24,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColor.fromHex('#FAB334'),
+                  ),
+                ),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  'Gestión Inmobiliaria Profesional',
+                  style: pw.TextStyle(
+                    fontSize: 12,
+                    color: PdfColor.fromHex('#F5E6C8'),
+                  ),
+                ),
+              ],
             ),
           ),
-          pw.SizedBox(height: 4),
-          pw.Text(
-            'SU TODERO - Gestión Inmobiliaria',
-            style: pw.TextStyle(
-              fontSize: 12,
-              color: PdfColor.fromHex('#F5E6C8'),
+          if (logo != null)
+            pw.Image(logo, height: 40, fit: pw.BoxFit.contain)
+          else
+            pw.Text(
+              'SU TODERO',
+              style: pw.TextStyle(
+                fontSize: 18,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColor.fromHex('#FAB334'),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -225,7 +269,7 @@ class InventoryActPdfService {
       decoration: pw.BoxDecoration(
         border: pw.Border(
           bottom: pw.BorderSide(
-            color: PdfColor.fromHex('#FFD700'),
+            color: PdfColor.fromHex('#FAB334'),
             width: 2,
           ),
         ),
@@ -391,8 +435,8 @@ class InventoryActPdfService {
     return pw.Container(
       padding: const pw.EdgeInsets.all(12),
       decoration: pw.BoxDecoration(
-        color: PdfColor.fromHex('#FFD700'),
-        border: pw.Border.all(color: PdfColor.fromHex('#FFD700'), width: 2),
+        color: PdfColor.fromHex('#FAB334'),
+        border: pw.Border.all(color: PdfColor.fromHex('#FAB334'), width: 2),
         borderRadius: pw.BorderRadius.circular(8),
       ),
       child: pw.Row(
@@ -689,7 +733,7 @@ class InventoryActPdfService {
       padding: const pw.EdgeInsets.symmetric(vertical: 12),
       decoration: pw.BoxDecoration(
         border: pw.Border(
-          top: pw.BorderSide(color: PdfColor.fromHex('#FFD700'), width: 2),
+          top: pw.BorderSide(color: PdfColor.fromHex('#FAB334'), width: 2),
         ),
       ),
       child: pw.Column(

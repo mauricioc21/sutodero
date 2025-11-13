@@ -70,7 +70,7 @@ class FloorPlan3DService {
                 style: pw.TextStyle(
                   fontSize: 24,
                   fontWeight: pw.FontWeight.bold,
-                  color: PdfColor.fromHex('#FFD700'),
+                  color: PdfColor.fromHex('#FAB334'),
                 ),
               ),
               pw.SizedBox(height: 8),
@@ -93,7 +93,7 @@ class FloorPlan3DService {
           pw.Container(
             padding: const pw.EdgeInsets.all(12),
             decoration: pw.BoxDecoration(
-              color: PdfColor.fromHex('#FFD700'),
+              color: PdfColor.fromHex('#FAB334'),
               borderRadius: pw.BorderRadius.circular(8),
             ),
             child: pw.Text(
@@ -306,7 +306,7 @@ class FloorPlan3DService {
       decoration: pw.BoxDecoration(
         color: PdfColor.fromHex('#F5E6C8'),
         borderRadius: pw.BorderRadius.circular(8),
-        border: pw.Border.all(color: PdfColor.fromHex('#FFD700'), width: 2),
+        border: pw.Border.all(color: PdfColor.fromHex('#FAB334'), width: 2),
       ),
       child: pw.Wrap(
         spacing: 16,
@@ -353,7 +353,7 @@ class FloorPlan3DService {
             'Generado por SU TODERO',
             style: pw.TextStyle(
               fontSize: 10,
-              color: PdfColor.fromHex('#FFD700'),
+              color: PdfColor.fromHex('#FAB334'),
             ),
           ),
           pw.Text(

@@ -185,13 +185,13 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                 const Icon(
                   Icons.qr_code_scanner,
                   size: 80,
-                  color: Color(0xFFFFD700),
+                  color: Color(0xFFFAB334),
                 ),
                 SizedBox(height: AppTheme.spacingXL),
                 const Text(
                   'Escaneo QR',
                   style: TextStyle(
-                    color: Color(0xFFFFD700),
+                    color: Color(0xFFFAB334),
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
@@ -302,7 +302,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
                     const Column(
                       children: [
                         CircularProgressIndicator(
-                          color: Color(0xFFFFD700),
+                          color: Color(0xFFFAB334),
                         ),
                         SizedBox(height: 12),
                         Text(

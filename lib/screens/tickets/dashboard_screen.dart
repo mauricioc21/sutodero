@@ -69,7 +69,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFFFFD700)),
+              child: CircularProgressIndicator(color: Color(0xFFFAB334)),
             )
           : RefreshIndicator(
               onRefresh: _loadData,
@@ -118,7 +118,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         const Text(
           'Resumen General',
           style: TextStyle(
-            color: Color(0xFFFFD700),
+            color: Color(0xFFFAB334),
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
@@ -231,7 +231,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const Text(
             'Distribución por Estado',
             style: TextStyle(
-              color: Color(0xFFFFD700),
+              color: Color(0xFFFAB334),
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -394,7 +394,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const Text(
             'Tickets por Tipo de Servicio',
             style: TextStyle(
-              color: Color(0xFFFFD700),
+              color: Color(0xFFFAB334),
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -561,7 +561,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         const Text(
           'Actividad Reciente',
           style: TextStyle(
-            color: Color(0xFFFFD700),
+            color: Color(0xFFFAB334),
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),

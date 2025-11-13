@@ -69,7 +69,7 @@ class FloorPlanService {
                 style: pw.TextStyle(
                   fontSize: 20,
                   fontWeight: pw.FontWeight.bold,
-                  color: PdfColor.fromHex('#FFD700'),
+                  color: PdfColor.fromHex('#FAB334'),
                 ),
               ),
               pw.SizedBox(height: 4),
@@ -87,7 +87,7 @@ class FloorPlanService {
             style: pw.TextStyle(
               fontSize: 16,
               fontWeight: pw.FontWeight.bold,
-              color: PdfColor.fromHex('#FFD700'),
+              color: PdfColor.fromHex('#FAB334'),
             ),
           ),
         ],
@@ -248,7 +248,7 @@ class FloorPlanService {
             style: pw.TextStyle(
               fontSize: 12,
               fontWeight: pw.FontWeight.bold,
-              color: PdfColor.fromHex('#FFD700'),
+              color: PdfColor.fromHex('#FAB334'),
             ),
           ),
           pw.SizedBox(height: 8),

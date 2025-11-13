@@ -62,7 +62,7 @@ class _VirtualTourViewerScreenState extends State<VirtualTourViewerScreen> {
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFFFD700),
+                  color: Color(0xFFFAB334),
                 ),
               ),
             ),
@@ -88,7 +88,7 @@ class _VirtualTourViewerScreenState extends State<VirtualTourViewerScreen> {
                 }
                 return const Center(
                   child: CircularProgressIndicator(
-                    color: Color(0xFFFFD700),
+                    color: Color(0xFFFAB334),
                   ),
                 );
               },
@@ -129,7 +129,7 @@ class _VirtualTourViewerScreenState extends State<VirtualTourViewerScreen> {
                       children: [
                         const Icon(
                           Icons.info_outline,
-                          color: Color(0xFFFFD700),
+                          color: Color(0xFFFAB334),
                           size: 20,
                         ),
                         SizedBox(width: AppTheme.spacingSM),
@@ -198,7 +198,7 @@ class _VirtualTourViewerScreenState extends State<VirtualTourViewerScreen> {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.touch_app, color: Color(0xFFFFD700), size: 20),
+                    Icon(Icons.touch_app, color: Color(0xFFFAB334), size: 20),
                     SizedBox(width: 8),
                     Text(
                       'Arrastra para explorar',

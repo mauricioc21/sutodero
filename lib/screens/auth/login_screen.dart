@@ -275,57 +275,49 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                 SizedBox(height: AppTheme.spacingLG),
                 
-                // Logo del maestro todero con efecto moderno de resplandor
+                // Logo completo de Su Todero con personaje y texto corporativo
                 Center(
                   child: Container(
-                    width: 220,
-                    height: 220,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: AppTheme.goldGlow,
-                    ),
-                    child: Center(
-                      child: Image.asset(
-                        'assets/images/maestro_todero_nobg.png',
-                        width: 200,
-                        height: 200,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(
-                            Icons.handyman,
-                            size: 100,
-                            color: AppTheme.dorado,
-                          );
-                        },
-                      ),
+                    padding: EdgeInsets.all(AppTheme.spacingLG),
+                    child: Image.asset(
+                      'assets/images/sutodero_login_logo.png',
+                      width: MediaQuery.of(context).size.width * 0.85,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        // Fallback al logo antiguo si hay error
+                        return Column(
+                          children: [
+                            Icon(
+                              Icons.handyman,
+                              size: 100,
+                              color: AppTheme.dorado,
+                            ),
+                            SizedBox(height: AppTheme.spacingMD),
+                            Text(
+                              'SU TODERO',
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.dorado,
+                                letterSpacing: 2,
+                              ),
+                            ),
+                            SizedBox(height: AppTheme.spacingSM),
+                            Text(
+                              'Servicios de Reparación y Mantenimiento',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.blanco.withValues(alpha: 0.7),
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ),
                 ),
-                
-                  SizedBox(height: AppTheme.spacingXL),
-                  
-                  Text(
-                    'SU TODERO',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.dorado,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  
-                  SizedBox(height: AppTheme.spacingSM),
-                  
-                  Text(
-                    'Servicios de Reparación y Mantenimiento',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.blanco.withValues(alpha: 0.7),
-                      letterSpacing: 0.5,
-                    ),
-                  ),
                   
                   SizedBox(height: AppTheme.spacing3XL),
                   

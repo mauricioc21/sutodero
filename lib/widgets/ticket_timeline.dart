@@ -15,7 +15,7 @@ class TicketTimeline extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
-            child: CircularProgressIndicator(color: Color(0xFFFFD700)),
+            child: CircularProgressIndicator(color: Color(0xFFFAB334)),
           );
         }
 
@@ -148,7 +148,7 @@ class TicketTimeline extends StatelessWidget {
   Color _getEventColor(EventType type) {
     switch (type) {
       case EventType.created:
-        return const Color(0xFFFFD700);
+        return const Color(0xFFFAB334);
       case EventType.statusChanged:
         return const Color(0xFF2196F3);
       case EventType.assigned:
@@ -162,7 +162,7 @@ class TicketTimeline extends StatelessWidget {
       case EventType.completed:
         return const Color(0xFF4CAF50);
       case EventType.rated:
-        return const Color(0xFFFFD700);
+        return const Color(0xFFFAB334);
       case EventType.cancelled:
         return Colors.red;
     }

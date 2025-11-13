@@ -70,7 +70,7 @@ class _SignaturePadDialogState extends State<SignaturePadDialog> {
             Text(
               widget.title,
               style: const TextStyle(
-                color: Color(0xFFFFD700),
+                color: Color(0xFFFAB334),
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
@@ -93,7 +93,7 @@ class _SignaturePadDialogState extends State<SignaturePadDialog> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: const Color(0xFFFFD700),
+                  color: const Color(0xFFFAB334),
                   width: 2,
                 ),
               ),
@@ -180,7 +180,7 @@ class _SignaturePadDialogState extends State<SignaturePadDialog> {
                       style: TextStyle(color: Colors.black),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFD700),
+                      backgroundColor: const Color(0xFFFAB334),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
