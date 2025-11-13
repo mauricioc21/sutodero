@@ -18,6 +18,9 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
   final _inventoryService = InventoryService();
   final _nombreController = TextEditingController();
   final _descripcionController = TextEditingController();
+  final _anchoController = TextEditingController();
+  final _largoController = TextEditingController();
+  final _alturaController = TextEditingController();
   RoomType _selectedType = RoomType.otro;
   SpaceCondition _selectedCondition = SpaceCondition.bueno;
   bool _isSaving = false;
@@ -38,6 +41,9 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
     if (widget.room != null) {
       _nombreController.text = widget.room!.nombre;
       _descripcionController.text = widget.room!.descripcion ?? '';
+      _anchoController.text = widget.room!.ancho?.toString() ?? '';
+      _largoController.text = widget.room!.largo?.toString() ?? '';
+      _alturaController.text = widget.room!.altura?.toString() ?? '';
       _selectedType = widget.room!.tipo;
       _selectedCondition = widget.room!.estado;
       _tipoPiso = widget.room!.tipoPiso;
@@ -49,6 +55,26 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
       _vista = widget.room!.vista;
       _iluminacionNatural = widget.room!.iluminacionNatural;
     }
+  }
+
+  @override
+  void dispose() {
+    _nombreController.dispose();
+    _descripcionController.dispose();
+    _anchoController.dispose();
+    _largoController.dispose();
+    _alturaController.dispose();
+    super.dispose();
+  }
+
+  /// Calcula el área en m² (ancho × largo)
+  double? get _areaCalculada {
+    final ancho = double.tryParse(_anchoController.text);
+    final largo = double.tryParse(_largoController.text);
+    if (ancho != null && largo != null && ancho > 0 && largo > 0) {
+      return ancho * largo;
+    }
+    return null;
   }
 
   @override
@@ -107,6 +133,104 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
                 border: OutlineInputBorder(),
               ),
               maxLines: 3,
+            ),
+            const SizedBox(height: 24),
+            
+            // Sección de DIMENSIONES
+            const Divider(thickness: 2),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                '📏 Dimensiones del Espacio',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Ingresa las medidas en metros para generar planos precisos',
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ),
+            const SizedBox(height: 16),
+            
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _anchoController,
+                    decoration: const InputDecoration(
+                      labelText: 'Ancho (m)',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.swap_horiz),
+                      hintText: 'Ej: 3.5',
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    onChanged: (_) => setState(() {}), // Para actualizar el área
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: _largoController,
+                    decoration: const InputDecoration(
+                      labelText: 'Largo (m)',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.swap_vert),
+                      hintText: 'Ej: 4.2',
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    onChanged: (_) => setState(() {}), // Para actualizar el área
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _alturaController,
+                    decoration: const InputDecoration(
+                      labelText: 'Altura (m)',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.height),
+                      hintText: 'Ej: 2.7',
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Área calculada',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _areaCalculada != null
+                              ? '${_areaCalculada!.toStringAsFixed(2)} m²'
+                              : '-- m²',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: _areaCalculada != null ? Colors.blue : Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 24),
             
@@ -308,12 +432,19 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
     try {
+      final ancho = _anchoController.text.isEmpty ? null : double.tryParse(_anchoController.text);
+      final largo = _largoController.text.isEmpty ? null : double.tryParse(_largoController.text);
+      final altura = _alturaController.text.isEmpty ? null : double.tryParse(_alturaController.text);
+      
       if (widget.room != null) {
         final updated = widget.room!.copyWith(
           nombre: _nombreController.text,
           descripcion: _descripcionController.text.isEmpty ? null : _descripcionController.text,
           tipo: _selectedType,
           estado: _selectedCondition,
+          ancho: ancho,
+          largo: largo,
+          altura: altura,
           tipoPiso: _tipoPiso,
           tipoCocina: _tipoCocina,
           materialMeson: _materialMeson,
@@ -335,6 +466,9 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
         );
         // Actualizar con los campos adicionales
         final updated = room.copyWith(
+          ancho: ancho,
+          largo: largo,
+          altura: altura,
           tipoPiso: _tipoPiso,
           tipoCocina: _tipoCocina,
           materialMeson: _materialMeson,
