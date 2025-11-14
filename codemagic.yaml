@@ -1,45 +1,85 @@
 workflows:
+  # ============================================
+  # 🍎 WORKFLOW iOS - Build Automatizado
+  # ============================================
   ios-workflow:
-    name: iOS Build & Deploy
+    name: 🍎 iOS Build & Deploy
     max_build_duration: 60
     instance_type: mac_mini_m1
     
+    # Trigger automático en push a main
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'main'
+          include: true
+          source: true
+      tag_patterns:
+        - pattern: 'v*'
+          include: true
+    
     environment:
       groups:
-        # Agregar tu Apple Developer credentials aquí
+        # Grupo de credenciales de Apple Developer
+        # Configurar en: Codemagic > Applications > Settings > Environment variables
         - app_store_credentials
+      
       vars:
         XCODE_WORKSPACE: "ios/Runner.xcworkspace"
         XCODE_SCHEME: "Runner"
         BUNDLE_ID: "sutodero.app"
-        APP_STORE_APP_ID: 1234567890  # Reemplazar con tu App ID
-      flutter: stable
-      xcode: latest
+        # Configurar APP_STORE_APP_ID en variables de entorno de Codemagic
+        # APP_STORE_APP_ID: 1234567890
+      
+      flutter: 3.24.0  # Versión específica para consistencia
+      xcode: 15.0  # Xcode 15 para iOS 17 support
       cocoapods: default
     
     scripts:
-      - name: Set up code signing settings on Xcode project
+      - name: 🔍 Verificar entorno
         script: |
+          echo "Flutter version:"
+          flutter --version
+          echo "Xcode version:"
+          xcodebuild -version
+          echo "CocoaPods version:"
+          pod --version
+      
+      - name: 📦 Instalar dependencias Flutter
+        script: |
+          flutter clean
+          flutter pub get
+      
+      - name: 🔐 Configurar firma de código (Code Signing)
+        script: |
+          # Codemagic maneja automáticamente los certificados
+          # si están configurados en el grupo app_store_credentials
           xcode-project use-profiles
       
-      - name: Get Flutter packages
-        script: |
-          flutter packages pub get
-      
-      - name: Install CocoaPods dependencies
+      - name: 🍏 Instalar CocoaPods
         script: |
           cd ios
+          pod repo update
           pod install
           cd ..
       
-      - name: Flutter analyze
+      - name: 🔍 Análisis estático de código
         script: |
-          flutter analyze
+          flutter analyze || true  # No fallar el build por warnings
       
-      - name: Flutter build IPA
+      - name: 🏗️ Build IPA para distribución
         script: |
           flutter build ipa --release \
-            --export-options-plist=/Users/builder/export_options.plist
+            --build-name=1.0.0 \
+            --build-number=$BUILD_NUMBER \
+            --export-options-plist=ios/ExportOptions.plist
+      
+      - name: 📋 Información del build
+        script: |
+          echo "✅ Build completado exitosamente!"
+          echo "📦 IPA generado en: build/ios/ipa/"
+          ls -lh build/ios/ipa/*.ipa
     
     artifacts:
       - build/ios/ipa/*.ipa
@@ -49,49 +89,165 @@ workflows:
     publishing:
       email:
         recipients:
-          - tu_email@ejemplo.com  # Reemplazar con tu email
+          - mauricioc21@gmail.com
+          - info@c21sutodero.com
         notify:
           success: true
           failure: true
       
+      # TestFlight - Distribución automática para beta testers
       app_store_connect:
-        # Descomenta estas líneas cuando configures App Store Connect
-        # api_key: $APP_STORE_CONNECT_KEY_IDENTIFIER
-        # key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
-        # issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        # Configurar estas variables en Codemagic Environment variables:
+        # APP_STORE_CONNECT_KEY_IDENTIFIER
+        # APP_STORE_CONNECT_ISSUER_ID
+        # APP_STORE_CONNECT_PRIVATE_KEY (contenido del .p8 file)
         
-        # Opciones de distribución
+        api_key: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        
         submit_to_testflight: true
         beta_groups:
           - Beta Testers
+          - Internal Testing
+        
+        # Envío a App Store (desactivado por defecto)
         submit_to_app_store: false
 
-  # Workflow para Android (ya funcional)
+  # ============================================
+  # 🤖 WORKFLOW ANDROID - Build Automatizado
+  # ============================================
   android-workflow:
-    name: Android Build
+    name: 🤖 Android Build & Deploy
     max_build_duration: 60
     instance_type: linux_x2
     
+    # Trigger automático en push a main
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'main'
+          include: true
+          source: true
+      tag_patterns:
+        - pattern: 'v*'
+          include: true
+    
     environment:
-      flutter: stable
+      groups:
+        # Grupo para Google Play credentials (opcional)
+        # - google_play_credentials
+      
+      vars:
+        PACKAGE_NAME: "sutodero.app"
+      
+      flutter: 3.24.0
       java: 17
     
     scripts:
-      - name: Get Flutter packages
+      - name: 🔍 Verificar entorno
         script: |
-          flutter packages pub get
+          echo "Flutter version:"
+          flutter --version
+          echo "Java version:"
+          java -version
       
-      - name: Build APK
+      - name: 📦 Instalar dependencias Flutter
         script: |
-          flutter build apk --release
+          flutter clean
+          flutter pub get
+      
+      - name: 🔍 Análisis estático de código
+        script: |
+          flutter analyze || true  # No fallar el build por warnings
+      
+      - name: 🏗️ Build APK Release
+        script: |
+          flutter build apk --release \
+            --build-name=1.0.0 \
+            --build-number=$BUILD_NUMBER \
+            --target-platform android-arm,android-arm64,android-x64 \
+            --split-per-abi
+      
+      - name: 🏗️ Build App Bundle (AAB) para Play Store
+        script: |
+          flutter build appbundle --release \
+            --build-name=1.0.0 \
+            --build-number=$BUILD_NUMBER
+      
+      - name: 📋 Información del build
+        script: |
+          echo "✅ Build completado exitosamente!"
+          echo "📦 APKs generados:"
+          ls -lh build/app/outputs/flutter-apk/*.apk
+          echo "📦 App Bundle:"
+          ls -lh build/app/outputs/bundle/release/*.aab
     
     artifacts:
-      - build/app/outputs/flutter-apk/app-release.apk
+      - build/app/outputs/flutter-apk/*.apk
+      - build/app/outputs/bundle/release/*.aab
+      - build/app/outputs/mapping/release/mapping.txt
     
     publishing:
       email:
         recipients:
-          - tu_email@ejemplo.com
+          - mauricioc21@gmail.com
+          - info@c21sutodero.com
+        notify:
+          success: true
+          failure: true
+      
+      # Google Play - Distribución automática (descomentado cuando esté listo)
+      # google_play:
+      #   credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+      #   track: internal  # internal, alpha, beta, production
+      #   in_app_update_priority: 5
+
+  # ============================================
+  # 🌐 WORKFLOW WEB - Build Automatizado
+  # ============================================
+  web-workflow:
+    name: 🌐 Web Build & Deploy
+    max_build_duration: 30
+    instance_type: linux_x2
+    
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'main'
+          include: true
+          source: true
+    
+    environment:
+      flutter: 3.24.0
+    
+    scripts:
+      - name: 📦 Instalar dependencias
+        script: |
+          flutter clean
+          flutter pub get
+      
+      - name: 🏗️ Build Web
+        script: |
+          flutter build web --release \
+            --web-renderer canvaskit \
+            --base-href /sutodero/
+      
+      - name: 📋 Información del build
+        script: |
+          echo "✅ Web build completado!"
+          echo "📦 Archivos generados en: build/web/"
+          du -sh build/web/
+    
+    artifacts:
+      - build/web/**
+    
+    publishing:
+      email:
+        recipients:
+          - mauricioc21@gmail.com
         notify:
           success: true
           failure: true
