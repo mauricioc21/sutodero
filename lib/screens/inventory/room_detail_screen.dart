@@ -140,18 +140,34 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
 
     try {
       if (source == ImageSource.camera) {
-        // Tomar foto con cámara
+        // ✅ FIX: Envolver toma de foto en try-catch más específico
         final XFile? photo = await _imagePicker.pickImage(
           source: ImageSource.camera,
           imageQuality: 85,
-        );
+          maxWidth: 1920,  // Limitar tamaño para evitar OOM
+          maxHeight: 1080,
+        ).catchError((error) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('❌ Error al acceder a la cámara: $error'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return null;
+        });
         
         if (photo != null) {
+          // Guardar foto localmente primero
           await _inventoryService.addRoomPhoto(_room!.id, photo.path);
           await _loadRoom();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('✅ Foto agregada correctamente')),
+              const SnackBar(
+                content: Text('✅ Foto agregada correctamente'),
+                backgroundColor: Colors.green,
+              ),
             );
           }
         }
@@ -159,6 +175,8 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
         // Seleccionar múltiples de galería
         final List<XFile> photos = await _imagePicker.pickMultiImage(
           imageQuality: 85,
+          maxWidth: 1920,
+          maxHeight: 1080,
         );
         
         if (photos.isNotEmpty) {
@@ -168,7 +186,10 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
           await _loadRoom();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('✅ ${photos.length} fotos agregadas')),
+              SnackBar(
+                content: Text('✅ ${photos.length} fotos agregadas'),
+                backgroundColor: Colors.green,
+              ),
             );
           }
         }
@@ -176,7 +197,11 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error con fotos: $e')),
+          SnackBar(
+            content: Text('❌ Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
         );
       }
     }

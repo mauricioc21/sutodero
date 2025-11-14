@@ -8,6 +8,7 @@ import '../../services/property_listing_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/storage_service.dart';
 import '../../config/app_theme.dart';
+import '../../utils/currency_formatter.dart';
 
 /// Pantalla para crear/editar captaciones de inmuebles
 class AddEditPropertyListingScreen extends StatefulWidget {
@@ -70,8 +71,17 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
     _barrioController = TextEditingController(text: widget.listing?.barrio ?? '');
     _descripcionController = TextEditingController(text: widget.listing?.descripcion ?? '');
     _areaController = TextEditingController(text: widget.listing?.area?.toString() ?? '');
-    _precioVentaController = TextEditingController(text: widget.listing?.precioVenta?.toString() ?? '');
-    _precioArriendoController = TextEditingController(text: widget.listing?.precioArriendo?.toString() ?? '');
+    // ✅ FIX: Formatear precios con puntos de miles al cargar
+    _precioVentaController = TextEditingController(
+      text: widget.listing?.precioVenta != null 
+        ? formatCurrency(widget.listing!.precioVenta!) 
+        : ''
+    );
+    _precioArriendoController = TextEditingController(
+      text: widget.listing?.precioArriendo != null 
+        ? formatCurrency(widget.listing!.precioArriendo!) 
+        : ''
+    );
     _administracionController = TextEditingController(text: widget.listing?.administracion?.toString() ?? '');
     _propietarioNombreController = TextEditingController(text: widget.listing?.propietarioNombre ?? '');
     _propietarioTelefonoController = TextEditingController(text: widget.listing?.propietarioTelefono ?? '');
@@ -704,12 +714,14 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
     String? Function(String?)? validator,
     int maxLines = 1,
     TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,  // ✅ FIX: Agregar soporte para formatters
   }) {
     return TextFormField(
       controller: controller,
       style: const TextStyle(color: AppTheme.blanco),
       maxLines: maxLines,
       keyboardType: keyboardType,
+      inputFormatters: inputFormatters,  // ✅ FIX: Aplicar formatters
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: AppTheme.dorado),
@@ -974,9 +986,10 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
           _buildTextField(
             controller: _precioVentaController,
             label: 'Precio de Venta',
-            hint: '350000000',
+            hint: '350.000.000',
             icon: Icons.attach_money,
             keyboardType: TextInputType.number,
+            inputFormatters: [CurrencyInputFormatter()],
           ),
           SizedBox(height: AppTheme.spacingSM),
         ],
@@ -985,9 +998,10 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
           _buildTextField(
             controller: _precioArriendoController,
             label: 'Precio de Arriendo (mensual)',
-            hint: '2500000',
+            hint: '2.500.000',
             icon: Icons.attach_money,
             keyboardType: TextInputType.number,
+            inputFormatters: [CurrencyInputFormatter()],
           ),
           SizedBox(height: AppTheme.spacingSM),
           _buildTextField(

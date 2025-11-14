@@ -121,9 +121,15 @@ class _AddEditPropertyScreenState extends State<AddEditPropertyScreen> {
         await _inventoryService.updateProperty(updated);
       } else {
         final authService = Provider.of<AuthService>(context, listen: false);
+        
+        // ✅ FIX: Esperar a que AuthService termine de cargar el usuario
+        while (authService.isLoading) {
+          await Future.delayed(const Duration(milliseconds: 100));
+        }
+        
         final user = authService.currentUser;
         if (user == null) {
-          throw Exception('Usuario no autenticado');
+          throw Exception('Por favor, inicia sesión nuevamente para crear inventarios');
         }
         await _inventoryService.createProperty(
           userId: user.uid,
