@@ -22,7 +22,7 @@ workflows:
       vars:
         PACKAGE_NAME: "sutodero.app"
       
-      flutter: 3.24.0
+      flutter: stable
       java: 17
     
     scripts:
