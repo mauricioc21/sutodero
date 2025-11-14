@@ -12,15 +12,36 @@ import 'services/auth_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // MODO OFFLINE: Deshabilitar Firebase temporalmente para diagnóstico
-  // Firebase se inicializará en background después del inicio de la app
+  // ✅ FIX: Inicializar Firebase ANTES de crear la app
+  // Esto asegura que Firebase esté disponible cuando el usuario intente hacer login
   if (kDebugMode) {
-    debugPrint('🚀 Iniciando app en MODO OFFLINE');
-    debugPrint('⚠️ Firebase se inicializará en background');
+    debugPrint('🚀 Iniciando app SU TODERO');
+    debugPrint('🔥 Inicializando Firebase...');
   }
   
-  // Inicializar Firebase en background (no bloquea la UI)
-  _initializeFirebaseInBackground();
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    ).timeout(
+      const Duration(seconds: 10),
+      onTimeout: () {
+        if (kDebugMode) {
+          debugPrint('⏱️ Timeout en inicialización de Firebase (10s)');
+          debugPrint('⚠️ La app funcionará en modo local sin Firebase');
+        }
+        throw TimeoutException('Firebase initialization timeout');
+      },
+    );
+    
+    if (kDebugMode) {
+      debugPrint('✅ Firebase inicializado correctamente');
+    }
+  } catch (e) {
+    if (kDebugMode) {
+      debugPrint('⚠️ Error al inicializar Firebase: $e');
+      debugPrint('⚠️ La app funcionará en modo local sin Firebase');
+    }
+  }
   
   runApp(
     MultiProvider(
@@ -30,35 +51,6 @@ void main() async {
       child: const SuToderoApp(),
     ),
   );
-}
-
-/// Inicializar Firebase en background sin bloquear la UI
-void _initializeFirebaseInBackground() {
-  Future.delayed(const Duration(milliseconds: 500), () async {
-    try {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      ).timeout(
-        const Duration(seconds: 5),
-        onTimeout: () {
-          if (kDebugMode) {
-            debugPrint('⏱️ Timeout en inicialización de Firebase (5s)');
-            debugPrint('⚠️ La app funcionará en modo local sin Firebase');
-          }
-          throw TimeoutException('Firebase initialization timeout');
-        },
-      );
-      
-      if (kDebugMode) {
-        debugPrint('✅ Firebase inicializado correctamente en background');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('⚠️ Error al inicializar Firebase: $e');
-        debugPrint('La app funcionará en modo local sin Firebase');
-      }
-    }
-  });
 }
 
 class SuToderoApp extends StatelessWidget {
@@ -99,8 +91,8 @@ class _InitializationScreenState extends State<InitializationScreen> {
   }
 
   Future<void> _initialize() async {
-    // Esperar mínimo 1 segundo para mostrar logo
-    await Future.delayed(const Duration(seconds: 1));
+    // Esperar brevemente para mostrar logo (Firebase ya está inicializado)
+    await Future.delayed(const Duration(milliseconds: 800));
     
     if (mounted) {
       Navigator.of(context).pushReplacement(
