@@ -35,11 +35,26 @@ android {
         versionName = flutter.versionName
     }
 
+    // ✅ CRITICAL: Configure signing with release keystore
+    signingConfigs {
+        create("release") {
+            // Codemagic CI environment variables
+            storeFile = System.getenv("CM_KEYSTORE_PATH")?.let { file(it) }
+                ?: file("../../sutodero-release.jks")
+            storePassword = System.getenv("CM_KEYSTORE_PASSWORD") ?: "Perro2011"
+            keyAlias = System.getenv("CM_KEY_ALIAS") ?: "sutodero"
+            keyPassword = System.getenv("CM_KEYSTORE_PASSWORD") ?: "Perro2011"
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // ✅ Sign with release keystore instead of debug keys
+            signingConfig = signingConfigs.getByName("release")
+            
+            // Optional: Enable proguard/R8 for smaller APK size
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
