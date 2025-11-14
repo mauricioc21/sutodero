@@ -68,3 +68,10 @@ coverage/
 # Generated files
 *.g.dart
 *.freezed.dart
+
+# Android Keystore (SEGURIDAD)
+# IMPORTANTE: El keystore NO debe estar en Git en producción
+# Solo lo incluimos aquí para que puedas descargarlo fácilmente
+# En un proyecto real, esto debería estar en secrets/vault
+*.jks
+!sutodero-release.jks
