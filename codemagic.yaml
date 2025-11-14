@@ -1,121 +1,6 @@
 workflows:
   # ============================================
-  # 🍎 WORKFLOW iOS - Build Automatizado
-  # ============================================
-  ios-workflow:
-    name: 🍎 iOS Build & Deploy
-    max_build_duration: 60
-    instance_type: mac_mini_m1
-    
-    # Trigger automático en push a main
-    triggering:
-      events:
-        - push
-      branch_patterns:
-        - pattern: 'main'
-          include: true
-          source: true
-      tag_patterns:
-        - pattern: 'v*'
-          include: true
-    
-    environment:
-      groups:
-        # Grupo de credenciales de Apple Developer
-        # Configurar en: Codemagic > Applications > Settings > Environment variables
-        - app_store_credentials
-      
-      vars:
-        XCODE_WORKSPACE: "ios/Runner.xcworkspace"
-        XCODE_SCHEME: "Runner"
-        BUNDLE_ID: "sutodero.app"
-        # Configurar APP_STORE_APP_ID en variables de entorno de Codemagic
-        # APP_STORE_APP_ID: 1234567890
-      
-      flutter: 3.24.0  # Versión específica para consistencia
-      xcode: 15.0  # Xcode 15 para iOS 17 support
-      cocoapods: default
-    
-    scripts:
-      - name: 🔍 Verificar entorno
-        script: |
-          echo "Flutter version:"
-          flutter --version
-          echo "Xcode version:"
-          xcodebuild -version
-          echo "CocoaPods version:"
-          pod --version
-      
-      - name: 📦 Instalar dependencias Flutter
-        script: |
-          flutter clean
-          flutter pub get
-      
-      - name: 🔐 Configurar firma de código (Code Signing)
-        script: |
-          # Codemagic maneja automáticamente los certificados
-          # si están configurados en el grupo app_store_credentials
-          xcode-project use-profiles
-      
-      - name: 🍏 Instalar CocoaPods
-        script: |
-          cd ios
-          pod repo update
-          pod install
-          cd ..
-      
-      - name: 🔍 Análisis estático de código
-        script: |
-          flutter analyze || true  # No fallar el build por warnings
-      
-      - name: 🏗️ Build IPA para distribución
-        script: |
-          flutter build ipa --release \
-            --build-name=1.0.0 \
-            --build-number=$BUILD_NUMBER \
-            --export-options-plist=ios/ExportOptions.plist
-      
-      - name: 📋 Información del build
-        script: |
-          echo "✅ Build completado exitosamente!"
-          echo "📦 IPA generado en: build/ios/ipa/"
-          ls -lh build/ios/ipa/*.ipa
-    
-    artifacts:
-      - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
-      - flutter_drive.log
-    
-    publishing:
-      email:
-        recipients:
-          - mauricioc21@gmail.com
-          - info@c21sutodero.com
-        notify:
-          success: true
-          failure: true
-      
-      # TestFlight - Distribución automática para beta testers
-      app_store_connect:
-        # Configurar estas variables en Codemagic Environment variables:
-        # APP_STORE_CONNECT_KEY_IDENTIFIER
-        # APP_STORE_CONNECT_ISSUER_ID
-        # APP_STORE_CONNECT_PRIVATE_KEY (contenido del .p8 file)
-        
-        api_key: $APP_STORE_CONNECT_KEY_IDENTIFIER
-        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
-        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
-        
-        submit_to_testflight: true
-        beta_groups:
-          - Beta Testers
-          - Internal Testing
-        
-        # Envío a App Store (desactivado por defecto)
-        submit_to_app_store: false
-
-  # ============================================
-  # 🤖 WORKFLOW ANDROID - Build Automatizado
+  # 🤖 WORKFLOW ANDROID - Build Automatizado ✅ ACTIVO
   # ============================================
   android-workflow:
     name: 🤖 Android Build & Deploy
@@ -205,7 +90,7 @@ workflows:
       #   in_app_update_priority: 5
 
   # ============================================
-  # 🌐 WORKFLOW WEB - Build Automatizado
+  # 🌐 WORKFLOW WEB - Build Automatizado ✅ ACTIVO
   # ============================================
   web-workflow:
     name: 🌐 Web Build & Deploy
@@ -251,3 +136,56 @@ workflows:
         notify:
           success: true
           failure: true
+
+  # ============================================
+  # 🍎 WORKFLOW iOS - DESACTIVADO ⏸️
+  # ============================================
+  # 
+  # ⚠️ REQUIERE: Apple Developer Account ($99/año)
+  # 
+  # Para activar este workflow cuando estés listo:
+  # 1. Inscríbete en: https://developer.apple.com/programs/enroll/
+  # 2. Obtén tu Team ID
+  # 3. Crea App Store Connect API Key
+  # 4. Configura credenciales en Codemagic
+  # 5. Actualiza ios/ExportOptions.plist con tu Team ID
+  # 6. Descomenta todo el código de abajo
+  # 7. Haz push a GitHub
+  # 
+  # Documentación completa en: CONFIGURACION_CICD_AUTOMATICO.md
+  #
+  # ios-workflow:
+  #   name: 🍎 iOS Build & Deploy
+  #   max_build_duration: 60
+  #   instance_type: mac_mini_m1
+  #   triggering:
+  #     events:
+  #       - push
+  #     branch_patterns:
+  #       - pattern: 'main'
+  #         include: true
+  #   environment:
+  #     groups:
+  #       - app_store_credentials
+  #     vars:
+  #       XCODE_WORKSPACE: "ios/Runner.xcworkspace"
+  #       BUNDLE_ID: "sutodero.app"
+  #     flutter: 3.24.0
+  #     xcode: 15.0
+  #   scripts:
+  #     - name: 📦 Instalar dependencias
+  #       script: flutter pub get
+  #     - name: 🍏 CocoaPods
+  #       script: cd ios && pod install && cd ..
+  #     - name: 🏗️ Build IPA
+  #       script: flutter build ipa --release
+  #   artifacts:
+  #     - build/ios/ipa/*.ipa
+  #   publishing:
+  #     email:
+  #       recipients:
+  #         - mauricioc21@gmail.com
+  #       notify:
+  #         success: true
+  #     app_store_connect:
+  #       submit_to_testflight: true
