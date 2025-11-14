@@ -20,10 +20,6 @@ workflows:
           include: true
     
     environment:
-      groups:
-        # Grupo para Google Play credentials (opcional)
-        # - google_play_credentials
-      
       vars:
         PACKAGE_NAME: "sutodero.app"
       
