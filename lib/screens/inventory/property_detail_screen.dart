@@ -791,7 +791,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.negro.withOpacity(0.05),
+            color: AppTheme.negro.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -820,9 +820,9 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppTheme.beigeClaro.withOpacity(0.3),
+                color: AppTheme.beigeClaro.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                border: Border.all(color: AppTheme.dorado.withOpacity(0.3)),
+                border: Border.all(color: AppTheme.dorado.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -862,7 +862,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: _getTicketStatusColor(ticket.estado).withOpacity(0.2),
+                      color: _getTicketStatusColor(ticket.estado).withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                     ),
                     child: Text(

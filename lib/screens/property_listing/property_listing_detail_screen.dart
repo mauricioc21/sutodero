@@ -535,7 +535,7 @@ class _PropertyListingDetailScreenState extends State<PropertyListingDetailScree
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppTheme.dorado.withOpacity(0.2),
+                  color: AppTheme.dorado.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppTheme.dorado),
                 ),

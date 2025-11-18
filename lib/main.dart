@@ -94,11 +94,12 @@ class _InitializationScreenState extends State<InitializationScreen> {
     // Esperar brevemente para mostrar logo (Firebase ya está inicializado)
     await Future.delayed(const Duration(milliseconds: 800));
     
-    if (mounted) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
-    }
+    // ✅ Check if widget is still mounted before navigation
+    if (!mounted) return;
+    
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+    );
   }
 
   @override
@@ -201,11 +202,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     
     // Navegar al login después de 3 segundos
     Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-        );
-      }
+      // ✅ Check if widget is still mounted before navigation
+      if (!mounted) return;
+      
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
     });
   }
 

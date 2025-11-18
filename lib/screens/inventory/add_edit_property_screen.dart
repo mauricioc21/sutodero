@@ -123,8 +123,17 @@ class _AddEditPropertyScreenState extends State<AddEditPropertyScreen> {
         final authService = Provider.of<AuthService>(context, listen: false);
         
         // ✅ FIX: Esperar a que AuthService termine de cargar el usuario
-        while (authService.isLoading) {
+        // ✅ IMPROVEMENT: Agregar timeout para prevenir loops infinitos
+        int attempts = 0;
+        const maxAttempts = 50; // 5 segundos (50 * 100ms)
+        
+        while (authService.isLoading && attempts < maxAttempts) {
           await Future.delayed(const Duration(milliseconds: 100));
+          attempts++;
+        }
+        
+        if (attempts >= maxAttempts) {
+          throw Exception('Timeout: No se pudo cargar la información del usuario. Por favor, reinicia la aplicación.');
         }
         
         final user = authService.currentUser;

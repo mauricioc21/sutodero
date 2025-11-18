@@ -1070,7 +1070,7 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
       decoration: BoxDecoration(
         color: AppTheme.grisOscuro,
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        border: Border.all(color: AppTheme.dorado.withOpacity(0.3)),
+        border: Border.all(color: AppTheme.dorado.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1104,7 +1104,7 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppTheme.dorado.withOpacity(0.2),
+                  color: AppTheme.dorado.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -1183,7 +1183,7 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
       decoration: BoxDecoration(
         color: AppTheme.grisOscuro,
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        border: Border.all(color: AppTheme.dorado.withOpacity(0.3)),
+        border: Border.all(color: AppTheme.dorado.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1218,7 +1218,7 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: AppTheme.dorado.withOpacity(0.2),
+                    color: AppTheme.dorado.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -1258,7 +1258,7 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.8),
+                          color: Colors.red.withValues(alpha: 0.8),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -1276,7 +1276,7 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.orange.withOpacity(0.9),
+                          color: Colors.orange.withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: const Text(
@@ -1353,7 +1353,7 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
             child: Container(
               padding: const EdgeInsets.all(2),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.8),
+                color: Colors.red.withValues(alpha: 0.8),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -1372,7 +1372,7 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.9),
+                color: Colors.orange.withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: const Text(

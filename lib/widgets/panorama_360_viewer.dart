@@ -206,7 +206,7 @@ class _Panorama360ViewerState extends State<Panorama360Viewer> {
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.transparent,
-                        AppTheme.negro.withOpacity(0.8),
+                        AppTheme.negro.withValues(alpha: 0.8),
                       ],
                     ),
                   ),
@@ -227,7 +227,7 @@ class _Panorama360ViewerState extends State<Panorama360Viewer> {
                                 shape: BoxShape.circle,
                                 color: index == _currentIndex
                                     ? AppTheme.dorado
-                                    : AppTheme.grisClaro.withOpacity(0.3),
+                                    : AppTheme.grisClaro.withValues(alpha: 0.3),
                               ),
                             ),
                           ),
@@ -268,7 +268,7 @@ class _Panorama360ViewerState extends State<Panorama360Viewer> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.grisOscuro.withOpacity(0.8),
+        color: AppTheme.grisOscuro.withValues(alpha: 0.8),
         shape: BoxShape.circle,
         border: Border.all(color: AppTheme.dorado, width: 2),
       ),
