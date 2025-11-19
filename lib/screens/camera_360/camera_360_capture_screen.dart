@@ -4,6 +4,7 @@ import '../../services/storage_service.dart';
 import '../../services/virtual_tour_service.dart';
 import '../../models/inventory_property.dart';
 import '../../config/app_theme.dart';
+import '../../widgets/camera_360_live_preview.dart';
 
 /// Pantalla universal de captura de fotos 360°
 /// Soporta múltiples métodos: Galería, Cámara del teléfono, Bluetooth
@@ -28,6 +29,7 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
   bool _isScanning = false;
   List<String> _capturedPhotos = [];
   bool _isUploading = false;
+  Camera360Device? _connectedCamera; // Track connected camera for live preview
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +76,11 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
               _buildBluetoothCamerasSection(),
               
               SizedBox(height: AppTheme.spacingXL),
+              
+              // Live Preview Widget (cuando hay cámara conectada)
+              if (_connectedCamera != null) _buildLivePreviewSection(),
+              
+              if (_connectedCamera != null) SizedBox(height: AppTheme.spacingXL),
               
               // Fotos capturadas
               if (_capturedPhotos.isNotEmpty) _buildCapturedPhotosSection(),
@@ -572,23 +579,79 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
 
   /// Conectar a cámara
   Future<void> _connectToCamera(Camera360Device camera) async {
-    final result = await _camera360Service.captureWith360Camera(camera);
+    // Actualizar estado para mostrar el live preview
+    setState(() {
+      _connectedCamera = camera;
+    });
 
     if (mounted) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('${camera.name}'),
-          content: Text(result.message),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('ENTENDIDO'),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text('✅ Conectado a ${camera.name}'),
+              ),
+            ],
+          ),
+          backgroundColor: AppTheme.success,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+      // Hacer scroll hacia el live preview
+      await Future.delayed(const Duration(milliseconds: 500));
+      // El usuario puede hacer scroll manualmente para ver el preview
+    }
+  }
+
+  /// Sección de Live Preview
+  Widget _buildLivePreviewSection() {
+    if (_connectedCamera == null) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              '📹 VISTA EN VIVO',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFFFAB334),
+                letterSpacing: 1,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close, color: AppTheme.error),
+              onPressed: () {
+                setState(() {
+                  _connectedCamera = null;
+                });
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Desconectado de cámara 360°'),
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+              },
             ),
           ],
         ),
-      );
-    }
+        SizedBox(height: AppTheme.spacingMD),
+        Camera360LivePreview(
+          camera: _connectedCamera!,
+          onPhotoCapture: (photoPath) {
+            // Callback cuando se captura una foto
+            _uploadAndAddPhoto(photoPath);
+          },
+        ),
+      ],
+    );
   }
 
   /// Crear tour virtual
