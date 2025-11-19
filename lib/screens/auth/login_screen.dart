@@ -40,19 +40,19 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       
-      // Login con timeout de 15 segundos
+      // Login con timeout extendido a 45 segundos
       final success = await authService.login(
         _emailController.text.trim(),
         _passwordController.text,
       ).timeout(
-        const Duration(seconds: 15),
+        const Duration(seconds: 45),
         onTimeout: () {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('⏱️ Tiempo de espera agotado. Verifica tu conexión.'),
+                content: Text('⏱️ Tiempo de espera agotado. Verifica tu conexión a internet y vuelve a intentar.'),
                 backgroundColor: Colors.red,
-                duration: Duration(seconds: 4),
+                duration: Duration(seconds: 5),
               ),
             );
           }

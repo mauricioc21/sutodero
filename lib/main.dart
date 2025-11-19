@@ -91,8 +91,8 @@ class _InitializationScreenState extends State<InitializationScreen> {
   }
 
   Future<void> _initialize() async {
-    // Esperar brevemente para mostrar logo (Firebase ya está inicializado)
-    await Future.delayed(const Duration(milliseconds: 800));
+    // Reducir tiempo de splash de 800ms a 300ms para carga más rápida
+    await Future.delayed(const Duration(milliseconds: 300));
     
     // ✅ Check if widget is still mounted before navigation
     if (!mounted) return;

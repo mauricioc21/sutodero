@@ -45,7 +45,7 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // Login con email y contraseña
+  // Login con email y contraseña (OPTIMIZADO)
   Future<bool> login(String email, String password) async {
     _isLoading = true;
     _errorMessage = null;
@@ -53,15 +53,36 @@ class AuthService extends ChangeNotifier {
 
     try {
       if (_firebaseAvailable) {
-        // Login con Firebase Auth
+        // Login con Firebase Auth con timeout más largo
         final credential = await _auth.signInWithEmailAndPassword(
           email: email,
           password: password,
+        ).timeout(
+          const Duration(seconds: 30),
+          onTimeout: () {
+            throw Exception('Timeout: Firebase no responde. Verifica tu conexión a internet.');
+          },
         );
-        await _loadUserData(credential.user!.uid);
+        
+        // Cargar datos de usuario en paralelo (no esperar)
+        _loadUserData(credential.user!.uid).catchError((e) {
+          debugPrint('⚠️ Error al cargar datos completos: $e');
+          // Continuar con datos básicos del usuario
+          _currentUser = UserModel(
+            uid: credential.user!.uid,
+            nombre: credential.user!.displayName ?? 'Usuario',
+            email: credential.user!.email ?? email,
+            rol: 'user',
+            telefono: '',
+          );
+        });
+        
+        // Retornar éxito inmediatamente después del login
+        _isLoading = false;
+        notifyListeners();
+        return true;
       } else {
-        // Modo demo sin Firebase
-        await Future.delayed(const Duration(seconds: 1));
+        // Modo demo sin Firebase (más rápido)
         _currentUser = UserModel(
           uid: 'demo_user',
           nombre: 'Usuario Demo',
@@ -69,11 +90,10 @@ class AuthService extends ChangeNotifier {
           rol: 'admin',
           telefono: '3138160439',
         );
+        _isLoading = false;
+        notifyListeners();
+        return true;
       }
-      
-      _isLoading = false;
-      notifyListeners();
-      return true;
     } on FirebaseAuthException catch (e) {
       _errorMessage = _getFirebaseAuthErrorMessage(e.code);
       _isLoading = false;
@@ -81,6 +101,7 @@ class AuthService extends ChangeNotifier {
       return false;
     } catch (e) {
       _errorMessage = 'Error al iniciar sesión: $e';
+      _firebaseAvailable = false; // Marcar Firebase como no disponible
       _isLoading = false;
       notifyListeners();
       return false;
