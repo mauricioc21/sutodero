@@ -484,7 +484,6 @@ class Camera360Service {
     }
   }
 }
-}
 
 /// Modelo de cámara 360° detectada
 class Camera360Device {

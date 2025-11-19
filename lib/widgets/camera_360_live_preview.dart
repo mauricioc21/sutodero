@@ -425,7 +425,7 @@ class _Camera360LivePreviewState extends State<Camera360LivePreview> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.panorama_360,
+              Icons.panorama_photosphere,
               color: AppTheme.dorado,
               size: 64,
             ),

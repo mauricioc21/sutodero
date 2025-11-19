@@ -75,3 +75,4 @@ coverage/
 # En un proyecto real, esto debería estar en secrets/vault
 *.jks
 !sutodero-release.jks
+SU_TODERO_v1.0.0.apk
