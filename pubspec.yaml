@@ -98,6 +98,7 @@ dependencies:
   
   # Image Processing
   image: ^4.0.0
+  flutter_image_compress: ^2.3.0
   
   # PDF Generation
   pdf: 3.11.1

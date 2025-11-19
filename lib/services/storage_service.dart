@@ -2,8 +2,11 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
 
 /// Servicio para gestionar almacenamiento de archivos en Firebase Storage
+/// Incluye compresión automática de imágenes para optimizar rendimiento
 class StorageService {
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final Uuid _uuid = const Uuid();
@@ -12,7 +15,55 @@ class StorageService {
   factory StorageService() => _instance;
   StorageService._internal();
 
+  /// Comprime una imagen para reducir su tamaño antes de subir
+  /// Optimizado para fotos normales (no 360°)
+  Future<File?> _compressImage(String filePath, {bool is360Photo = false}) async {
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) return null;
+
+      // Para fotos 360° usamos menos compresión para mantener calidad
+      final quality = is360Photo ? 85 : 70;
+      final maxWidth = is360Photo ? 4096 : 1920;
+      final maxHeight = is360Photo ? 2048 : 1080;
+
+      // Crear archivo temporal para la imagen comprimida
+      final tempDir = await getTemporaryDirectory();
+      final targetPath = '${tempDir.path}/${_uuid.v4()}.jpg';
+
+      if (kDebugMode) {
+        final originalSize = await file.length();
+        debugPrint('🗜️ Comprimiendo imagen (${(originalSize / 1024 / 1024).toStringAsFixed(2)} MB)...');
+      }
+
+      final result = await FlutterImageCompress.compressAndGetFile(
+        filePath,
+        targetPath,
+        quality: quality,
+        minWidth: maxWidth,
+        minHeight: maxHeight,
+        format: CompressFormat.jpeg,
+      );
+
+      if (result != null && kDebugMode) {
+        final compressedSize = await result.length();
+        final originalSize = await file.length();
+        final reduction = ((1 - (compressedSize / originalSize)) * 100).toStringAsFixed(1);
+        debugPrint('✅ Imagen comprimida: ${(compressedSize / 1024 / 1024).toStringAsFixed(2)} MB (-$reduction%)');
+      }
+
+      return result != null ? File(result.path) : null;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ Error al comprimir imagen: $e');
+      }
+      // Si falla la compresión, retornar archivo original
+      return File(filePath);
+    }
+  }
+
   /// Sube una foto de ticket y retorna la URL de descarga
+  /// Comprime automáticamente la imagen antes de subir
   /// 
   /// [ticketId] - ID del ticket al que pertenece la foto
   /// [filePath] - Ruta local del archivo a subir
@@ -23,10 +74,11 @@ class StorageService {
     bool isResultPhoto = false,
   }) async {
     try {
-      final file = File(filePath);
-      if (!await file.exists()) {
+      // Comprimir imagen antes de subir
+      final compressedFile = await _compressImage(filePath);
+      if (compressedFile == null || !await compressedFile.exists()) {
         if (kDebugMode) {
-          debugPrint('❌ Archivo no existe: $filePath');
+          debugPrint('❌ Error al comprimir/encontrar archivo: $filePath');
         }
         return null;
       }
@@ -40,8 +92,8 @@ class StorageService {
         debugPrint('📤 Subiendo foto de ticket a: tickets/$ticketId/$folder/$fileName');
       }
 
-      // Subir archivo con timeout de 30 segundos
-      final uploadTask = storageRef.putFile(file);
+      // Subir archivo comprimido con timeout de 30 segundos
+      final uploadTask = storageRef.putFile(compressedFile);
       
       // Esperar a que termine la subida con timeout
       final snapshot = await uploadTask.timeout(
@@ -57,6 +109,11 @@ class StorageService {
       if (kDebugMode) {
         debugPrint('✅ Foto subida exitosamente: $downloadUrl');
       }
+
+      // Limpiar archivo temporal
+      try {
+        await compressedFile.delete();
+      } catch (_) {}
 
       return downloadUrl;
     } catch (e) {
@@ -113,15 +170,17 @@ class StorageService {
   }
 
   /// Sube una foto de acta de inventario y retorna la URL de descarga
+  /// Comprime automáticamente para optimizar rendimiento
   Future<String?> uploadInventoryActPhoto({
     required String actId,
     required String filePath,
   }) async {
     try {
-      final file = File(filePath);
-      if (!await file.exists()) {
+      // Comprimir imagen antes de subir
+      final compressedFile = await _compressImage(filePath);
+      if (compressedFile == null || !await compressedFile.exists()) {
         if (kDebugMode) {
-          debugPrint('❌ Archivo no existe: $filePath');
+          debugPrint('❌ Error al comprimir/encontrar archivo: $filePath');
         }
         return null;
       }
@@ -133,7 +192,7 @@ class StorageService {
         debugPrint('📤 Subiendo foto de acta: inventory_acts/$actId/$fileName');
       }
 
-      final uploadTask = storageRef.putFile(file);
+      final uploadTask = storageRef.putFile(compressedFile);
       final snapshot = await uploadTask.timeout(
         const Duration(seconds: 30),
         onTimeout: () {
@@ -146,6 +205,11 @@ class StorageService {
       if (kDebugMode) {
         debugPrint('✅ Foto subida exitosamente: $downloadUrl');
       }
+
+      // Limpiar archivo temporal
+      try {
+        await compressedFile.delete();
+      } catch (_) {}
 
       return downloadUrl;
     } catch (e) {
@@ -199,6 +263,7 @@ class StorageService {
   // ============================================================================
 
   /// Sube una foto de captación de inmueble
+  /// Comprime automáticamente (menos compresión para fotos 360°)
   /// 
   /// [listingId] - ID de la captación
   /// [filePath] - Ruta local del archivo a subir
@@ -209,10 +274,12 @@ class StorageService {
     required String photoType,
   }) async {
     try {
-      final file = File(filePath);
-      if (!await file.exists()) {
+      // Comprimir imagen (menos compresión para fotos 360°)
+      final is360 = photoType == '360';
+      final compressedFile = await _compressImage(filePath, is360Photo: is360);
+      if (compressedFile == null || !await compressedFile.exists()) {
         if (kDebugMode) {
-          debugPrint('❌ Archivo no existe: $filePath');
+          debugPrint('❌ Error al comprimir/encontrar archivo: $filePath');
         }
         return null;
       }
@@ -224,7 +291,7 @@ class StorageService {
         debugPrint('📤 Subiendo foto de captación: property_listings/$listingId/$photoType/$fileName');
       }
 
-      final uploadTask = storageRef.putFile(file);
+      final uploadTask = storageRef.putFile(compressedFile);
       final snapshot = await uploadTask.timeout(
         const Duration(seconds: 30),
         onTimeout: () {
@@ -237,6 +304,11 @@ class StorageService {
       if (kDebugMode) {
         debugPrint('✅ Foto de captación subida: $downloadUrl');
       }
+
+      // Limpiar archivo temporal
+      try {
+        await compressedFile.delete();
+      } catch (_) {}
 
       return downloadUrl;
     } catch (e) {

@@ -52,9 +52,16 @@ android {
             // ✅ Sign with release keystore instead of debug keys
             signingConfig = signingConfigs.getByName("release")
             
-            // Optional: Enable proguard/R8 for smaller APK size
-            isMinifyEnabled = false
-            isShrinkResources = false
+            // ⚡ OPTIMIZACIONES DE RENDIMIENTO ACTIVADAS
+            // Minificación de código con R8 (reduce tamaño ~30%)
+            isMinifyEnabled = true
+            // Elimina recursos no usados (reduce tamaño adicional ~15%)
+            isShrinkResources = true
+            // Archivo de reglas de ProGuard
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }
