@@ -55,12 +55,12 @@ class AuthService extends ChangeNotifier {
 
     try {
       if (_firebaseAvailable) {
-        // Login con Firebase Auth con timeout REDUCIDO a 15 segundos
+        // Login con Firebase Auth con timeout REDUCIDO a 5 segundos
         final credential = await _auth.signInWithEmailAndPassword(
           email: email,
           password: password,
         ).timeout(
-          const Duration(seconds: 15),
+          const Duration(seconds: 5),
           onTimeout: () {
             throw Exception('Sin respuesta del servidor. Verifica tu internet.');
           },

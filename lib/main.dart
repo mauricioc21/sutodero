@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 import 'config/app_theme.dart';
 import 'screens/auth/login_screen.dart';
@@ -24,15 +25,32 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     ).timeout(
-      const Duration(seconds: 10),
+      const Duration(seconds: 5),
       onTimeout: () {
         if (kDebugMode) {
-          debugPrint('⏱️ Timeout en inicialización de Firebase (10s)');
+          debugPrint('⏱️ Timeout en inicialización de Firebase (5s)');
           debugPrint('⚠️ La app funcionará en modo local sin Firebase');
         }
         throw TimeoutException('Firebase initialization timeout');
       },
     );
+    
+    // ✅ HABILITAR PERSISTENCIA OFFLINE DE FIRESTORE
+    // Esto permite que la app funcione SIN internet
+    try {
+      final FirebaseFirestore firestore = FirebaseFirestore.instance;
+      firestore.settings = const Settings(
+        persistenceEnabled: true,
+        cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+      );
+      if (kDebugMode) {
+        debugPrint('✅ Persistencia offline de Firestore habilitada');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ No se pudo habilitar persistencia offline: $e');
+      }
+    }
     
     if (kDebugMode) {
       debugPrint('✅ Firebase inicializado correctamente');
