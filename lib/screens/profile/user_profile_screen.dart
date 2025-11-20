@@ -47,10 +47,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final user = authService.currentUser;
     
     if (user != null) {
-      _nombreController.text = user.nombre;
-      _telefonoController.text = user.telefono;
-      _direccionController.text = user.direccion ?? '';
-      _profileImageUrl = user.photoUrl;
+      setState(() {
+        _nombreController.text = user.nombre;
+        _telefonoController.text = user.telefono;
+        _direccionController.text = user.direccion ?? '';
+        _profileImageUrl = user.photoUrl;
+      });
     }
   }
 
@@ -342,6 +344,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
     final user = authService.currentUser;
+    final isLoadingAuth = authService.isLoading;
 
     return Scaffold(
       backgroundColor: AppTheme.negro,
@@ -350,11 +353,48 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         backgroundColor: AppTheme.grisOscuro,
         foregroundColor: AppTheme.dorado,
       ),
-      body: user == null
+      body: isLoadingAuth
           ? const Center(
-              child: Text('No hay usuario autenticado'),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(color: AppTheme.dorado),
+                  SizedBox(height: 16),
+                  Text(
+                    'Cargando perfil...',
+                    style: TextStyle(color: AppTheme.blanco),
+                  ),
+                ],
+              ),
             )
-          : SingleChildScrollView(
+          : user == null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.person_off,
+                        size: 64,
+                        color: AppTheme.grisClaro,
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'No hay usuario autenticado',
+                        style: TextStyle(color: AppTheme.blanco),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.dorado,
+                          foregroundColor: AppTheme.negro,
+                        ),
+                        child: const Text('Volver'),
+                      ),
+                    ],
+                  ),
+                )
+              : SingleChildScrollView(
               padding: EdgeInsets.all(AppTheme.paddingLG),
               child: Form(
                 key: _formKey,

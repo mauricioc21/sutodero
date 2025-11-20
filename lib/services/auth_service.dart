@@ -66,7 +66,7 @@ class AuthService extends ChangeNotifier {
           },
         );
         
-        // ⚡ OPTIMIZACIÓN CRÍTICA: Establecer usuario básico INMEDIATAMENTE
+        // ⚡ OPTIMIZACIÓN: Establecer usuario básico PRIMERO para UI rápida
         _currentUser = UserModel(
           uid: credential.user!.uid,
           nombre: credential.user!.displayName ?? 'Usuario',
@@ -75,22 +75,26 @@ class AuthService extends ChangeNotifier {
           telefono: '',
         );
         
-        // ⚡ Retornar éxito INMEDIATAMENTE sin esperar datos completos
+        if (kDebugMode) {
+          debugPrint('⚡ Usuario básico establecido: ${_currentUser!.nombre}');
+        }
+        
+        // ✅ ESPERAR a cargar datos completos antes de continuar
+        // Esto es CRÍTICO para que el nombre real y userId estén disponibles
+        try {
+          await _loadUserData(credential.user!.uid);
+          if (kDebugMode) {
+            debugPrint('✅ Datos completos cargados: ${_currentUser!.nombre}');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('⚠️ Error cargando datos completos: $e (continuando con datos básicos)');
+          }
+        }
+        
+        // ⚡ Retornar éxito después de cargar datos completos
         _isLoading = false;
         notifyListeners();
-        
-        // 🔄 Cargar datos completos en segundo plano (NO bloqueante)
-        _loadUserData(credential.user!.uid).then((_) {
-          // Notificar cuando se completen los datos
-          notifyListeners();
-          if (kDebugMode) {
-            debugPrint('✅ Datos completos de usuario cargados en segundo plano');
-          }
-        }).catchError((e) {
-          if (kDebugMode) {
-            debugPrint('⚠️ Error al cargar datos completos: $e (continuando con datos básicos)');
-          }
-        });
         
         // 📝 Registrar actividad de login
         _activityLog.logLogin(credential.user!.uid, email);
@@ -249,9 +253,19 @@ class AuthService extends ChangeNotifier {
   // Cargar datos del usuario desde Firestore
   Future<void> _loadUserData(String uid) async {
     try {
-      final doc = await _firestore.collection('users').doc(uid).get();
+      final doc = await _firestore.collection('users').doc(uid).get()
+          .timeout(const Duration(seconds: 5), onTimeout: () {
+        if (kDebugMode) {
+          debugPrint('⚠️ Timeout cargando datos de usuario desde Firestore');
+        }
+        throw Exception('Sin conexión a internet');
+      });
+      
       if (doc.exists) {
         _currentUser = UserModel.fromMap(doc.data()!, uid);
+        if (kDebugMode) {
+          debugPrint('✅ Datos completos del usuario cargados: ${_currentUser!.nombre}');
+        }
       } else {
         // Si no existe el documento, crear uno con datos básicos
         final user = _auth.currentUser;
@@ -265,6 +279,9 @@ class AuthService extends ChangeNotifier {
             fechaCreacion: DateTime.now(),
           );
           await _firestore.collection('users').doc(uid).set(_currentUser!.toMap());
+          if (kDebugMode) {
+            debugPrint('✅ Documento de usuario creado en Firestore');
+          }
         }
       }
     } catch (e) {
@@ -303,11 +320,19 @@ class AuthService extends ChangeNotifier {
 
   // Obtener mensajes de error en español
   String _getFirebaseAuthErrorMessage(String code) {
+    if (kDebugMode) {
+      debugPrint('🔴 Firebase Auth Error Code: $code');
+    }
+    
     switch (code) {
       case 'user-not-found':
         return 'No existe una cuenta con este correo electrónico';
       case 'wrong-password':
         return 'Contraseña incorrecta';
+      case 'invalid-credential':
+        return 'Correo o contraseña incorrectos';
+      case 'invalid-login-credentials':
+        return 'Correo o contraseña incorrectos';
       case 'email-already-in-use':
         return 'Ya existe una cuenta con este correo electrónico';
       case 'invalid-email':
