@@ -73,7 +73,14 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
 
   Future<void> _loadPropiedades() async {
     try {
-      final propiedades = await _inventoryService.getAllProperties();
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final userId = authService.currentUser?.uid;
+      
+      if (userId == null) {
+        return;
+      }
+      
+      final propiedades = await _inventoryService.getAllProperties(userId);
       if (mounted) {
         setState(() {
           _propiedades = propiedades;

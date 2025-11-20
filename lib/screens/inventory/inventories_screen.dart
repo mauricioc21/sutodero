@@ -31,7 +31,20 @@ class _InventoriesScreenState extends State<InventoriesScreen> {
   Future<void> _loadProperties() async {
     setState(() => _isLoading = true);
     try {
-      final properties = await _inventoryService.getAllProperties();
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final userId = authService.currentUser?.uid;
+      
+      if (userId == null) {
+        if (kDebugMode) {
+          debugPrint('⚠️ No user logged in');
+        }
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+        return;
+      }
+      
+      final properties = await _inventoryService.getAllProperties(userId);
       if (mounted) {
         setState(() {
           _properties = properties;
