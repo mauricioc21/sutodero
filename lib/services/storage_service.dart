@@ -382,4 +382,66 @@ class StorageService {
       return false;
     }
   }
+
+  // ============================================================================
+  // USER PROFILE PHOTO MANAGEMENT
+  // ============================================================================
+
+  /// Sube una foto de perfil de usuario
+  /// Comprime automáticamente la imagen antes de subir
+  /// 
+  /// [userId] - ID del usuario
+  /// [filePath] - Ruta local del archivo a subir
+  Future<String?> uploadProfilePhoto({
+    required String userId,
+    required String filePath,
+  }) async {
+    try {
+      // Comprimir imagen antes de subir (calidad normal)
+      final compressedFile = await _compressImage(filePath);
+      if (compressedFile == null || !await compressedFile.exists()) {
+        if (kDebugMode) {
+          debugPrint('❌ Error al comprimir/encontrar archivo: $filePath');
+        }
+        return null;
+      }
+
+      // Usar nombre fijo para sobreescribir foto anterior
+      final fileName = 'profile.jpg';
+      final storageRef = _storage.ref().child('users/$userId/profile/$fileName');
+
+      if (kDebugMode) {
+        debugPrint('📤 Subiendo foto de perfil: users/$userId/profile/$fileName');
+      }
+
+      // Subir archivo comprimido con timeout de 30 segundos
+      final uploadTask = storageRef.putFile(compressedFile);
+      
+      final snapshot = await uploadTask.timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Timeout al subir foto después de 30 segundos');
+        },
+      );
+
+      // Obtener URL de descarga
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+      
+      if (kDebugMode) {
+        debugPrint('✅ Foto de perfil subida exitosamente: $downloadUrl');
+      }
+
+      // Limpiar archivo temporal
+      try {
+        await compressedFile.delete();
+      } catch (_) {}
+
+      return downloadUrl;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error subiendo foto de perfil: $e');
+      }
+      return null;
+    }
+  }
 }

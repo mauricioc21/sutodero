@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:provider/provider.dart';
 import '../../models/inventory_property.dart';
 import '../../services/inventory_service.dart';
+import '../../services/auth_service.dart';
 import 'property_detail_screen.dart';
 import 'add_edit_property_screen.dart';
 import '../../config/app_theme.dart';
@@ -54,7 +56,12 @@ class _InventoriesScreenState extends State<InventoriesScreen> {
     }
     
     try {
-      final results = await _inventoryService.searchProperties(query);
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final userId = authService.currentUser?.uid;
+      
+      if (userId == null) return;
+
+      final results = await _inventoryService.searchProperties(userId, query);
       if (mounted) {
         setState(() => _properties = results);
       }

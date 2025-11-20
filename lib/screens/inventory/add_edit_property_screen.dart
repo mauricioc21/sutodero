@@ -118,7 +118,13 @@ class _AddEditPropertyScreenState extends State<AddEditPropertyScreen> {
           descripcion: _descripcionController.text.isEmpty ? null : _descripcionController.text,
           tipo: _selectedType,
         );
-        await _inventoryService.updateProperty(updated);
+        
+        final authService = Provider.of<AuthService>(context, listen: false);
+        final userId = authService.currentUser?.uid;
+        if (userId == null) {
+          throw Exception('Usuario no autenticado');
+        }
+        await _inventoryService.updateProperty(userId, updated);
       } else {
         final authService = Provider.of<AuthService>(context, listen: false);
         

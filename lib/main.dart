@@ -7,6 +7,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'config/app_theme.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/profile/user_profile_screen.dart';
 import 'services/auth_service.dart';
 
 void main() async {
@@ -71,6 +72,9 @@ class SuToderoApp extends StatelessWidget {
       ],
       theme: AppTheme.theme,
       home: const InitializationScreen(), // Pantalla de inicialización
+      routes: {
+        '/profile': (context) => const UserProfileScreen(),
+      },
     );
   }
 }

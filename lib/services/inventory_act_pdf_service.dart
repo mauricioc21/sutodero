@@ -11,6 +11,7 @@ import '../models/inventory_act.dart';
 import '../models/property_room.dart';
 import '../models/inventory_property.dart';
 import '../models/room_features.dart';
+import '../config/brand_colors.dart';
 
 /// Servicio para generar PDFs de Actas de Inventario
 /// con firma digital, reconocimiento facial y fotos
@@ -22,22 +23,22 @@ class InventoryActPdfService {
   }) async {
     final pdf = pw.Document();
 
-    // Cargar logo corporativo Su Todero
+    // Cargar logo corporativo Su Todero usando BrandColors
     pw.ImageProvider? logoImage;
     try {
-      logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_yellow.png');
+      logoImage = await imageFromAssetBundle(BrandColors.logoMain);
       if (kDebugMode) {
-        debugPrint('✅ Logo corporativo SU TODERO cargado exitosamente (amarillo)');
+        debugPrint('✅ Logo corporativo SU TODERO cargado exitosamente');
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('⚠️ No se pudo cargar el logo amarillo: $e');
+        debugPrint('⚠️ No se pudo cargar el logo principal: $e');
       }
-      // Intentar con logo blanco como fallback
+      // Intentar con logo amarillo como fallback
       try {
-        logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_white.png');
+        logoImage = await imageFromAssetBundle(BrandColors.logoYellow);
         if (kDebugMode) {
-          debugPrint('✅ Logo alternativo (blanco) cargado');
+          debugPrint('✅ Logo alternativo (amarillo) cargado');
         }
       } catch (e2) {
         if (kDebugMode) {
@@ -216,7 +217,7 @@ class InventoryActPdfService {
     return pw.Container(
       padding: const pw.EdgeInsets.all(16),
       decoration: pw.BoxDecoration(
-        color: PdfColor.fromHex('#000000'),
+        color: BrandColors.darkPdf,
         borderRadius: pw.BorderRadius.circular(8),
       ),
       child: pw.Row(
@@ -232,15 +233,15 @@ class InventoryActPdfService {
                   style: pw.TextStyle(
                     fontSize: 24,
                     fontWeight: pw.FontWeight.bold,
-                    color: PdfColor.fromHex('#FAB334'),
+                    color: BrandColors.primaryPdf,
                   ),
                 ),
                 pw.SizedBox(height: 4),
                 pw.Text(
-                  'Gestión Inmobiliaria Profesional',
+                  BrandColors.companySlogan,
                   style: pw.TextStyle(
                     fontSize: 12,
-                    color: PdfColor.fromHex('#F5E6C8'),
+                    color: BrandColors.beigeClairPdf,
                   ),
                 ),
               ],
@@ -250,11 +251,11 @@ class InventoryActPdfService {
             pw.Image(logo, height: 40, fit: pw.BoxFit.contain)
           else
             pw.Text(
-              'SU TODERO',
+              BrandColors.companyName,
               style: pw.TextStyle(
                 fontSize: 18,
                 fontWeight: pw.FontWeight.bold,
-                color: PdfColor.fromHex('#FAB334'),
+                color: BrandColors.primaryPdf,
               ),
             ),
         ],
@@ -269,7 +270,7 @@ class InventoryActPdfService {
       decoration: pw.BoxDecoration(
         border: pw.Border(
           bottom: pw.BorderSide(
-            color: PdfColor.fromHex('#FAB334'),
+            color: BrandColors.primaryPdf,
             width: 2,
           ),
         ),
@@ -298,7 +299,7 @@ class InventoryActPdfService {
     return pw.Container(
       padding: const pw.EdgeInsets.all(12),
       decoration: pw.BoxDecoration(
-        color: PdfColor.fromHex('#F5E6C8'),
+        color: BrandColors.beigeClairPdf,
         borderRadius: pw.BorderRadius.circular(8),
       ),
       child: pw.Column(
@@ -435,8 +436,8 @@ class InventoryActPdfService {
     return pw.Container(
       padding: const pw.EdgeInsets.all(12),
       decoration: pw.BoxDecoration(
-        color: PdfColor.fromHex('#FAB334'),
-        border: pw.Border.all(color: PdfColor.fromHex('#FAB334'), width: 2),
+        color: BrandColors.beigeClairPdf,
+        border: pw.Border.all(color: BrandColors.primaryPdf, width: 2),
         borderRadius: pw.BorderRadius.circular(8),
       ),
       child: pw.Row(
@@ -733,24 +734,24 @@ class InventoryActPdfService {
       padding: const pw.EdgeInsets.symmetric(vertical: 12),
       decoration: pw.BoxDecoration(
         border: pw.Border(
-          top: pw.BorderSide(color: PdfColor.fromHex('#FAB334'), width: 2),
+          top: pw.BorderSide(color: BrandColors.primaryPdf, width: 2),
         ),
       ),
       child: pw.Column(
         children: [
           pw.Text(
-            'SU TODERO - Gestión Profesional de Inventarios',
+            '${BrandColors.companyName} - Gestión Profesional de Inventarios',
             style: pw.TextStyle(
               fontSize: 10,
               fontWeight: pw.FontWeight.bold,
-              color: PdfColor.fromHex('#000000'),
+              color: BrandColors.darkPdf,
             ),
             textAlign: pw.TextAlign.center,
           ),
           pw.SizedBox(height: 4),
           pw.Text(
-            'Cra 14b #112-85 Segundo Piso, Bogotá, Colombia | Tel: (601) 703-9495 | www.sutodero.com',
-            style: pw.TextStyle(fontSize: 8, color: PdfColor.fromHex('#2C2C2C')),
+            '${BrandColors.companyAddress} | Tel: ${BrandColors.companyPhone} | ${BrandColors.companyWebsite}',
+            style: pw.TextStyle(fontSize: 8, color: BrandColors.darkGrayPdf),
             textAlign: pw.TextAlign.center,
           ),
           pw.SizedBox(height: 4),

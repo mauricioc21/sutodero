@@ -6,7 +6,6 @@ import 'inventory/inventories_screen.dart';
 import 'tickets/tickets_screen.dart';
 import 'tickets/dashboard_screen.dart';
 import 'auth/login_screen.dart';
-import 'qr/qr_scanner_screen.dart';
 import 'camera_360/camera_360_capture_screen.dart';
 import 'property_listing/property_listings_screen.dart';
 
@@ -41,6 +40,11 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.account_circle),
+            tooltip: 'Mi Perfil',
+            onPressed: () => Navigator.pushNamed(context, '/profile'),
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Cerrar Sesión',
@@ -209,17 +213,7 @@ class HomeScreen extends StatelessWidget {
             );
           },
         ),
-        _buildFeatureCard(
-          context,
-          icon: Icons.qr_code_scanner,
-          title: 'Escanear QR',
-          description: 'Escanea códigos QR',
-          iconColor: const Color(0xFF9C27B0),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const QRScannerScreen()),
-          ),
-        ),
+
         _buildFeatureCard(
           context,
           icon: Icons.architecture,

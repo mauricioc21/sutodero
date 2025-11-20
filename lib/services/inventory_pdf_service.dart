@@ -5,6 +5,7 @@ import 'package:printing/printing.dart';
 import 'package:flutter/foundation.dart';
 import '../models/inventory_property.dart';
 import '../models/property_room.dart';
+import '../config/brand_colors.dart';
 import 'package:intl/intl.dart';
 
 /// Servicio para generar PDFs de inventarios
@@ -20,26 +21,26 @@ class InventoryPdfService {
   ) async {
     final pdf = pw.Document();
     
-    // Cargar logo corporativo Su Todero
+    // Cargar logo corporativo Su Todero (NUEVO LOGO)
     pw.ImageProvider? logoImage;
     try {
-      logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_yellow.png');
+      logoImage = await imageFromAssetBundle(BrandColors.logoMain);
       if (kDebugMode) {
-        debugPrint('✅ Logo corporativo SU TODERO cargado exitosamente (amarillo)');
+        debugPrint('✅ Logo corporativo SU TODERO cargado exitosamente');
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('⚠️ No se pudo cargar el logo amarillo: $e');
+        debugPrint('⚠️ No se pudo cargar logo corporativo: $e');
       }
-      // Intentar con logo blanco como fallback
+      // Intentar con logo amarillo como fallback
       try {
-        logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_white.png');
+        logoImage = await imageFromAssetBundle(BrandColors.logoYellow);
         if (kDebugMode) {
-          debugPrint('✅ Logo alternativo (blanco) cargado');
+          debugPrint('✅ Logo fallback (amarillo) cargado');
         }
       } catch (e2) {
         if (kDebugMode) {
-          debugPrint('⚠️ No se pudo cargar ningún logo corporativo: $e2');
+          debugPrint('⚠️ No se pudo cargar ningún logo: $e2');
         }
       }
     }
@@ -94,26 +95,26 @@ class InventoryPdfService {
   ) async {
     final pdf = pw.Document();
     
-    // Cargar logo corporativo Su Todero
+    // Cargar logo corporativo Su Todero (NUEVO LOGO)
     pw.ImageProvider? logoImage;
     try {
-      logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_yellow.png');
+      logoImage = await imageFromAssetBundle(BrandColors.logoMain);
       if (kDebugMode) {
-        debugPrint('✅ Logo corporativo SU TODERO cargado exitosamente (amarillo)');
+        debugPrint('✅ Logo corporativo SU TODERO cargado exitosamente');
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('⚠️ No se pudo cargar el logo amarillo: $e');
+        debugPrint('⚠️ No se pudo cargar logo corporativo: $e');
       }
-      // Intentar con logo blanco como fallback
+      // Intentar con logo amarillo como fallback
       try {
-        logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_white.png');
+        logoImage = await imageFromAssetBundle(BrandColors.logoYellow);
         if (kDebugMode) {
-          debugPrint('✅ Logo alternativo (blanco) cargado');
+          debugPrint('✅ Logo fallback (amarillo) cargado');
         }
       } catch (e2) {
         if (kDebugMode) {
-          debugPrint('⚠️ No se pudo cargar ningún logo corporativo: $e2');
+          debugPrint('⚠️ No se pudo cargar ningún logo: $e2');
         }
       }
     }
@@ -131,7 +132,7 @@ class InventoryPdfService {
             style: pw.TextStyle(
               fontSize: 24,
               fontWeight: pw.FontWeight.bold,
-              color: PdfColor.fromHex('#FAB334'),
+              color: BrandColors.primaryPdf, // Dorado corporativo
             ),
             textAlign: pw.TextAlign.center,
           ),

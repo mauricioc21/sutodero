@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:provider/provider.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import '../../models/inventory_property.dart';
@@ -7,10 +8,11 @@ import '../../models/property_room.dart';
 import '../../models/ticket_model.dart';
 import '../../models/inventory_act.dart';
 import '../../services/inventory_service.dart';
+import '../../services/auth_service.dart';
 import '../../services/floor_plan_service.dart';
 import '../../services/floor_plan_3d_service.dart';
 import '../../services/inventory_pdf_service.dart';
-import '../../services/qr_service.dart';
+
 import '../../services/ticket_service.dart';
 import '../../services/inventory_act_service.dart';
 import '../../services/inventory_act_pdf_service.dart';
@@ -38,7 +40,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   final FloorPlanService _floorPlanService = FloorPlanService();
   final FloorPlan3DService _floorPlan3DService = FloorPlan3DService();
   final InventoryPdfService _pdfService = InventoryPdfService();
-  final QRService _qrService = QRService();
+
   final TicketService _ticketService = TicketService();
   final InventoryActService _actService = InventoryActService();
   final InventoryActPdfService _actPdfService = InventoryActPdfService();
@@ -56,10 +58,17 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     _loadRooms();
   }
 
+  String? get _userId => Provider.of<AuthService>(context, listen: false).currentUser?.uid;
+
   Future<void> _loadRooms() async {
     setState(() => _isLoading = true);
     try {
-      final rooms = await _inventoryService.getRoomsByProperty(widget.property.id);
+      final userId = _userId;
+      if (userId == null) {
+        if (mounted) setState(() => _isLoading = false);
+        return;
+      }
+      final rooms = await _inventoryService.getRoomsByProperty(userId, widget.property.id);
       // Cargar tickets relacionados
       final tickets = await _loadRelatedTickets();
       // Cargar tours virtuales
@@ -128,19 +137,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     }
   }
 
-  Future<void> _showQRCode() async {
-    final qrData = _qrService.generatePropertyQR(
-      widget.property.id,
-      direccion: widget.property.direccion,
-    );
-    
-    await _qrService.showQRDialog(
-      context,
-      data: qrData,
-      title: 'QR de Propiedad',
-      subtitle: widget.property.direccion,
-    );
-  }
+
 
   /// Genera plano 2D de la propiedad
   Future<void> _generateFloorPlan() async {
@@ -386,12 +383,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
             onPressed: _openCamera360Capture,
             tooltip: 'Capturar Fotos 360°',
           ),
-          // Botón QR
-          IconButton(
-            icon: const Icon(Icons.qr_code),
-            onPressed: _showQRCode,
-            tooltip: 'Código QR',
-          ),
+
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: _editProperty,
@@ -770,7 +762,9 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     );
 
     if (confirmed == true) {
-      await _inventoryService.deleteProperty(widget.property.id);
+      final userId = _userId;
+      if (userId == null) return;
+      await _inventoryService.deleteProperty(userId, widget.property.id);
       if (mounted) {
         Navigator.pop(context, true);
       }

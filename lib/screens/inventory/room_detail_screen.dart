@@ -1,13 +1,15 @@
 import 'dart:io';
 import 'dart:math' show cos, sin;
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../models/property_room.dart';
 import '../../models/inventory_property.dart';
 import '../../models/room_features.dart';
 import '../../services/inventory_service.dart';
+import '../../services/auth_service.dart';
 import '../../services/floor_plan_service.dart';
-import '../../services/qr_service.dart';
 import '../../services/inventory_pdf_service.dart';
 import 'add_edit_room_screen.dart';
 import '../../config/app_theme.dart';
@@ -24,11 +26,12 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
   final _inventoryService = InventoryService();
   final _floorPlanService = FloorPlanService();
   final _imagePicker = ImagePicker();
-  final _qrService = QRService();
   final _pdfService = InventoryPdfService();
   PropertyRoom? _room;
   bool _isLoading = true;
   bool _isGeneratingFloorPlan = false;
+
+  String? get _userId => Provider.of<AuthService>(context, listen: false).currentUser?.uid;
 
   @override
   void initState() {
@@ -40,7 +43,12 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
   Future<void> _loadRoom() async {
     setState(() => _isLoading = true);
     try {
-      final room = await _inventoryService.getRoom(widget.room.id);
+      final userId = _userId;
+      if (userId == null) {
+        if (mounted) setState(() => _isLoading = false);
+        return;
+      }
+      final room = await _inventoryService.getRoom(userId, widget.room.propertyId, widget.room.id);
       if (mounted) {
         setState(() {
           _room = room;
@@ -57,22 +65,6 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     }
   }
 
-  Future<void> _showQRCode() async {
-    if (_room == null) return;
-    
-    final qrData = _qrService.generateRoomQR(
-      _room!.id,
-      _room!.propertyId,
-      nombre: _room!.nombre,
-    );
-    
-    await _qrService.showQRDialog(
-      context,
-      data: qrData,
-      title: 'QR de Espacio',
-      subtitle: '${_room!.tipo.icon} ${_room!.nombre}',
-    );
-  }
 
   Future<void> _exportToPdf() async {
     if (_room == null) return;
@@ -87,7 +79,9 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
       );
       
       // Necesitamos cargar la propiedad
-      final property = await _inventoryService.getProperty(_room!.propertyId);
+      final userId = _userId;
+      if (userId == null) throw Exception('Usuario no autenticado');
+      final property = await _inventoryService.getProperty(userId, _room!.propertyId);
       if (property == null) throw Exception('Propiedad no encontrada');
       
       final pdfBytes = await _pdfService.generateRoomPdf(property, _room!);
@@ -112,8 +106,109 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     }
   }
 
+  /// ✅ TOMAR FOTO DIRECTAMENTE - Sin diálogo
+  /// Profesional: Abre la cámara inmediatamente
+  Future<void> _takePhotoDirectly() async {
+    if (_room == null) return;
+    
+    try {
+      final XFile? photo = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+        maxWidth: 1920,
+        maxHeight: 1080,
+      );
+      
+      if (photo != null) {
+        final userId = _userId;
+        if (userId == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('❌ Error: Usuario no autenticado'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
+        
+        await _inventoryService.addRoomPhoto(userId, _room!.propertyId, _room!.id, photo.path);
+        await _loadRoom();
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Foto capturada y guardada'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error al tomar foto: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
+  /// 📁 AGREGAR DESDE GALERÍA - Para fotos ya existentes
+  Future<void> _addFromGallery() async {
+    if (_room == null) return;
+
+    try {
+      final List<XFile> photos = await _imagePicker.pickMultiImage(
+        imageQuality: 85,
+        maxWidth: 1920,
+        maxHeight: 1080,
+      );
+      
+      if (photos.isNotEmpty) {
+        final userId = _userId;
+        if (userId == null) return;
+        
+        for (final photo in photos) {
+          await _inventoryService.addRoomPhoto(userId, _room!.propertyId, _room!.id, photo.path);
+        }
+        await _loadRoom();
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('✅ ${photos.length} foto(s) agregada(s) desde galería'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// MÉTODO LEGACY - Mantener para compatibilidad
+  @Deprecated('Usar _takePhotoDirectly() o _addFromGallery()')
   Future<void> _addRoomPhotos() async {
-    // Mostrar diálogo para elegir entre cámara o galería
+    // Redirigir al método directo de cámara
+    await _takePhotoDirectly();
+  }
+
+  Future<void> _addRoomPhotosOLD() async {
+    // Código original con diálogo
     final source = await showDialog<ImageSource>(
       context: context,
       builder: (context) => AlertDialog(
@@ -160,7 +255,9 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
         
         if (photo != null) {
           // Guardar foto localmente primero
-          await _inventoryService.addRoomPhoto(_room!.id, photo.path);
+          final userId = _userId;
+          if (userId == null) return;
+          await _inventoryService.addRoomPhoto(userId, _room!.propertyId, _room!.id, photo.path);
           await _loadRoom();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -180,8 +277,10 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
         );
         
         if (photos.isNotEmpty) {
+          final userId = _userId;
+          if (userId == null) return;
           for (final photo in photos) {
-            await _inventoryService.addRoomPhoto(_room!.id, photo.path);
+            await _inventoryService.addRoomPhoto(userId, _room!.propertyId, _room!.id, photo.path);
           }
           await _loadRoom();
           if (mounted) {
@@ -218,54 +317,97 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     await _addRoomPhotos();
   }
 
-  Future<void> _take360Photo() async {
-    // Mostrar diálogo para elegir entre cámara o galería para foto 360°
-    final source = await showDialog<ImageSource>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Agregar Foto 360°'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt, color: AppTheme.dorado),
-              title: const Text('Tomar Foto'),
-              onTap: () => Navigator.pop(context, ImageSource.camera),
+  /// ✅ TOMAR FOTO 360° DIRECTAMENTE - Desde cámara
+  Future<void> _take360PhotoDirect() async {
+    if (_room == null) return;
+
+    try {
+      // Mostrar opciones: Cámara externa 360° o Galería
+      final choice = await showDialog<String>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Foto 360°'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Text(
+                '¿Tienes una cámara 360° externa?',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 12),
+              Text(
+                '• SI: Toma la foto con la cámara 360° y luego selecciónala desde galería\n'
+                '• NO: Usa la cámara del teléfono para panorama',
+                style: TextStyle(fontSize: 13),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'gallery'),
+              child: const Text('Tengo Cámara 360°\n(Galería)'),
             ),
-            ListTile(
-              leading: const Icon(Icons.photo_library, color: AppTheme.dorado),
-              title: const Text('Galería'),
-              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, 'camera'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.dorado,
+                foregroundColor: AppTheme.negro,
+              ),
+              child: const Text('Cámara Teléfono'),
             ),
           ],
         ),
-      ),
-    );
-
-    if (source == null || _room == null) return;
-
-    try {
-      final XFile? photo = await _imagePicker.pickImage(
-        source: source,
-        imageQuality: 85,
       );
+
+      if (choice == null || _room == null) return;
+
+      final XFile? photo;
+      if (choice == 'camera') {
+        // Cámara del teléfono
+        photo = await _imagePicker.pickImage(
+          source: ImageSource.camera,
+          imageQuality: 90, // Mayor calidad para 360
+        );
+      } else {
+        // Galería (para fotos de cámara 360° externa)
+        photo = await _imagePicker.pickImage(
+          source: ImageSource.gallery,
+          imageQuality: 100, // Máxima calidad
+        );
+      }
       
       if (photo != null) {
-        await _inventoryService.setRoom360Photo(_room!.id, photo.path);
+        final userId = _userId;
+        if (userId == null) return;
+        await _inventoryService.setRoom360Photo(userId, _room!.propertyId, _room!.id, photo.path);
         await _loadRoom();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('✅ Foto 360° guardada')),
+            const SnackBar(
+              content: Text('✅ Foto 360° guardada correctamente'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
           );
         }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error con foto 360°: $e')),
+          SnackBar(
+            content: Text('❌ Error con foto 360°: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
+  }
+
+  /// MÉTODO LEGACY
+  @Deprecated('Usar _take360PhotoDirect()')
+  Future<void> _take360Photo() async {
+    await _take360PhotoDirect();
   }
 
   Future<void> _generateFloorPlan() async {
@@ -372,7 +514,9 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
 
     if (confirmed == true && _room != null) {
       try {
-        await _inventoryService.deleteRoom(_room!.id);
+        final userId = _userId;
+        if (userId == null) return;
+        await _inventoryService.deleteRoom(userId, _room!.propertyId, _room!.id);
         if (mounted) {
           Navigator.pop(context, true);
         }
@@ -445,12 +589,6 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
             icon: const Icon(Icons.picture_as_pdf),
             onPressed: _exportToPdf,
             tooltip: 'Exportar PDF',
-          ),
-          // Botón QR
-          IconButton(
-            icon: const Icon(Icons.qr_code),
-            onPressed: _showQRCode,
-            tooltip: 'Código QR',
           ),
           IconButton(
             icon: const Icon(Icons.edit),
@@ -620,48 +758,100 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
             ),
             SizedBox(height: AppTheme.spacingSM),
             
-            // Botón unificado de captura de fotos
-            ElevatedButton.icon(
-              onPressed: _addRoomPhotos,
-              icon: const Icon(Icons.add_photo_alternate),
-              label: const Text('Agregar Fotos'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.dorado,
-                foregroundColor: AppTheme.negro,
+            // ✅ BOTONES PROFESIONALES - 3 opciones claras
+            Row(
+              children: [
+                // 📸 TOMAR FOTO - Acción principal
+                Expanded(
+                  flex: 2,
+                  child: ElevatedButton.icon(
+                    onPressed: _takePhotoDirectly,
+                    icon: const Icon(Icons.camera_alt, size: 24),
+                    label: const Text(
+                      'Tomar Foto',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.dorado,
+                      foregroundColor: AppTheme.negro,
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: AppTheme.spacingSM),
+                
+                // 📁 GALERÍA - Opción secundaria
+                Expanded(
+                  flex: 1,
+                  child: ElevatedButton(
+                    onPressed: _addFromGallery,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey[700],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Icon(Icons.photo_library, size: 24),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: AppTheme.spacingSM),
+            
+            // 🌐 FOTO 360° - Separada y destacada
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _take360PhotoDirect,
+                icon: const Icon(Icons.panorama_photosphere, size: 24),
+                label: Text(
+                  _room!.tiene360 ? 'Actualizar Foto 360°' : 'Agregar Foto 360°',
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
               ),
             ),
             SizedBox(height: AppTheme.spacingSM),
             
-            // Botón foto 360°
-            ElevatedButton.icon(
-              onPressed: _take360Photo,
-              icon: const Icon(Icons.panorama_photosphere),
-              label: Text(_room!.tiene360 ? 'Reemplazar Foto 360°' : 'Tomar Foto 360°'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                foregroundColor: AppTheme.blanco,
-              ),
-            ),
-            SizedBox(height: AppTheme.spacingMD),
-            
-            // Botón generar plano
-            ElevatedButton.icon(
-              onPressed: _isGeneratingFloorPlan ? null : _generateFloorPlan,
-              icon: _isGeneratingFloorPlan
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppTheme.blanco),
-                      ),
-                    )
-                  : const Icon(Icons.architecture),
-              label: Text(_isGeneratingFloorPlan ? 'Generando Plano...' : 'Generar Plano del Espacio'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.dorado,
-                foregroundColor: AppTheme.grisOscuro,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+            // Botón generar plano - Ancho completo
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _isGeneratingFloorPlan ? null : _generateFloorPlan,
+                icon: _isGeneratingFloorPlan
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Icon(Icons.architecture, size: 24),
+                label: Text(
+                  _isGeneratingFloorPlan ? 'Generando...' : 'Generar Plano',
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4CAF50),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
               ),
             ),
             SizedBox(height: AppTheme.spacingMD),
