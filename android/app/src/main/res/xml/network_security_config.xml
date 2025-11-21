@@ -1,23 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- Permitir todo el tráfico (incluye Firebase endpoints) -->
+    <!-- Allow cleartext (HTTP) traffic for debugging -->
     <base-config cleartextTrafficPermitted="true">
         <trust-anchors>
-            <!-- Trust preinstalled CAs -->
             <certificates src="system" />
-            <!-- Additionally trust user added CAs -->
             <certificates src="user" />
         </trust-anchors>
     </base-config>
     
-    <!-- Permitir específicamente dominios de Firebase -->
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">firebase.google.com</domain>
+    <!-- Firebase and Google Services domains -->
+    <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">firebaseapp.com</domain>
         <domain includeSubdomains="true">googleapis.com</domain>
-        <domain includeSubdomains="true">google.com</domain>
         <domain includeSubdomains="true">firebasestorage.app</domain>
-        <domain includeSubdomains="true">su-todero.firebaseapp.com</domain>
-        <domain includeSubdomains="true">su-todero.firebasestorage.app</domain>
+        <domain includeSubdomains="true">google.com</domain>
+        <domain includeSubdomains="true">gstatic.com</domain>
     </domain-config>
 </network-security-config>
