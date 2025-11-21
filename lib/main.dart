@@ -22,16 +22,21 @@ void main() async {
   }
   
   try {
+    if (kDebugMode) {
+      debugPrint('🔥 Intentando inicializar Firebase...');
+      debugPrint('📱 Platform: ${DefaultFirebaseOptions.currentPlatform.projectId}');
+    }
+    
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     ).timeout(
-      const Duration(seconds: 30),
+      const Duration(seconds: 60),  // Aumentado a 60s
       onTimeout: () {
         if (kDebugMode) {
-          debugPrint('⏱️ Timeout en inicialización de Firebase (30s)');
+          debugPrint('⏱️ Timeout en inicialización de Firebase (60s)');
           debugPrint('⚠️ La app funcionará en modo local sin Firebase');
         }
-        throw TimeoutException('Firebase initialization timeout');
+        throw TimeoutException('Firebase initialization timeout - sin conexión');
       },
     );
     

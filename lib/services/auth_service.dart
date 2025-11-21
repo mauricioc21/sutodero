@@ -54,17 +54,33 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
 
     try {
+      if (kDebugMode) {
+        debugPrint('🔐 Intentando login para: $email');
+        debugPrint('🔥 Firebase disponible: $_firebaseAvailable');
+      }
+      
       if (_firebaseAvailable) {
-        // Login con Firebase Auth con timeout de 30 segundos
+        // Login con Firebase Auth con timeout de 60 segundos
+        if (kDebugMode) {
+          debugPrint('📡 Conectando a Firebase Auth...');
+        }
+        
         final credential = await _auth.signInWithEmailAndPassword(
           email: email,
           password: password,
         ).timeout(
-          const Duration(seconds: 30),
+          const Duration(seconds: 60),  // Aumentado a 60s
           onTimeout: () {
+            if (kDebugMode) {
+              debugPrint('⏱️ TIMEOUT en Firebase Auth después de 60s');
+            }
             throw Exception('Sin respuesta del servidor. Verifica tu conexión a internet.');
           },
         );
+        
+        if (kDebugMode) {
+          debugPrint('✅ Credential obtenido: ${credential.user?.uid}');
+        }
         
         // ⚡ OPTIMIZACIÓN: Establecer usuario básico PRIMERO para UI rápida
         _currentUser = UserModel(
