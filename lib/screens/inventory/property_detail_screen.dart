@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/inventory_property.dart';
 import '../../models/property_room.dart';
 import '../../models/ticket_model.dart';
@@ -465,6 +466,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
           children: [
             _buildPropertyHeader(),
             _buildPropertyInfo(),
+            _buildFloorPlansSection(), // Sección de planos 2D y 3D
             _buildVirtualToursSection(), // Siempre mostrar sección (con botón crear si vacío)
             if (_relatedTickets.isNotEmpty) _buildRelatedTicketsSection(),
             _buildRoomsSection(),
@@ -1146,6 +1148,300 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     }
   }
 
+  /// Sección de planos arquitectónicos 2D y 3D
+  Widget _buildFloorPlansSection() {
+    final bool hasPlano2D = widget.property.plano2dUrl != null && widget.property.plano2dUrl!.isNotEmpty;
+    final bool hasPlano3D = widget.property.plano3dUrl != null && widget.property.plano3dUrl!.isNotEmpty;
+    final bool hasAnyPlan = hasPlano2D || hasPlano3D;
+
+    return Padding(
+      padding: EdgeInsets.all(AppTheme.paddingLG),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header con título e iconos
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.dorado.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                    ),
+                    child: const Icon(
+                      Icons.architecture,
+                      color: Color(0xFFFAB334),
+                      size: 24,
+                    ),
+                  ),
+                  SizedBox(width: AppTheme.spacingMD),
+                  const Text(
+                    'Planos Arquitectónicos',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  // Botón Plano 2D
+                  IconButton(
+                    onPressed: _generateFloorPlan,
+                    icon: Icon(
+                      Icons.architecture,
+                      color: hasPlano2D ? AppTheme.dorado : AppTheme.grisClaro,
+                    ),
+                    tooltip: hasPlano2D ? 'Regenerar Plano 2D' : 'Generar Plano 2D',
+                  ),
+                  // Botón Plano 3D
+                  IconButton(
+                    onPressed: _generate3DFloorPlan,
+                    icon: Icon(
+                      Icons.view_in_ar,
+                      color: hasPlano3D ? AppTheme.dorado : AppTheme.grisClaro,
+                    ),
+                    tooltip: hasPlano3D ? 'Regenerar Plano 3D' : 'Generar Plano 3D',
+                  ),
+                ],
+              ),
+            ],
+          ),
+          SizedBox(height: AppTheme.spacingMD),
+
+          // Si no hay planos, mostrar mensaje con instrucciones
+          if (!hasAnyPlan)
+            Container(
+              padding: EdgeInsets.all(AppTheme.paddingLG),
+              decoration: BoxDecoration(
+                color: AppTheme.grisOscuro.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                border: Border.all(color: AppTheme.dorado.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.architecture_outlined,
+                    size: 64,
+                    color: AppTheme.dorado.withValues(alpha: 0.5),
+                  ),
+                  SizedBox(height: AppTheme.spacingMD),
+                  const Text(
+                    'No hay planos generados',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.grisClaro,
+                    ),
+                  ),
+                  SizedBox(height: AppTheme.spacingSM),
+                  const Text(
+                    'Genera planos 2D y 3D automáticamente desde los espacios',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.grisClaro,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: AppTheme.spacingMD),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: _rooms.isEmpty ? null : _generateFloorPlan,
+                        icon: const Icon(Icons.architecture),
+                        label: const Text('Generar 2D'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.dorado,
+                          foregroundColor: AppTheme.negro,
+                        ),
+                      ),
+                      SizedBox(width: AppTheme.spacingMD),
+                      ElevatedButton.icon(
+                        onPressed: _rooms.isEmpty ? null : _generate3DFloorPlan,
+                        icon: const Icon(Icons.view_in_ar),
+                        label: const Text('Generar 3D'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.dorado,
+                          foregroundColor: AppTheme.negro,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_rooms.isEmpty) ...[
+                    SizedBox(height: AppTheme.spacingSM),
+                    const Text(
+                      '⚠️ Agrega espacios primero',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.orange,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+          // Si hay planos, mostrar tarjetas
+          if (hasAnyPlan)
+            Row(
+              children: [
+                // Plano 2D
+                if (hasPlano2D)
+                  Expanded(
+                    child: _buildFloorPlanCard(
+                      title: 'Plano 2D',
+                      subtitle: 'Vista superior',
+                      icon: Icons.architecture,
+                      url: widget.property.plano2dUrl!,
+                      onTap: () => _openFloorPlan(widget.property.plano2dUrl!),
+                      onRegenerate: _generateFloorPlan,
+                    ),
+                  ),
+                
+                if (hasPlano2D && hasPlano3D)
+                  SizedBox(width: AppTheme.spacingMD),
+
+                // Plano 3D
+                if (hasPlano3D)
+                  Expanded(
+                    child: _buildFloorPlanCard(
+                      title: 'Plano 3D',
+                      subtitle: 'Vista isométrica',
+                      icon: Icons.view_in_ar,
+                      url: widget.property.plano3dUrl!,
+                      onTap: () => _openFloorPlan(widget.property.plano3dUrl!),
+                      onRegenerate: _generate3DFloorPlan,
+                    ),
+                  ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Construye una tarjeta individual de plano
+  Widget _buildFloorPlanCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required String url,
+    required VoidCallback onTap,
+    required VoidCallback onRegenerate,
+  }) {
+    return Card(
+      color: AppTheme.grisOscuro,
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        side: BorderSide(color: AppTheme.dorado.withValues(alpha: 0.3)),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        child: Padding(
+          padding: EdgeInsets.all(AppTheme.paddingMD),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.dorado.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                ),
+                child: Icon(
+                  icon,
+                  color: AppTheme.dorado,
+                  size: 48,
+                ),
+              ),
+              SizedBox(height: AppTheme.spacingMD),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.dorado,
+                ),
+              ),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.grisClaro,
+                ),
+              ),
+              SizedBox(height: AppTheme.spacingMD),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onTap,
+                      icon: const Icon(Icons.visibility, size: 16),
+                      label: const Text('Ver', style: TextStyle(fontSize: 12)),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.dorado,
+                        side: const BorderSide(color: AppTheme.dorado),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    onPressed: onRegenerate,
+                    icon: const Icon(Icons.refresh, size: 16),
+                    color: AppTheme.grisClaro,
+                    tooltip: 'Regenerar',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Abre un plano en el navegador o visor de PDF
+  Future<void> _openFloorPlan(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❌ No se pudo abrir el plano'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error abriendo plano: $e');
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   /// Sección de tours virtuales 360°
   Widget _buildVirtualToursSection() {
     return Padding(
@@ -1721,51 +2017,71 @@ class _ActClientInfoDialogState extends State<_ActClientInfoDialog> {
       ),
       actions: [
         Padding(
-          padding: const EdgeInsets.only(bottom: 16, right: 8),
+          padding: const EdgeInsets.only(
+            bottom: AppTheme.safeBottomPadding, // Usar padding seguro
+            left: 16,
+            right: 16,
+            top: 8,
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, null),
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.black54,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                ),
-                child: const Text(
-                  'CANCELAR',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    FocusScope.of(context).unfocus(); // Cerrar teclado
+                    Navigator.pop(context, null);
+                  },
+                  icon: const Icon(Icons.close, size: 18),
+                  label: const Text('CANCELAR'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.black54,
+                    side: const BorderSide(color: Colors.black26),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  ),
                 ),
               ),
-              const SizedBox(width: 12),
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    // Cerrar teclado primero
-                    FocusScope.of(context).unfocus();
-                    
-                    // Pequeño delay para asegurar que el teclado se cierra
-                    Future.delayed(const Duration(milliseconds: 100), () {
-                      Navigator.pop(context, {
-                        'clientName': _clientNameController.text,
-                        'clientPhone': _clientPhoneController.text.isEmpty ? null : _clientPhoneController.text,
-                        'clientEmail': _clientEmailController.text.isEmpty ? null : _clientEmailController.text,
-                        'clientIdNumber': _clientIdController.text.isEmpty ? null : _clientIdController.text,
-                        'inspectorName': _inspectorNameController.text.isEmpty ? null : _inspectorNameController.text,
-                        'inspectorRole': _inspectorRoleController.text.isEmpty ? null : _inspectorRoleController.text,
-                        'observations': _observationsController.text.isEmpty ? null : _observationsController.text,
+              const SizedBox(width: 16),
+              Expanded(
+                flex: 2,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      // Cerrar teclado primero
+                      FocusScope.of(context).unfocus();
+                      
+                      // Pequeño delay para asegurar que el teclado se cierra
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        if (!context.mounted) return;
+                        Navigator.pop(context, {
+                          'clientName': _clientNameController.text,
+                          'clientPhone': _clientPhoneController.text.isEmpty ? null : _clientPhoneController.text,
+                          'clientEmail': _clientEmailController.text.isEmpty ? null : _clientEmailController.text,
+                          'clientIdNumber': _clientIdController.text.isEmpty ? null : _clientIdController.text,
+                          'inspectorName': _inspectorNameController.text.isEmpty ? null : _inspectorNameController.text,
+                          'inspectorRole': _inspectorRoleController.text.isEmpty ? null : _inspectorRoleController.text,
+                          'observations': _observationsController.text.isEmpty ? null : _observationsController.text,
+                        });
                       });
-                    });
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.dorado,
-                  foregroundColor: AppTheme.negro,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  elevation: 2,
-                ),
-                child: const Text(
-                  'CONTINUAR',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                    } else {
+                      // Mostrar feedback si hay errores de validación
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('⚠️ Por favor completa los campos requeridos'),
+                          backgroundColor: Colors.orange,
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.check, size: 18),
+                  label: const Text('CONTINUAR'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.dorado,
+                    foregroundColor: AppTheme.negro,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    elevation: 4,
+                  ),
                 ),
               ),
             ],

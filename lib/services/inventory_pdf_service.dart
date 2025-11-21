@@ -3,6 +3,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import '../models/inventory_property.dart';
 import '../models/property_room.dart';
 import '../config/brand_colors.dart';
@@ -45,6 +46,82 @@ class InventoryPdfService {
       }
     }
 
+    // Descargar planos 2D y 3D si existen
+    pw.MemoryImage? plano2dImage;
+    pw.MemoryImage? plano3dImage;
+    
+    if (property.plano2dUrl != null && property.plano2dUrl!.isNotEmpty) {
+      try {
+        plano2dImage = await _downloadImage(property.plano2dUrl!);
+        if (kDebugMode) {
+          debugPrint('✅ Plano 2D descargado para PDF de inventario');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('⚠️ Error descargando plano 2D: $e');
+        }
+      }
+    }
+    
+    if (property.plano3dUrl != null && property.plano3dUrl!.isNotEmpty) {
+      try {
+        plano3dImage = await _downloadImage(property.plano3dUrl!);
+        if (kDebugMode) {
+          debugPrint('✅ Plano 3D descargado para PDF de inventario');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('⚠️ Error descargando plano 3D: $e');
+        }
+      }
+    }
+
+    // Descargar fotos de todos los espacios
+    final List<pw.MemoryImage> allRoomPhotos = [];
+    final Map<String, List<pw.MemoryImage>> photosByRoom = {};
+    
+    for (final room in rooms) {
+      final roomPhotos = <pw.MemoryImage>[];
+      
+      // Fotos regulares del espacio
+      for (final photoUrl in room.fotos) {
+        try {
+          final image = await _downloadImage(photoUrl);
+          if (image != null) {
+            roomPhotos.add(image);
+            allRoomPhotos.add(image);
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('⚠️ Error descargando foto de espacio: $e');
+          }
+        }
+      }
+      
+      // Foto 360° si existe
+      if (room.foto360Url != null && room.foto360Url!.isNotEmpty) {
+        try {
+          final image360 = await _downloadImage(room.foto360Url!);
+          if (image360 != null) {
+            roomPhotos.add(image360);
+            allRoomPhotos.add(image360);
+          }
+          if (kDebugMode) {
+            debugPrint('✅ Foto 360° descargada para ${room.nombre}');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('⚠️ Error descargando foto 360°: $e');
+          }
+        }
+      }
+      
+      if (roomPhotos.isNotEmpty) {
+        photosByRoom[room.nombre] = roomPhotos;
+      }
+    }
+
+    // Página principal con información
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.letter,
@@ -84,6 +161,134 @@ class InventoryPdfService {
         ],
       ),
     );
+
+    // Página de Plano 2D
+    if (plano2dImage != null) {
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.letter.landscape,
+          margin: const pw.EdgeInsets.all(40),
+          build: (context) => pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              _buildHeader(logoImage),
+              pw.SizedBox(height: 20),
+              pw.Text(
+                'PLANO 2D - VISTA SUPERIOR',
+                style: pw.TextStyle(
+                  fontSize: 20,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColor.fromHex('#FAB334'),
+                ),
+              ),
+              pw.SizedBox(height: 16),
+              pw.Expanded(
+                child: pw.Container(
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfColors.grey300, width: 2),
+                    borderRadius: pw.BorderRadius.circular(8),
+                  ),
+                  child: pw.ClipRRect(
+                    horizontalRadius: 8,
+                    verticalRadius: 8,
+                    child: pw.Image(plano2dImage, fit: pw.BoxFit.contain),
+                  ),
+                ),
+              ),
+              pw.SizedBox(height: 12),
+              _buildFooter(),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Página de Plano 3D
+    if (plano3dImage != null) {
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.letter.landscape,
+          margin: const pw.EdgeInsets.all(40),
+          build: (context) => pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              _buildHeader(logoImage),
+              pw.SizedBox(height: 20),
+              pw.Text(
+                'PLANO 3D - VISTA ISOMÉTRICA',
+                style: pw.TextStyle(
+                  fontSize: 20,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColor.fromHex('#FAB334'),
+                ),
+              ),
+              pw.SizedBox(height: 16),
+              pw.Expanded(
+                child: pw.Container(
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfColors.grey300, width: 2),
+                    borderRadius: pw.BorderRadius.circular(8),
+                  ),
+                  child: pw.ClipRRect(
+                    horizontalRadius: 8,
+                    verticalRadius: 8,
+                    child: pw.Image(plano3dImage, fit: pw.BoxFit.contain),
+                  ),
+                ),
+              ),
+              pw.SizedBox(height: 12),
+              _buildFooter(),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Páginas de fotos (4 fotos por página, agrupadas por espacio)
+    if (photosByRoom.isNotEmpty) {
+      photosByRoom.forEach((roomName, photos) {
+        // Dividir fotos en páginas (4 por página)
+        const photosPerPage = 4;
+        for (var i = 0; i < photos.length; i += photosPerPage) {
+          final pagePhotos = photos.skip(i).take(photosPerPage).toList();
+          
+          pdf.addPage(
+            pw.Page(
+              pageFormat: PdfPageFormat.letter,
+              margin: const pw.EdgeInsets.all(40),
+              build: (context) => pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(logoImage),
+                  pw.SizedBox(height: 20),
+                  pw.Text(
+                    'GALERÍA FOTOGRÁFICA - $roomName',
+                    style: pw.TextStyle(
+                      fontSize: 18,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColor.fromHex('#FAB334'),
+                    ),
+                  ),
+                  pw.Text(
+                    '(${i + 1}-${i + pagePhotos.length} de ${photos.length})',
+                    style: pw.TextStyle(
+                      fontSize: 12,
+                      color: PdfColors.grey700,
+                    ),
+                  ),
+                  pw.SizedBox(height: 16),
+                  pw.Expanded(
+                    child: _buildPhotoGrid(pagePhotos),
+                  ),
+                  pw.SizedBox(height: 12),
+                  _buildFooter(),
+                ],
+              ),
+            ),
+          );
+        }
+      });
+    }
 
     return pdf.save();
   }
@@ -495,5 +700,61 @@ class InventoryPdfService {
       }
       rethrow;
     }
+  }
+
+  /// Descargar imagen desde URL
+  Future<pw.MemoryImage?> _downloadImage(String url) async {
+    try {
+      if (kDebugMode) {
+        debugPrint('📥 Descargando imagen: ${url.substring(0, 50)}...');
+      }
+      
+      final response = await http.get(Uri.parse(url)).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          throw Exception('Timeout al descargar imagen después de 10 segundos');
+        },
+      );
+      
+      if (response.statusCode == 200) {
+        if (kDebugMode) {
+          debugPrint('✅ Imagen descargada exitosamente (${response.bodyBytes.length} bytes)');
+        }
+        return pw.MemoryImage(response.bodyBytes);
+      } else {
+        if (kDebugMode) {
+          debugPrint('❌ Error HTTP ${response.statusCode} al descargar imagen');
+        }
+        return null;
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error descargando imagen: $e');
+      }
+      return null;
+    }
+  }
+
+  /// Grid de fotos para PDF (2x2)
+  pw.Widget _buildPhotoGrid(List<pw.MemoryImage> photos) {
+    return pw.GridView(
+      crossAxisCount: 2,
+      childAspectRatio: 1,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      children: photos.map((photo) {
+        return pw.Container(
+          decoration: pw.BoxDecoration(
+            border: pw.Border.all(color: PdfColors.grey300, width: 2),
+            borderRadius: pw.BorderRadius.circular(8),
+          ),
+          child: pw.ClipRRect(
+            horizontalRadius: 8,
+            verticalRadius: 8,
+            child: pw.Image(photo, fit: pw.BoxFit.cover),
+          ),
+        );
+      }).toList(),
+    );
   }
 }
