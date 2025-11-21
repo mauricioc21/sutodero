@@ -46,11 +46,11 @@ class InventoryService {
       final snapshot = await _propertiesCollection(userId)
           .orderBy('fechaCreacion', descending: true)
           .get()
-          .timeout(const Duration(seconds: 5), onTimeout: () {
+          .timeout(const Duration(seconds: 30), onTimeout: () {
             if (kDebugMode) {
               debugPrint('⚠️ Timeout obteniendo propiedades - modo offline');
             }
-            throw Exception('Sin conexión a internet');
+            throw Exception('Sin conexión a internet. Intenta nuevamente.');
           });
 
       return snapshot.docs
@@ -71,7 +71,7 @@ class InventoryService {
   Future<InventoryProperty?> getProperty(String userId, String propertyId) async {
     try {
       final doc = await _propertiesCollection(userId).doc(propertyId).get()
-          .timeout(const Duration(seconds: 5));
+          .timeout(const Duration(seconds: 30));
       
       if (!doc.exists) return null;
 
@@ -103,9 +103,9 @@ class InventoryService {
             property.toMap(),
             SetOptions(merge: true),
           ).timeout(
-        const Duration(seconds: 10),
+        const Duration(seconds: 30),
         onTimeout: () {
-          throw Exception('Timeout al guardar propiedad. Verifica tu conexión a internet.');
+          throw Exception('Timeout al guardar propiedad. Intenta nuevamente con mejor conexión a internet.');
         },
       );
 

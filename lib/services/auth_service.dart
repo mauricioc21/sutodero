@@ -55,14 +55,14 @@ class AuthService extends ChangeNotifier {
 
     try {
       if (_firebaseAvailable) {
-        // Login con Firebase Auth con timeout REDUCIDO a 5 segundos
+        // Login con Firebase Auth con timeout de 30 segundos
         final credential = await _auth.signInWithEmailAndPassword(
           email: email,
           password: password,
         ).timeout(
-          const Duration(seconds: 5),
+          const Duration(seconds: 30),
           onTimeout: () {
-            throw Exception('Sin respuesta del servidor. Verifica tu internet.');
+            throw Exception('Sin respuesta del servidor. Verifica tu conexión a internet.');
           },
         );
         
@@ -144,9 +144,9 @@ class AuthService extends ChangeNotifier {
           email: email,
           password: password,
         ).timeout(
-          const Duration(seconds: 10),
+          const Duration(seconds: 30),
           onTimeout: () {
-            throw Exception('Timeout al registrar usuario. Verifica tu internet.');
+            throw Exception('Timeout al registrar usuario. Verifica tu conexión a internet.');
           },
         );
         
@@ -178,9 +178,9 @@ class AuthService extends ChangeNotifier {
         
         await _firestore.collection('users').doc(user.uid).set(user.toMap())
             .timeout(
-          const Duration(seconds: 10),
+          const Duration(seconds: 30),
           onTimeout: () {
-            throw Exception('Timeout al guardar datos en Firestore. Verifica tu internet.');
+            throw Exception('Timeout al guardar datos en Firestore. Verifica tu conexión a internet.');
           },
         );
         
@@ -287,11 +287,11 @@ class AuthService extends ChangeNotifier {
   Future<void> _loadUserData(String uid) async {
     try {
       final doc = await _firestore.collection('users').doc(uid).get()
-          .timeout(const Duration(seconds: 5), onTimeout: () {
+          .timeout(const Duration(seconds: 30), onTimeout: () {
         if (kDebugMode) {
           debugPrint('⚠️ Timeout cargando datos de usuario desde Firestore');
         }
-        throw Exception('Sin conexión a internet');
+        throw Exception('Sin conexión a internet. Intenta nuevamente.');
       });
       
       if (doc.exists) {

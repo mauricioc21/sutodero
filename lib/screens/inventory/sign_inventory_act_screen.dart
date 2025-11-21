@@ -77,7 +77,7 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
 
       final XFile? photo = await _imagePicker.pickImage(
         source: source,
-        preferredCameraDevice: source == ImageSource.camera ? CameraDevice.front : null,
+        preferredCameraDevice: source == ImageSource.camera ? CameraDevice.front : CameraDevice.rear,
         maxWidth: 1024,
         maxHeight: 1024,
         imageQuality: 85,

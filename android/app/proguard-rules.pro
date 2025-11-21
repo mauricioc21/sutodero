@@ -11,22 +11,44 @@
 -dontwarn io.flutter.**
 
 # ============================================================================
-# FIREBASE
+# FIREBASE (COMPREHENSIVE RULES)
 # ============================================================================
 
-# Firebase Core
+# Firebase Core - Keep everything
 -keep class com.google.firebase.** { *; }
+-keep interface com.google.firebase.** { *; }
+-keepclassmembers class com.google.firebase.** {
+    *;
+}
 -dontwarn com.google.firebase.**
 
-# Firestore
+# Firestore - Prevent serialization issues
 -keep class com.google.firebase.firestore.** { *; }
+-keep interface com.google.firebase.firestore.** { *; }
 -keepclassmembers class com.google.firebase.firestore.** { *; }
+-keepclassmembers class * {
+    @com.google.firebase.firestore.PropertyName *;
+}
 
-# Firebase Storage
+# Firebase Storage - Keep all methods
 -keep class com.google.firebase.storage.** { *; }
+-keepclassmembers class com.google.firebase.storage.** { *; }
 
-# Firebase Auth
+# Firebase Auth - Critical for user authentication
 -keep class com.google.firebase.auth.** { *; }
+-keepclassmembers class com.google.firebase.auth.** { *; }
+
+# Google Play Services (required by Firebase)
+-keep class com.google.android.gms.** { *; }
+-keep interface com.google.android.gms.** { *; }
+-dontwarn com.google.android.gms.**
+
+# Firebase Analytics (if used)
+-keep class com.google.firebase.analytics.** { *; }
+
+# Keep all Firebase initialization classes
+-keep class com.google.firebase.provider.FirebaseInitProvider { *; }
+-keep class com.google.firebase.components.** { *; }
 
 # ============================================================================
 # BLUETOOTH (Flutter Blue Plus)

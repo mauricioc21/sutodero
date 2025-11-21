@@ -25,10 +25,10 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     ).timeout(
-      const Duration(seconds: 5),
+      const Duration(seconds: 30),
       onTimeout: () {
         if (kDebugMode) {
-          debugPrint('⏱️ Timeout en inicialización de Firebase (5s)');
+          debugPrint('⏱️ Timeout en inicialización de Firebase (30s)');
           debugPrint('⚠️ La app funcionará en modo local sin Firebase');
         }
         throw TimeoutException('Firebase initialization timeout');

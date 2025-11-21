@@ -191,7 +191,7 @@ class InventoryPdfService {
                   child: pw.ClipRRect(
                     horizontalRadius: 8,
                     verticalRadius: 8,
-                    child: pw.Image(plano2dImage, fit: pw.BoxFit.contain),
+                    child: pw.Image(plano2dImage!, fit: pw.BoxFit.contain),
                   ),
                 ),
               ),
@@ -232,7 +232,7 @@ class InventoryPdfService {
                   child: pw.ClipRRect(
                     horizontalRadius: 8,
                     verticalRadius: 8,
-                    child: pw.Image(plano3dImage, fit: pw.BoxFit.contain),
+                    child: pw.Image(plano3dImage!, fit: pw.BoxFit.contain),
                   ),
                 ),
               ),

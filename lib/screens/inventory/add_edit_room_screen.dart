@@ -620,7 +620,7 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
             ),
             const SizedBox(height: 24),
             Padding(
-              padding: const EdgeInsets.only(bottom: AppTheme.safeBottomPadding),
+              padding: const EdgeInsets.only(bottom: 80.0), // safeBottomPadding
               child: ElevatedButton(
                 onPressed: _isSaving ? null : _save,
                 child: _isSaving

@@ -29,7 +29,7 @@ android {
         applicationId = "sutodero.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = 23 // Requerido por firebase_auth
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -52,16 +52,11 @@ android {
             // ✅ Sign with release keystore instead of debug keys
             signingConfig = signingConfigs.getByName("release")
             
-            // ⚡ OPTIMIZACIONES DE RENDIMIENTO ACTIVADAS
-            // Minificación de código con R8 (reduce tamaño ~30%)
-            isMinifyEnabled = true
-            // Elimina recursos no usados (reduce tamaño adicional ~15%)
-            isShrinkResources = true
-            // Archivo de reglas de ProGuard
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            // ⚠️ MINIFICACIÓN DESHABILITADA para evitar problemas con Firebase
+            // La minificación agresiva puede remover código de Firebase que se necesita en runtime
+            isMinifyEnabled = false
+            // Recursos se mantienen para evitar problemas de carga
+            isShrinkResources = false
         }
     }
 }
