@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:panorama_viewer/panorama_viewer.dart';
 import '../../models/virtual_tour_model.dart';
 import '../../config/app_theme.dart';
@@ -20,6 +21,20 @@ class VirtualTourViewerScreen extends StatefulWidget {
 class _VirtualTourViewerScreenState extends State<VirtualTourViewerScreen> {
   int _currentPhotoIndex = 0;
   bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-cache de la primera imagen para mejor rendimiento
+    if (widget.tour.photo360Urls.isNotEmpty) {
+      precacheImage(
+        NetworkImage(widget.tour.photo360Urls[_currentPhotoIndex]),
+        context,
+      ).catchError((e) {
+        debugPrint('⚠️ Error pre-caching imagen: $e');
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +60,8 @@ class _VirtualTourViewerScreenState extends State<VirtualTourViewerScreen> {
         ),
       );
     }
+
+    final currentPhotoUrl = widget.tour.photo360Urls[_currentPhotoIndex];
 
     return Scaffold(
       backgroundColor: AppTheme.negro,
@@ -73,12 +90,16 @@ class _VirtualTourViewerScreenState extends State<VirtualTourViewerScreen> {
         children: [
           // Visor panorámico 360°
           PanoramaViewer(
+            key: ValueKey(currentPhotoUrl), // Forzar rebuild al cambiar foto
             animSpeed: 1.0,
             sensorControl: SensorControl.orientation,
             child: Image.network(
-              widget.tour.photo360Urls[_currentPhotoIndex],
+              currentPhotoUrl,
+              fit: BoxFit.cover,
+              cacheWidth: 2048, // Optimizar tamaño de cache
               loadingBuilder: (context, child, loadingProgress) {
                 if (loadingProgress == null) {
+                  // Imagen cargada exitosamente
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     if (mounted && _isLoading) {
                       setState(() => _isLoading = false);
@@ -86,22 +107,68 @@ class _VirtualTourViewerScreenState extends State<VirtualTourViewerScreen> {
                   });
                   return child;
                 }
-                return const Center(
-                  child: CircularProgressIndicator(
-                    color: Color(0xFFFAB334),
+                
+                // Mostrar progreso de carga
+                final progress = loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null;
+
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        color: const Color(0xFFFAB334),
+                        value: progress,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        progress != null
+                            ? 'Cargando... ${(progress * 100).toInt()}%'
+                            : 'Cargando imagen 360°...',
+                        style: const TextStyle(
+                          color: AppTheme.blanco,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
                   ),
                 );
               },
               errorBuilder: (context, error, stackTrace) {
-                return const Center(
+                debugPrint('❌ Error cargando imagen 360°: $error');
+                debugPrint('URL: $currentPhotoUrl');
+                
+                return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.error_outline, size: 64, color: Colors.red),
-                      SizedBox(height: 16),
-                      Text(
+                      const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                      const SizedBox(height: 16),
+                      const Text(
                         'Error al cargar la imagen 360°',
-                        style: TextStyle(color: AppTheme.blanco),
+                        style: TextStyle(color: AppTheme.blanco, fontSize: 16),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Verifica tu conexión a internet',
+                        style: TextStyle(color: AppTheme.grisClaro, fontSize: 12),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          // Forzar rebuild para reintentar carga
+                          setState(() {
+                            _isLoading = true;
+                          });
+                        },
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Reintentar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.dorado,
+                          foregroundColor: AppTheme.negro,
+                        ),
                       ),
                     ],
                   ),
@@ -162,10 +229,14 @@ class _VirtualTourViewerScreenState extends State<VirtualTourViewerScreen> {
                   _buildNavButton(
                     icon: Icons.arrow_back,
                     onPressed: _currentPhotoIndex > 0
-                        ? () => setState(() {
+                        ? () {
+                            setState(() {
                               _currentPhotoIndex--;
                               _isLoading = true;
-                            })
+                            });
+                            // Pre-cache de la imagen
+                            _precacheCurrentImage();
+                          }
                         : null,
                   ),
                   const SizedBox(width: 24),
@@ -173,10 +244,14 @@ class _VirtualTourViewerScreenState extends State<VirtualTourViewerScreen> {
                   _buildNavButton(
                     icon: Icons.arrow_forward,
                     onPressed: _currentPhotoIndex < widget.tour.photo360Urls.length - 1
-                        ? () => setState(() {
+                        ? () {
+                            setState(() {
                               _currentPhotoIndex++;
                               _isLoading = true;
-                            })
+                            });
+                            // Pre-cache de la imagen
+                            _precacheCurrentImage();
+                          }
                         : null,
                   ),
                 ],
@@ -212,6 +287,20 @@ class _VirtualTourViewerScreenState extends State<VirtualTourViewerScreen> {
         ],
       ),
     );
+  }
+
+  /// Pre-cargar imagen actual en cache
+  void _precacheCurrentImage() {
+    if (_currentPhotoIndex < widget.tour.photo360Urls.length) {
+      precacheImage(
+        NetworkImage(widget.tour.photo360Urls[_currentPhotoIndex]),
+        context,
+      ).catchError((e) {
+        if (kDebugMode) {
+          debugPrint('⚠️ Error pre-caching imagen: $e');
+        }
+      });
+    }
   }
 
   /// Construir botón de navegación

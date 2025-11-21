@@ -1658,7 +1658,15 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     for (final room in _rooms) {
       if (room.foto360Url != null && room.foto360Url!.isNotEmpty) {
         all360Photos.add(room.foto360Url!);
+        if (kDebugMode) {
+          debugPrint('📸 Foto 360° encontrada en ${room.nombre}: ${room.foto360Url}');
+        }
       }
+    }
+
+    if (kDebugMode) {
+      debugPrint('🔍 Total de fotos 360° encontradas: ${all360Photos.length}');
+      debugPrint('📋 Espacios totales: ${_rooms.length}');
     }
 
     if (all360Photos.isEmpty) {
@@ -1666,6 +1674,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
         const SnackBar(
           content: Text('⚠️ No hay fotos 360° capturadas. Captura fotos 360° en los espacios primero.'),
           backgroundColor: Colors.orange,
+          duration: Duration(seconds: 4),
         ),
       );
       return;
@@ -1793,6 +1802,13 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
               : 'Tour Virtual de ${widget.property.direccion}',
         );
 
+        if (kDebugMode) {
+          debugPrint('✅ Tour virtual creado exitosamente');
+          debugPrint('   ID: ${tour.id}');
+          debugPrint('   Fotos: ${tour.photo360Urls.length}');
+          debugPrint('   Propiedad: ${tour.propertyAddress}');
+        }
+
         if (mounted) {
           Navigator.pop(context); // Cerrar loading
 
@@ -1800,9 +1816,10 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
           _loadRooms();
 
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✅ Tour virtual creado exitosamente'),
+            SnackBar(
+              content: Text('✅ Tour virtual creado con ${tour.photo360Urls.length} foto(s) 360°'),
               backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
             ),
           );
 
