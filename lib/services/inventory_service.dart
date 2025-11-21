@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../models/inventory_property.dart';
 import '../models/property_room.dart';
 import 'activity_log_service.dart';
+import 'storage_service.dart';
 
 /// Servicio para gestionar inventarios de propiedades en Firestore
 /// Datos organizados por usuario: users/{userId}/properties/{propertyId}
@@ -91,17 +92,30 @@ class InventoryService {
     try {
       property.fechaActualizacion = DateTime.now();
       
+      if (kDebugMode) {
+        debugPrint('💾 Guardando propiedad en Firestore...');
+        debugPrint('   userId: $userId');
+        debugPrint('   propertyId: ${property.id}');
+        debugPrint('   dirección: ${property.direccion}');
+      }
+      
       await _propertiesCollection(userId).doc(property.id).set(
             property.toMap(),
             SetOptions(merge: true),
-          ).timeout(const Duration(seconds: 10));
+          ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          throw Exception('Timeout al guardar propiedad. Verifica tu conexión a internet.');
+        },
+      );
 
       if (kDebugMode) {
-        debugPrint('✅ Propiedad guardada: ${property.direccion}');
+        debugPrint('✅ Propiedad guardada exitosamente: ${property.direccion}');
       }
     } catch (e) {
       if (kDebugMode) {
         debugPrint('❌ Error guardando propiedad: $e');
+        debugPrint('   Stack trace: ${StackTrace.current}');
       }
       rethrow;
     }
@@ -303,37 +317,111 @@ class InventoryService {
   }
 
   /// Agrega una foto a un espacio
-  Future<void> addRoomPhoto(String userId, String propertyId, String roomId, String photoUrl) async {
+  /// IMPORTANTE: photoPath es el PATH LOCAL del archivo, no una URL
+  Future<void> addRoomPhoto(String userId, String propertyId, String roomId, String photoPath) async {
     final room = await getRoom(userId, propertyId, roomId);
-    if (room == null) return;
+    if (room == null) {
+      if (kDebugMode) {
+        debugPrint('❌ Error: Room no encontrado para foto normal');
+      }
+      return;
+    }
 
+    if (kDebugMode) {
+      debugPrint('📸 Subiendo foto normal para room: $roomId');
+      debugPrint('📁 Path local: $photoPath');
+    }
+
+    // 1. Subir foto a Firebase Storage
+    final storageService = StorageService();
+    final photoUrl = await storageService.uploadRoomPhoto(
+      userId: userId,
+      propertyId: propertyId,
+      roomId: roomId,
+      filePath: photoPath,
+      is360: false,
+    );
+
+    if (photoUrl == null) {
+      if (kDebugMode) {
+        debugPrint('❌ Error: No se pudo subir foto a Storage');
+      }
+      throw Exception('No se pudo subir la foto a Firebase Storage');
+    }
+
+    if (kDebugMode) {
+      debugPrint('✅ Foto subida exitosamente: $photoUrl');
+    }
+
+    // 2. Agregar URL a Firestore
     room.fotos.add(photoUrl);
     await updateRoom(userId, propertyId, room);
 
-    // Registrar actividad
+    // 3. Registrar actividad
     _activityLog.logUploadPhoto(
       userId,
       entityId: roomId,
       entityType: 'room',
       photoUrl: photoUrl,
     );
+
+    if (kDebugMode) {
+      debugPrint('✅ Foto guardada en Firestore');
+    }
   }
 
   /// Establece la foto 360° de un espacio
-  Future<void> setRoom360Photo(String userId, String propertyId, String roomId, String photo360Url) async {
+  /// IMPORTANTE: photo360Path es el PATH LOCAL del archivo, no una URL
+  Future<void> setRoom360Photo(String userId, String propertyId, String roomId, String photo360Path) async {
     final room = await getRoom(userId, propertyId, roomId);
-    if (room == null) return;
+    if (room == null) {
+      if (kDebugMode) {
+        debugPrint('❌ Error: Room no encontrado para foto 360°');
+      }
+      return;
+    }
 
-    room.foto360Url = photo360Url;
+    if (kDebugMode) {
+      debugPrint('📸 Subiendo foto 360° para room: $roomId');
+      debugPrint('📁 Path local: $photo360Path');
+    }
+
+    // 1. Subir foto a Firebase Storage
+    final storageService = StorageService();
+    final photoUrl = await storageService.uploadRoomPhoto(
+      userId: userId,
+      propertyId: propertyId,
+      roomId: roomId,
+      filePath: photo360Path,
+      is360: true,
+    );
+
+    if (photoUrl == null) {
+      if (kDebugMode) {
+        debugPrint('❌ Error: No se pudo subir foto 360° a Storage');
+      }
+      throw Exception('No se pudo subir la foto 360° a Firebase Storage');
+    }
+
+    if (kDebugMode) {
+      debugPrint('✅ Foto 360° subida exitosamente: $photoUrl');
+    }
+
+    // 2. Guardar URL en Firestore
+    room.foto360Url = photoUrl;
     await updateRoom(userId, propertyId, room);
 
-    // Registrar actividad
+    // 3. Registrar actividad
     _activityLog.logUploadPhoto(
       userId,
       entityId: roomId,
       entityType: 'room_360',
-      photoUrl: photo360Url,
+      photoUrl: photoUrl,
     );
+
+    if (kDebugMode) {
+      debugPrint('✅ Foto 360° guardada en Firestore');
+    }
   }
 
   /// Agrega un problema a un espacio

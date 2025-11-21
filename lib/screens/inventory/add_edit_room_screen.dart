@@ -619,11 +619,14 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
               onChanged: (v) => setState(() => _iluminacionNatural = v),
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _isSaving ? null : _save,
-              child: _isSaving
-                  ? const CircularProgressIndicator()
-                  : Text(isEdit ? 'Actualizar' : 'Guardar'),
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppTheme.safeBottomPadding),
+              child: ElevatedButton(
+                onPressed: _isSaving ? null : _save,
+                child: _isSaving
+                    ? const CircularProgressIndicator()
+                    : Text(isEdit ? 'Actualizar' : 'Guardar'),
+              ),
             ),
           ],
         ),

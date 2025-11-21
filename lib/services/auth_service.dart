@@ -135,14 +135,31 @@ class AuthService extends ChangeNotifier {
 
     try {
       if (_firebaseAvailable) {
+        if (kDebugMode) {
+          debugPrint('📝 Iniciando registro de usuario: $email');
+        }
+        
         // Registro con Firebase Auth
         final credential = await _auth.createUserWithEmailAndPassword(
           email: email,
           password: password,
+        ).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            throw Exception('Timeout al registrar usuario. Verifica tu internet.');
+          },
         );
+        
+        if (kDebugMode) {
+          debugPrint('✅ Usuario creado en Firebase Auth: ${credential.user!.uid}');
+        }
         
         // Actualizar nombre de usuario en Firebase Auth
         await credential.user!.updateDisplayName(nombre);
+        
+        if (kDebugMode) {
+          debugPrint('✅ Display name actualizado: $nombre');
+        }
         
         // Crear documento de usuario en Firestore
         final user = UserModel(
@@ -154,7 +171,23 @@ class AuthService extends ChangeNotifier {
           fechaCreacion: DateTime.now(),
         );
         
-        await _firestore.collection('users').doc(user.uid).set(user.toMap());
+        if (kDebugMode) {
+          debugPrint('💾 Guardando usuario en Firestore: ${user.uid}');
+          debugPrint('📄 Datos: ${user.toMap()}');
+        }
+        
+        await _firestore.collection('users').doc(user.uid).set(user.toMap())
+            .timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            throw Exception('Timeout al guardar datos en Firestore. Verifica tu internet.');
+          },
+        );
+        
+        if (kDebugMode) {
+          debugPrint('✅ Usuario guardado exitosamente en Firestore');
+        }
+        
         _currentUser = user;
       } else {
         // Modo demo sin Firebase

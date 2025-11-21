@@ -107,13 +107,42 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
   }
 
   /// ✅ TOMAR FOTO DIRECTAMENTE - Sin diálogo
-  /// Profesional: Abre la cámara inmediatamente
+  /// Profesional: Abre la cámara inmediatamente (ahora con opción de galería)
   Future<void> _takePhotoDirectly() async {
     if (_room == null) return;
     
+    // Mostrar diálogo de selección de fuente
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.grisOscuro,
+        title: const Text(
+          'Capturar Foto',
+          style: TextStyle(color: AppTheme.dorado),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: AppTheme.dorado),
+              title: const Text('Tomar con Cámara', style: TextStyle(color: AppTheme.blanco)),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: AppTheme.dorado),
+              title: const Text('Seleccionar de Galería', style: TextStyle(color: AppTheme.blanco)),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+    
     try {
       final XFile? photo = await _imagePicker.pickImage(
-        source: ImageSource.camera,
+        source: source,
         imageQuality: 85,
         maxWidth: 1920,
         maxHeight: 1080,

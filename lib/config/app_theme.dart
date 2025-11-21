@@ -309,6 +309,9 @@ class AppTheme {
   static const double spacing2XL = spacingXLarge;
   static const double spacing3XL = 48.0;
   
+  /// Margen inferior seguro para botones (evita que queden montados con botones del sistema)
+  static const double safeBottomPadding = 80.0;
+  
   /// Border Radius estándar
   static const double radiusSmall = 8;
   static const double radiusMedium = 12;

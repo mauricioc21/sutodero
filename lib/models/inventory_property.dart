@@ -108,6 +108,8 @@ class InventoryProperty {
   int? numeroHabitaciones;
   int? numeroBanos;
   bool activa;
+  String? plano2dUrl; // URL del plano 2D en Firebase Storage
+  String? plano3dUrl; // URL del plano 3D isométrico en Firebase Storage
 
   InventoryProperty({
     required this.id,
@@ -126,6 +128,8 @@ class InventoryProperty {
     this.numeroHabitaciones,
     this.numeroBanos,
     this.activa = true,
+    this.plano2dUrl,
+    this.plano3dUrl,
   })  : fotos = fotos ?? [],
         fechaCreacion = fechaCreacion ?? DateTime.now();
 
@@ -148,6 +152,8 @@ class InventoryProperty {
       'numeroHabitaciones': numeroHabitaciones,
       'numeroBanos': numeroBanos,
       'activa': activa,
+      'plano2dUrl': plano2dUrl,
+      'plano3dUrl': plano3dUrl,
     };
   }
 
@@ -175,6 +181,8 @@ class InventoryProperty {
       numeroHabitaciones: map['numeroHabitaciones'],
       numeroBanos: map['numeroBanos'],
       activa: map['activa'] ?? true,
+      plano2dUrl: map['plano2dUrl'],
+      plano3dUrl: map['plano3dUrl'],
     );
   }
 
@@ -196,6 +204,8 @@ class InventoryProperty {
     int? numeroHabitaciones,
     int? numeroBanos,
     bool? activa,
+    String? plano2dUrl,
+    String? plano3dUrl,
   }) {
     return InventoryProperty(
       id: id ?? this.id,
@@ -214,6 +224,8 @@ class InventoryProperty {
       numeroHabitaciones: numeroHabitaciones ?? this.numeroHabitaciones,
       numeroBanos: numeroBanos ?? this.numeroBanos,
       activa: activa ?? this.activa,
+      plano2dUrl: plano2dUrl ?? this.plano2dUrl,
+      plano3dUrl: plano3dUrl ?? this.plano3dUrl,
     );
   }
 }

@@ -46,9 +46,38 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
 
   Future<void> _captureFacialPhoto() async {
     try {
+      // Mostrar diálogo de selección de fuente
+      final source = await showDialog<ImageSource>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: AppTheme.grisOscuro,
+          title: const Text(
+            'Foto de Confirmación',
+            style: TextStyle(color: AppTheme.dorado),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: AppTheme.dorado),
+                title: const Text('Tomar Foto', style: TextStyle(color: AppTheme.blanco)),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: AppTheme.dorado),
+                title: const Text('Seleccionar de Galería', style: TextStyle(color: AppTheme.blanco)),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      if (source == null) return;
+
       final XFile? photo = await _imagePicker.pickImage(
-        source: ImageSource.camera,
-        preferredCameraDevice: CameraDevice.front,
+        source: source,
+        preferredCameraDevice: source == ImageSource.camera ? CameraDevice.front : null,
         maxWidth: 1024,
         maxHeight: 1024,
         imageQuality: 85,

@@ -20,6 +20,7 @@ class InventoryActPdfService {
   Future<Uint8List> generateActPdf({
     required InventoryAct act,
     List<PropertyRoom>? rooms,
+    InventoryProperty? property,
   }) async {
     final pdf = pw.Document();
 
@@ -64,6 +65,38 @@ class InventoryActPdfService {
       } catch (e) {
         // Continuar si alguna foto falla
         continue;
+      }
+    }
+
+    // Descargar planos 2D y 3D si están disponibles
+    pw.MemoryImage? plano2dImage;
+    pw.MemoryImage? plano3dImage;
+    
+    if (property != null) {
+      if (property.plano2dUrl != null) {
+        try {
+          plano2dImage = await _downloadImage(property.plano2dUrl!);
+          if (kDebugMode) {
+            debugPrint('✅ Plano 2D descargado para PDF');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('⚠️ Error descargando plano 2D: $e');
+          }
+        }
+      }
+      
+      if (property.plano3dUrl != null) {
+        try {
+          plano3dImage = await _downloadImage(property.plano3dUrl!);
+          if (kDebugMode) {
+            debugPrint('✅ Plano 3D descargado para PDF');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('⚠️ Error descargando plano 3D: $e');
+          }
+        }
       }
     }
 
@@ -144,6 +177,83 @@ class InventoryActPdfService {
           ),
         );
       }
+    }
+
+    // Páginas de planos: 2D y 3D (si están disponibles)
+    if (plano2dImage != null) {
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(32),
+          build: (context) => pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              _buildPageHeader(act),
+              pw.SizedBox(height: 20),
+              pw.Text(
+                'PLANO 2D DE LA PROPIEDAD',
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColor.fromHex('#FAB334'),
+                ),
+              ),
+              pw.SizedBox(height: 16),
+              pw.Expanded(
+                child: pw.Container(
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfColors.grey300),
+                    borderRadius: pw.BorderRadius.circular(8),
+                  ),
+                  child: pw.ClipRRect(
+                    horizontalRadius: 8,
+                    verticalRadius: 8,
+                    child: pw.Image(plano2dImage, fit: pw.BoxFit.contain),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (plano3dImage != null) {
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(32),
+          build: (context) => pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              _buildPageHeader(act),
+              pw.SizedBox(height: 20),
+              pw.Text(
+                'PLANO 3D ISOMÉTRICO',
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColor.fromHex('#FAB334'),
+                ),
+              ),
+              pw.SizedBox(height: 16),
+              pw.Expanded(
+                child: pw.Container(
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfColors.grey300),
+                    borderRadius: pw.BorderRadius.circular(8),
+                  ),
+                  child: pw.ClipRRect(
+                    horizontalRadius: 8,
+                    verticalRadius: 8,
+                    child: pw.Image(plano3dImage, fit: pw.BoxFit.contain),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     // Página final: Validación y códigos
@@ -562,6 +672,38 @@ class InventoryActPdfService {
         pw.SizedBox(height: 12),
         if (room.descripcion != null) ...[
           _buildInfoRow('Descripción:', room.descripcion!),
+          pw.SizedBox(height: 8),
+        ],
+        // Indicador de foto 360° si existe
+        if (room.foto360Url != null) ...[
+          pw.Container(
+            padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: pw.BoxDecoration(
+              color: PdfColor.fromHex('#FAB334'),
+              borderRadius: pw.BorderRadius.circular(4),
+            ),
+            child: pw.Row(
+              mainAxisSize: pw.MainAxisSize.min,
+              children: [
+                pw.Text(
+                  '📷 360°',
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColor.fromHex('#1A1A1A'),
+                  ),
+                ),
+                pw.SizedBox(width: 4),
+                pw.Text(
+                  'Foto panorámica disponible',
+                  style: pw.TextStyle(
+                    fontSize: 9,
+                    color: PdfColor.fromHex('#1A1A1A'),
+                  ),
+                ),
+              ],
+            ),
+          ),
           pw.SizedBox(height: 8),
         ],
         pw.Text(

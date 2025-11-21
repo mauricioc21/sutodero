@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -303,21 +304,52 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           final userId = authService.currentUser?.uid;
 
           if (userId != null) {
+            if (kDebugMode) {
+              debugPrint('📸 Subiendo foto de perfil para usuario: $userId');
+              debugPrint('📁 Ruta del archivo: ${photo.path}');
+            }
+            
             // Subir foto a Storage
             final photoUrl = await _storageService.uploadProfilePhoto(
               userId: userId,
               filePath: photo.path,
             );
 
-            if (photoUrl != null) {
+            if (photoUrl != null && mounted) {
+              if (kDebugMode) {
+                debugPrint('✅ Foto subida exitosamente: $photoUrl');
+              }
+              
+              // Actualizar en el estado local
               setState(() {
                 _profileImageUrl = photoUrl;
               });
-
+              
+              // Guardar en AuthService y Firestore
+              final success = await authService.updateProfile(
+                photoUrl: photoUrl,
+              );
+              
+              if (success && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('✅ Foto de perfil actualizada'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } else if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('⚠️ Foto subida pero no se guardó en perfil'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+            } else if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('✅ Foto de perfil actualizada'),
-                  backgroundColor: Colors.green,
+                  content: Text('❌ Error al subir foto'),
+                  backgroundColor: Colors.red,
                 ),
               );
             }
@@ -623,7 +655,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     SizedBox(height: AppTheme.spacing2XL),
 
                     // Información adicional
-                    Container(
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: AppTheme.safeBottomPadding),
+                      child: Container(
                       padding: EdgeInsets.all(AppTheme.paddingMD),
                       decoration: BoxDecoration(
                         color: AppTheme.grisOscuro,
@@ -650,6 +684,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             ),
                         ],
                       ),
+                    ),
                     ),
                   ],
                 ),

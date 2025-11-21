@@ -94,11 +94,14 @@ class _AddEditPropertyScreenState extends State<AddEditPropertyScreen> {
               maxLines: 3,
             ),
             SizedBox(height: AppTheme.spacingXL),
-            ElevatedButton(
-              onPressed: _isSaving ? null : _save,
-              child: _isSaving
-                  ? const CircularProgressIndicator()
-                  : Text(isEdit ? 'Actualizar' : 'Guardar'),
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppTheme.safeBottomPadding),
+              child: ElevatedButton(
+                onPressed: _isSaving ? null : _save,
+                child: _isSaving
+                    ? const CircularProgressIndicator()
+                    : Text(isEdit ? 'Actualizar' : 'Guardar'),
+              ),
             ),
           ],
         ),

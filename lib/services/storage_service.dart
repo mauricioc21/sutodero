@@ -384,6 +384,138 @@ class StorageService {
   }
 
   // ============================================================================
+  // INVENTORY ROOM PHOTO MANAGEMENT
+  // ============================================================================
+
+  /// Sube una foto de un espacio/habitación del inventario
+  /// Comprime automáticamente (menos compresión para fotos 360°)
+  /// 
+  /// [userId] - ID del usuario propietario
+  /// [propertyId] - ID de la propiedad
+  /// [roomId] - ID del espacio/habitación
+  /// [filePath] - Ruta local del archivo a subir
+  /// [is360] - true si es foto 360° (menos compresión, mayor calidad)
+  Future<String?> uploadRoomPhoto({
+    required String userId,
+    required String propertyId,
+    required String roomId,
+    required String filePath,
+    bool is360 = false,
+  }) async {
+    try {
+      // Comprimir imagen (menos compresión para fotos 360°)
+      final compressedFile = await _compressImage(filePath, is360Photo: is360);
+      if (compressedFile == null || !await compressedFile.exists()) {
+        if (kDebugMode) {
+          debugPrint('❌ Error al comprimir/encontrar archivo: $filePath');
+        }
+        return null;
+      }
+
+      // Generar nombre único o fijo para 360°
+      final fileName = is360 ? 'panorama_360.jpg' : '${_uuid.v4()}.jpg';
+      final folder = is360 ? '360' : 'photos';
+      final storageRef = _storage.ref().child(
+        'users/$userId/properties/$propertyId/rooms/$roomId/$folder/$fileName'
+      );
+
+      if (kDebugMode) {
+        debugPrint('📤 Subiendo foto de espacio${is360 ? ' 360°' : ''}: users/$userId/properties/$propertyId/rooms/$roomId/$folder/$fileName');
+      }
+
+      // Subir archivo comprimido con timeout de 30 segundos
+      final uploadTask = storageRef.putFile(compressedFile);
+      
+      final snapshot = await uploadTask.timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Timeout al subir foto después de 30 segundos');
+        },
+      );
+
+      // Obtener URL de descarga
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+      
+      if (kDebugMode) {
+        debugPrint('✅ Foto de espacio${is360 ? ' 360°' : ''} subida exitosamente: $downloadUrl');
+      }
+
+      // Limpiar archivo temporal
+      try {
+        await compressedFile.delete();
+      } catch (_) {}
+
+      return downloadUrl;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error subiendo foto de espacio: $e');
+      }
+      return null;
+    }
+  }
+
+  // ============================================================================
+  // FLOOR PLAN MANAGEMENT
+  // ============================================================================
+
+  /// Sube un plano (2D o 3D) de una propiedad
+  /// 
+  /// [userId] - ID del usuario propietario
+  /// [propertyId] - ID de la propiedad
+  /// [filePath] - Ruta local del archivo PDF a subir
+  /// [planType] - Tipo de plano: '2d' o '3d'
+  Future<String?> uploadFloorPlan({
+    required String userId,
+    required String propertyId,
+    required String filePath,
+    required String planType,
+  }) async {
+    try {
+      final file = File(filePath);
+      if (!await file.exists()) {
+        if (kDebugMode) {
+          debugPrint('❌ Error: Archivo no encontrado: $filePath');
+        }
+        return null;
+      }
+
+      // Usar nombre fijo para sobreescribir plano anterior
+      final fileName = 'plano_$planType.pdf';
+      final storageRef = _storage.ref().child(
+        'users/$userId/properties/$propertyId/planos/$fileName'
+      );
+
+      if (kDebugMode) {
+        debugPrint('📤 Subiendo plano $planType: users/$userId/properties/$propertyId/planos/$fileName');
+      }
+
+      // Subir archivo con timeout de 30 segundos
+      final uploadTask = storageRef.putFile(file);
+      
+      final snapshot = await uploadTask.timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Timeout al subir plano después de 30 segundos');
+        },
+      );
+
+      // Obtener URL de descarga
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+      
+      if (kDebugMode) {
+        debugPrint('✅ Plano $planType subido exitosamente: $downloadUrl');
+      }
+
+      return downloadUrl;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error subiendo plano $planType: $e');
+      }
+      return null;
+    }
+  }
+
+  // ============================================================================
   // USER PROFILE PHOTO MANAGEMENT
   // ============================================================================
 

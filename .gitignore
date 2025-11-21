@@ -76,3 +76,4 @@ coverage/
 *.jks
 !sutodero-release.jks
 SU_TODERO_v1.0.0.apk
+*.apk

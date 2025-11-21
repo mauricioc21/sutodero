@@ -12,6 +12,7 @@ import '../../services/auth_service.dart';
 import '../../services/floor_plan_service.dart';
 import '../../services/floor_plan_3d_service.dart';
 import '../../services/inventory_pdf_service.dart';
+import '../../services/storage_service.dart';
 
 import '../../services/ticket_service.dart';
 import '../../services/inventory_act_service.dart';
@@ -40,6 +41,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   final FloorPlanService _floorPlanService = FloorPlanService();
   final FloorPlan3DService _floorPlan3DService = FloorPlan3DService();
   final InventoryPdfService _pdfService = InventoryPdfService();
+  final StorageService _storageService = StorageService();
 
   final TicketService _ticketService = TicketService();
   final InventoryActService _actService = InventoryActService();
@@ -188,40 +190,71 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
       );
 
       if (!mounted) return;
+
+      // Guardar PDF localmente primero
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/Plano_2D_${widget.property.id.substring(0, 8)}.pdf');
+      await file.writeAsBytes(pdfBytes);
+
+      if (kDebugMode) {
+        debugPrint('📄 Plano 2D generado localmente: ${file.path}');
+      }
+
+      // Subir a Firebase Storage
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final userId = authService.currentUser?.uid;
+      
+      if (userId == null) {
+        throw Exception('Usuario no autenticado');
+      }
+
+      final planoUrl = await _storageService.uploadFloorPlan(
+        userId: userId,
+        propertyId: widget.property.id,
+        filePath: file.path,
+        planType: '2d',
+      );
+
+      if (planoUrl == null) {
+        throw Exception('No se pudo subir el plano a Firebase Storage');
+      }
+
+      if (kDebugMode) {
+        debugPrint('✅ Plano 2D subido a Storage: $planoUrl');
+      }
+
+      // Actualizar propiedad con URL del plano
+      final updatedProperty = widget.property.copyWith(
+        plano2dUrl: planoUrl,
+        fechaActualizacion: DateTime.now(),
+      );
+
+      await _inventoryService.updateProperty(userId, updatedProperty);
+
+      if (kDebugMode) {
+        debugPrint('✅ URL del plano guardada en Firestore');
+      }
+
+      // Actualizar estado local
+      setState(() {
+        widget.property.plano2dUrl = planoUrl;
+      });
+
+      // Limpiar archivo temporal
+      try {
+        await file.delete();
+      } catch (_) {}
+
+      if (!mounted) return;
       Navigator.pop(context); // Cerrar loading
 
-      // Guardar PDF
-      if (kIsWeb) {
-        // En web: descargar automáticamente
-        // TODO: Implementar descarga web
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Plano 2D generado (función web en desarrollo)'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        // En móvil: guardar y compartir
-        final dir = await getApplicationDocumentsDirectory();
-        final file = File('${dir.path}/Plano_2D_${widget.property.id.substring(0, 8)}.pdf');
-        await file.writeAsBytes(pdfBytes);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('✅ Plano 2D guardado: ${file.path}'),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 4),
-              action: SnackBarAction(
-                label: 'Ver',
-                onPressed: () {
-                  // TODO: Abrir PDF
-                },
-              ),
-            ),
-          );
-        }
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Plano 2D generado y guardado en la nube'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
+      );
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // Cerrar loading si está abierto
@@ -283,39 +316,71 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
       );
 
       if (!mounted) return;
+
+      // Guardar PDF localmente primero
+      final dir = await getApplicationDocumentsDirectory();
+      final file = File('${dir.path}/Plano_3D_${widget.property.id.substring(0, 8)}.pdf');
+      await file.writeAsBytes(pdfBytes);
+
+      if (kDebugMode) {
+        debugPrint('📄 Plano 3D generado localmente: ${file.path}');
+      }
+
+      // Subir a Firebase Storage
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final userId = authService.currentUser?.uid;
+      
+      if (userId == null) {
+        throw Exception('Usuario no autenticado');
+      }
+
+      final planoUrl = await _storageService.uploadFloorPlan(
+        userId: userId,
+        propertyId: widget.property.id,
+        filePath: file.path,
+        planType: '3d',
+      );
+
+      if (planoUrl == null) {
+        throw Exception('No se pudo subir el plano a Firebase Storage');
+      }
+
+      if (kDebugMode) {
+        debugPrint('✅ Plano 3D subido a Storage: $planoUrl');
+      }
+
+      // Actualizar propiedad con URL del plano
+      final updatedProperty = widget.property.copyWith(
+        plano3dUrl: planoUrl,
+        fechaActualizacion: DateTime.now(),
+      );
+
+      await _inventoryService.updateProperty(userId, updatedProperty);
+
+      if (kDebugMode) {
+        debugPrint('✅ URL del plano guardada en Firestore');
+      }
+
+      // Actualizar estado local
+      setState(() {
+        widget.property.plano3dUrl = planoUrl;
+      });
+
+      // Limpiar archivo temporal
+      try {
+        await file.delete();
+      } catch (_) {}
+
+      if (!mounted) return;
       Navigator.pop(context); // Cerrar loading
 
-      // Guardar PDF
-      if (kIsWeb) {
-        // En web: descargar automáticamente
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Plano 3D generado (función web en desarrollo)'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        // En móvil: guardar y compartir
-        final dir = await getApplicationDocumentsDirectory();
-        final file = File('${dir.path}/Plano_3D_${widget.property.id.substring(0, 8)}.pdf');
-        await file.writeAsBytes(pdfBytes);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('✅ Plano 3D isométrico guardado: ${file.path}'),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 4),
-              action: SnackBarAction(
-                label: 'Ver',
-                onPressed: () {
-                  // TODO: Abrir PDF
-                },
-              ),
-            ),
-          );
-        }
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Plano 3D isométrico generado y guardado en la nube'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
+      );
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // Cerrar loading si está abierto
@@ -1009,6 +1074,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
       final pdfBytes = await _actPdfService.generateActPdf(
         act: act,
         rooms: _rooms,
+        property: widget.property,
       ).timeout(
         const Duration(minutes: 2),
         onTimeout: () {
@@ -1534,7 +1600,27 @@ class _ActClientInfoDialogState extends State<_ActClientInfoDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Información del Acta'),
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      title: Row(
+        children: [
+          const Expanded(
+            child: Text(
+              'Información del Acta',
+              style: TextStyle(color: Colors.black87),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, color: Colors.black54),
+            onPressed: () => Navigator.pop(context, null),
+            tooltip: 'Cerrar',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ],
+      ),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -1634,29 +1720,56 @@ class _ActClientInfoDialogState extends State<_ActClientInfoDialog> {
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              Navigator.pop(context, {
-                'clientName': _clientNameController.text,
-                'clientPhone': _clientPhoneController.text.isEmpty ? null : _clientPhoneController.text,
-                'clientEmail': _clientEmailController.text.isEmpty ? null : _clientEmailController.text,
-                'clientIdNumber': _clientIdController.text.isEmpty ? null : _clientIdController.text,
-                'inspectorName': _inspectorNameController.text.isEmpty ? null : _inspectorNameController.text,
-                'inspectorRole': _inspectorRoleController.text.isEmpty ? null : _inspectorRoleController.text,
-                'observations': _observationsController.text.isEmpty ? null : _observationsController.text,
-              });
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.dorado,
-            foregroundColor: AppTheme.negro,
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16, right: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, null),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.black54,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+                child: const Text(
+                  'CANCELAR',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    // Cerrar teclado primero
+                    FocusScope.of(context).unfocus();
+                    
+                    // Pequeño delay para asegurar que el teclado se cierra
+                    Future.delayed(const Duration(milliseconds: 100), () {
+                      Navigator.pop(context, {
+                        'clientName': _clientNameController.text,
+                        'clientPhone': _clientPhoneController.text.isEmpty ? null : _clientPhoneController.text,
+                        'clientEmail': _clientEmailController.text.isEmpty ? null : _clientEmailController.text,
+                        'clientIdNumber': _clientIdController.text.isEmpty ? null : _clientIdController.text,
+                        'inspectorName': _inspectorNameController.text.isEmpty ? null : _inspectorNameController.text,
+                        'inspectorRole': _inspectorRoleController.text.isEmpty ? null : _inspectorRoleController.text,
+                        'observations': _observationsController.text.isEmpty ? null : _observationsController.text,
+                      });
+                    });
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.dorado,
+                  foregroundColor: AppTheme.negro,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  elevation: 2,
+                ),
+                child: const Text(
+                  'CONTINUAR',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
           ),
-          child: const Text('Continuar'),
         ),
       ],
     );
