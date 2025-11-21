@@ -33,6 +33,10 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        
+        // ✅ CRITICAL: Enable multidex support for Firebase
+        // Firebase requires more than 65,536 methods
+        multiDexEnabled = true
     }
 
     // ✅ CRITICAL: Configure signing with release keystore
@@ -59,6 +63,11 @@ android {
             isShrinkResources = false
         }
     }
+}
+
+dependencies {
+    // ✅ CRITICAL: Multidex support for Firebase
+    implementation("androidx.multidex:multidex:2.0.1")
 }
 
 flutter {
