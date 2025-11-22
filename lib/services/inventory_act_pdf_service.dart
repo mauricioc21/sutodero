@@ -11,6 +11,7 @@ import '../models/inventory_act.dart';
 import '../models/property_room.dart';
 import '../models/inventory_property.dart';
 import '../models/room_features.dart';
+import '../config/brand_colors.dart';
 
 /// Servicio para generar PDFs de Actas de Inventario
 /// con firma digital, reconocimiento facial y fotos
@@ -19,25 +20,26 @@ class InventoryActPdfService {
   Future<Uint8List> generateActPdf({
     required InventoryAct act,
     List<PropertyRoom>? rooms,
+    InventoryProperty? property,
   }) async {
     final pdf = pw.Document();
 
-    // Cargar logo corporativo Su Todero
+    // Cargar logo corporativo Su Todero usando BrandColors
     pw.ImageProvider? logoImage;
     try {
-      logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_yellow.png');
+      logoImage = await imageFromAssetBundle(BrandColors.logoMain);
       if (kDebugMode) {
-        debugPrint('✅ Logo corporativo SU TODERO cargado exitosamente (amarillo)');
+        debugPrint('✅ Logo corporativo SU TODERO cargado exitosamente');
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('⚠️ No se pudo cargar el logo amarillo: $e');
+        debugPrint('⚠️ No se pudo cargar el logo principal: $e');
       }
-      // Intentar con logo blanco como fallback
+      // Intentar con logo amarillo como fallback
       try {
-        logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_white.png');
+        logoImage = await imageFromAssetBundle(BrandColors.logoYellow);
         if (kDebugMode) {
-          debugPrint('✅ Logo alternativo (blanco) cargado');
+          debugPrint('✅ Logo alternativo (amarillo) cargado');
         }
       } catch (e2) {
         if (kDebugMode) {
@@ -63,6 +65,38 @@ class InventoryActPdfService {
       } catch (e) {
         // Continuar si alguna foto falla
         continue;
+      }
+    }
+
+    // Descargar planos 2D y 3D si están disponibles
+    pw.MemoryImage? plano2dImage;
+    pw.MemoryImage? plano3dImage;
+    
+    if (property != null) {
+      if (property.plano2dUrl != null) {
+        try {
+          plano2dImage = await _downloadImage(property.plano2dUrl!);
+          if (kDebugMode) {
+            debugPrint('✅ Plano 2D descargado para PDF');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('⚠️ Error descargando plano 2D: $e');
+          }
+        }
+      }
+      
+      if (property.plano3dUrl != null) {
+        try {
+          plano3dImage = await _downloadImage(property.plano3dUrl!);
+          if (kDebugMode) {
+            debugPrint('✅ Plano 3D descargado para PDF');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('⚠️ Error descargando plano 3D: $e');
+          }
+        }
       }
     }
 
@@ -145,6 +179,83 @@ class InventoryActPdfService {
       }
     }
 
+    // Páginas de planos: 2D y 3D (si están disponibles)
+    if (plano2dImage != null) {
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(32),
+          build: (context) => pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              _buildPageHeader(act),
+              pw.SizedBox(height: 20),
+              pw.Text(
+                'PLANO 2D DE LA PROPIEDAD',
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColor.fromHex('#FAB334'),
+                ),
+              ),
+              pw.SizedBox(height: 16),
+              pw.Expanded(
+                child: pw.Container(
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfColors.grey300),
+                    borderRadius: pw.BorderRadius.circular(8),
+                  ),
+                  child: pw.ClipRRect(
+                    horizontalRadius: 8,
+                    verticalRadius: 8,
+                    child: pw.Image(plano2dImage!, fit: pw.BoxFit.contain),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (plano3dImage != null) {
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(32),
+          build: (context) => pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              _buildPageHeader(act),
+              pw.SizedBox(height: 20),
+              pw.Text(
+                'PLANO 3D ISOMÉTRICO',
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColor.fromHex('#FAB334'),
+                ),
+              ),
+              pw.SizedBox(height: 16),
+              pw.Expanded(
+                child: pw.Container(
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfColors.grey300),
+                    borderRadius: pw.BorderRadius.circular(8),
+                  ),
+                  child: pw.ClipRRect(
+                    horizontalRadius: 8,
+                    verticalRadius: 8,
+                    child: pw.Image(plano3dImage!, fit: pw.BoxFit.contain),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     // Página final: Validación y códigos
     pdf.addPage(
       pw.Page(
@@ -216,7 +327,7 @@ class InventoryActPdfService {
     return pw.Container(
       padding: const pw.EdgeInsets.all(16),
       decoration: pw.BoxDecoration(
-        color: PdfColor.fromHex('#000000'),
+        color: BrandColors.darkPdf,
         borderRadius: pw.BorderRadius.circular(8),
       ),
       child: pw.Row(
@@ -232,15 +343,15 @@ class InventoryActPdfService {
                   style: pw.TextStyle(
                     fontSize: 24,
                     fontWeight: pw.FontWeight.bold,
-                    color: PdfColor.fromHex('#FAB334'),
+                    color: BrandColors.primaryPdf,
                   ),
                 ),
                 pw.SizedBox(height: 4),
                 pw.Text(
-                  'Gestión Inmobiliaria Profesional',
+                  BrandColors.companySlogan,
                   style: pw.TextStyle(
                     fontSize: 12,
-                    color: PdfColor.fromHex('#F5E6C8'),
+                    color: BrandColors.beigeClairPdf,
                   ),
                 ),
               ],
@@ -250,11 +361,11 @@ class InventoryActPdfService {
             pw.Image(logo, height: 40, fit: pw.BoxFit.contain)
           else
             pw.Text(
-              'SU TODERO',
+              BrandColors.companyName,
               style: pw.TextStyle(
                 fontSize: 18,
                 fontWeight: pw.FontWeight.bold,
-                color: PdfColor.fromHex('#FAB334'),
+                color: BrandColors.primaryPdf,
               ),
             ),
         ],
@@ -269,7 +380,7 @@ class InventoryActPdfService {
       decoration: pw.BoxDecoration(
         border: pw.Border(
           bottom: pw.BorderSide(
-            color: PdfColor.fromHex('#FAB334'),
+            color: BrandColors.primaryPdf,
             width: 2,
           ),
         ),
@@ -298,7 +409,7 @@ class InventoryActPdfService {
     return pw.Container(
       padding: const pw.EdgeInsets.all(12),
       decoration: pw.BoxDecoration(
-        color: PdfColor.fromHex('#F5E6C8'),
+        color: BrandColors.beigeClairPdf,
         borderRadius: pw.BorderRadius.circular(8),
       ),
       child: pw.Column(
@@ -435,8 +546,8 @@ class InventoryActPdfService {
     return pw.Container(
       padding: const pw.EdgeInsets.all(12),
       decoration: pw.BoxDecoration(
-        color: PdfColor.fromHex('#FAB334'),
-        border: pw.Border.all(color: PdfColor.fromHex('#FAB334'), width: 2),
+        color: BrandColors.beigeClairPdf,
+        border: pw.Border.all(color: BrandColors.primaryPdf, width: 2),
         borderRadius: pw.BorderRadius.circular(8),
       ),
       child: pw.Row(
@@ -561,6 +672,38 @@ class InventoryActPdfService {
         pw.SizedBox(height: 12),
         if (room.descripcion != null) ...[
           _buildInfoRow('Descripción:', room.descripcion!),
+          pw.SizedBox(height: 8),
+        ],
+        // Indicador de foto 360° si existe
+        if (room.foto360Url != null) ...[
+          pw.Container(
+            padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: pw.BoxDecoration(
+              color: PdfColor.fromHex('#FAB334'),
+              borderRadius: pw.BorderRadius.circular(4),
+            ),
+            child: pw.Row(
+              mainAxisSize: pw.MainAxisSize.min,
+              children: [
+                pw.Text(
+                  '📷 360°',
+                  style: pw.TextStyle(
+                    fontSize: 10,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColor.fromHex('#1A1A1A'),
+                  ),
+                ),
+                pw.SizedBox(width: 4),
+                pw.Text(
+                  'Foto panorámica disponible',
+                  style: pw.TextStyle(
+                    fontSize: 9,
+                    color: PdfColor.fromHex('#1A1A1A'),
+                  ),
+                ),
+              ],
+            ),
+          ),
           pw.SizedBox(height: 8),
         ],
         pw.Text(
@@ -733,24 +876,24 @@ class InventoryActPdfService {
       padding: const pw.EdgeInsets.symmetric(vertical: 12),
       decoration: pw.BoxDecoration(
         border: pw.Border(
-          top: pw.BorderSide(color: PdfColor.fromHex('#FAB334'), width: 2),
+          top: pw.BorderSide(color: BrandColors.primaryPdf, width: 2),
         ),
       ),
       child: pw.Column(
         children: [
           pw.Text(
-            'SU TODERO - Gestión Profesional de Inventarios',
+            '${BrandColors.companyName} - Gestión Profesional de Inventarios',
             style: pw.TextStyle(
               fontSize: 10,
               fontWeight: pw.FontWeight.bold,
-              color: PdfColor.fromHex('#000000'),
+              color: BrandColors.darkPdf,
             ),
             textAlign: pw.TextAlign.center,
           ),
           pw.SizedBox(height: 4),
           pw.Text(
-            'Cra 14b #112-85 Segundo Piso, Bogotá, Colombia | Tel: (601) 703-9495 | www.sutodero.com',
-            style: pw.TextStyle(fontSize: 8, color: PdfColor.fromHex('#2C2C2C')),
+            '${BrandColors.companyAddress} | Tel: ${BrandColors.companyPhone} | ${BrandColors.companyWebsite}',
+            style: pw.TextStyle(fontSize: 8, color: BrandColors.darkGrayPdf),
             textAlign: pw.TextAlign.center,
           ),
           pw.SizedBox(height: 4),

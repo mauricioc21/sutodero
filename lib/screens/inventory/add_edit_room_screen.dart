@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/property_room.dart';
 import '../../models/inventory_property.dart';
 import '../../models/room_features.dart';
 import '../../services/inventory_service.dart';
+import '../../services/auth_service.dart';
 
 class AddEditRoomScreen extends StatefulWidget {
   final String propertyId;
@@ -23,6 +25,8 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
   final _alturaController = TextEditingController();
   RoomType _selectedType = RoomType.otro;
   SpaceCondition _selectedCondition = SpaceCondition.bueno;
+
+  String? get _userId => Provider.of<AuthService>(context, listen: false).currentUser?.uid;
   bool _isSaving = false;
   
   // Nuevos campos opcionales de características
@@ -615,11 +619,14 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
               onChanged: (v) => setState(() => _iluminacionNatural = v),
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _isSaving ? null : _save,
-              child: _isSaving
-                  ? const CircularProgressIndicator()
-                  : Text(isEdit ? 'Actualizar' : 'Guardar'),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 80.0), // safeBottomPadding
+              child: ElevatedButton(
+                onPressed: _isSaving ? null : _save,
+                child: _isSaving
+                    ? const CircularProgressIndicator()
+                    : Text(isEdit ? 'Actualizar' : 'Guardar'),
+              ),
             ),
           ],
         ),
@@ -653,10 +660,15 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
           vista: _vista,
           iluminacionNatural: _iluminacionNatural,
         );
-        await _inventoryService.updateRoom(updated);
+        final userId = _userId;
+        if (userId == null) throw Exception('Usuario no autenticado');
+        await _inventoryService.updateRoom(userId, widget.propertyId, updated);
       } else {
         // Para crear necesitamos actualizar el modelo después de la creación
+        final userId = _userId;
+        if (userId == null) throw Exception('Usuario no autenticado');
         final room = await _inventoryService.createRoom(
+          userId: userId,
           propertyId: widget.propertyId,
           nombre: _nombreController.text,
           descripcion: _descripcionController.text.isEmpty ? null : _descripcionController.text,
@@ -677,7 +689,7 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
           vista: _vista,
           iluminacionNatural: _iluminacionNatural,
         );
-        await _inventoryService.updateRoom(updated);
+        await _inventoryService.updateRoom(userId, widget.propertyId, updated);
       }
       if (mounted) Navigator.pop(context, true);
     } catch (e) {

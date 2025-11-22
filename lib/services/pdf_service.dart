@@ -7,6 +7,7 @@ import 'dart:convert';
 import '../models/ticket_model.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
+import '../config/brand_colors.dart';
 
 /// Servicio para generar PDFs de tickets
 class PdfService {
@@ -18,22 +19,22 @@ class PdfService {
   Future<Uint8List> generateTicketPdf(TicketModel ticket) async {
     final pdf = pw.Document();
     
-    // Cargar logo corporativo SU TODERO (texto amarillo)
+    // Cargar logo corporativo SU TODERO usando BrandColors
     pw.ImageProvider? logoImage;
     try {
-      logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_yellow.png');
+      logoImage = await imageFromAssetBundle(BrandColors.logoMain);
       if (kDebugMode) {
         debugPrint('✅ Logo corporativo SU TODERO cargado exitosamente');
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('⚠️ No se pudo cargar el logo corporativo: $e');
+        debugPrint('⚠️ No se pudo cargar el logo principal: $e');
       }
-      // Intentar con logo blanco como fallback
+      // Intentar con logo amarillo como fallback
       try {
-        logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_white.png');
+        logoImage = await imageFromAssetBundle(BrandColors.logoYellow);
         if (kDebugMode) {
-          debugPrint('✅ Logo alternativo (blanco) cargado');
+          debugPrint('✅ Logo alternativo (amarillo) cargado');
         }
       } catch (e2) {
         if (kDebugMode) {
@@ -127,7 +128,7 @@ class PdfService {
             style: pw.TextStyle(
               fontSize: 24,
               fontWeight: pw.FontWeight.bold,
-              color: PdfColor.fromHex('#FAB334'), // Dorado corporativo
+              color: BrandColors.primaryPdf,
             ),
             textAlign: pw.TextAlign.center,
           ),
@@ -141,7 +142,7 @@ class PdfService {
               _buildStatusBadge(ticket.estado),
             ],
           ),
-          pw.Divider(thickness: 2, color: PdfColor.fromHex('#FAB334')),
+          pw.Divider(thickness: 2, color: BrandColors.primaryPdf),
           pw.SizedBox(height: 20),
           
           // Información del ticket
@@ -275,33 +276,33 @@ class PdfService {
           pw.Container(
             padding: const pw.EdgeInsets.all(16),
             decoration: pw.BoxDecoration(
-              color: PdfColor.fromHex('#2C2C2C'),
+              color: BrandColors.darkGrayPdf,
               borderRadius: pw.BorderRadius.circular(8),
             ),
             child: pw.Column(
               children: [
                 pw.Text(
-                  'SU TODERO',
+                  BrandColors.companyName,
                   style: pw.TextStyle(
                     fontSize: 12,
                     fontWeight: pw.FontWeight.bold,
-                    color: PdfColor.fromHex('#FAB334'),
+                    color: BrandColors.primaryPdf,
                   ),
                   textAlign: pw.TextAlign.center,
                 ),
                 pw.SizedBox(height: 4),
                 pw.Text(
-                  'Gestión Profesional de Servicios de Reparación y Mantenimiento',
+                  BrandColors.companySlogan,
                   style: pw.TextStyle(
                     fontSize: 9,
-                    color: PdfColor.fromHex('#F5E6C8'),
+                    color: BrandColors.beigeClairPdf,
                   ),
                   textAlign: pw.TextAlign.center,
                 ),
                 pw.SizedBox(height: 6),
                 pw.Text(
-                  'Cra 14b #112-85 Segundo Piso, Bogotá, Colombia | Tel: (601) 703-9495 | www.sutodero.com',
-                  style: pw.TextStyle(fontSize: 8, color: PdfColor.fromHex('#FFFFFF')),
+                  '${BrandColors.companyAddress} | Tel: ${BrandColors.companyPhone} | ${BrandColors.companyWebsite}',
+                  style: const pw.TextStyle(fontSize: 8, color: PdfColors.white),
                   textAlign: pw.TextAlign.center,
                 ),
                 pw.SizedBox(height: 8),
@@ -325,7 +326,7 @@ class PdfService {
     return pw.Container(
       padding: const pw.EdgeInsets.all(16),
       decoration: pw.BoxDecoration(
-        color: PdfColor.fromHex('#000000'), // Negro corporativo
+        color: BrandColors.darkPdf,
         borderRadius: pw.BorderRadius.circular(12),
       ),
       child: pw.Row(
@@ -343,14 +344,14 @@ class PdfService {
               width: 80,
               height: 80,
               decoration: pw.BoxDecoration(
-                color: PdfColor.fromHex('#FAB334'), // Dorado
+                color: BrandColors.primaryPdf,
                 shape: pw.BoxShape.circle,
               ),
               child: pw.Center(
                 child: pw.Icon(
                   pw.IconData(0xe1a3), // handyman icon
                   size: 40,
-                  color: PdfColor.fromHex('#000000'),
+                  color: BrandColors.darkPdf,
                 ),
               ),
             ),
@@ -360,19 +361,19 @@ class PdfService {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Text(
-                  'SU TODERO',
+                  BrandColors.companyName,
                   style: pw.TextStyle(
                     fontSize: 24,
                     fontWeight: pw.FontWeight.bold,
-                    color: PdfColor.fromHex('#FAB334'), // Dorado corporativo
+                    color: BrandColors.primaryPdf,
                   ),
                 ),
                 pw.SizedBox(height: 4),
                 pw.Text(
-                  'Servicios Profesionales de Reparación y Mantenimiento',
+                  BrandColors.companySlogan,
                   style: pw.TextStyle(
                     fontSize: 10,
-                    color: PdfColor.fromHex('#F5E6C8'), // Beige claro
+                    color: BrandColors.beigeClairPdf,
                   ),
                 ),
               ],
@@ -425,7 +426,7 @@ class PdfService {
         pw.Container(
           padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: pw.BoxDecoration(
-            color: PdfColor.fromHex('#2C2C2C'), // Gris oscuro corporativo
+            color: BrandColors.darkGrayPdf,
             borderRadius: pw.BorderRadius.circular(8),
           ),
           child: pw.Text(
@@ -433,7 +434,7 @@ class PdfService {
             style: pw.TextStyle(
               fontSize: 14,
               fontWeight: pw.FontWeight.bold,
-              color: PdfColor.fromHex('#FAB334'), // Dorado corporativo
+              color: BrandColors.primaryPdf,
             ),
           ),
         ),
@@ -441,8 +442,8 @@ class PdfService {
         pw.Container(
           padding: const pw.EdgeInsets.all(12),
           decoration: pw.BoxDecoration(
-            color: PdfColor.fromHex('#F5E6C8'), // Beige claro
-            border: pw.Border.all(color: PdfColor.fromHex('#FAB334'), width: 1),
+            color: BrandColors.beigeClairPdf,
+            border: pw.Border.all(color: BrandColors.primaryPdf, width: 1),
             borderRadius: pw.BorderRadius.circular(8),
           ),
           child: pw.Column(

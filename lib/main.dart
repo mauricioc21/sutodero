@@ -4,9 +4,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 import 'config/app_theme.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/profile/user_profile_screen.dart';
 import 'services/auth_service.dart';
 
 void main() async {
@@ -20,18 +22,40 @@ void main() async {
   }
   
   try {
+    if (kDebugMode) {
+      debugPrint('🔥 Intentando inicializar Firebase...');
+      debugPrint('📱 Platform: ${DefaultFirebaseOptions.currentPlatform.projectId}');
+    }
+    
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     ).timeout(
-      const Duration(seconds: 10),
+      const Duration(seconds: 60),  // Aumentado a 60s
       onTimeout: () {
         if (kDebugMode) {
-          debugPrint('⏱️ Timeout en inicialización de Firebase (10s)');
+          debugPrint('⏱️ Timeout en inicialización de Firebase (60s)');
           debugPrint('⚠️ La app funcionará en modo local sin Firebase');
         }
-        throw TimeoutException('Firebase initialization timeout');
+        throw TimeoutException('Firebase initialization timeout - sin conexión');
       },
     );
+    
+    // ✅ HABILITAR PERSISTENCIA OFFLINE DE FIRESTORE
+    // Esto permite que la app funcione SIN internet
+    try {
+      final FirebaseFirestore firestore = FirebaseFirestore.instance;
+      firestore.settings = const Settings(
+        persistenceEnabled: true,
+        cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+      );
+      if (kDebugMode) {
+        debugPrint('✅ Persistencia offline de Firestore habilitada');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ No se pudo habilitar persistencia offline: $e');
+      }
+    }
     
     if (kDebugMode) {
       debugPrint('✅ Firebase inicializado correctamente');
@@ -71,6 +95,9 @@ class SuToderoApp extends StatelessWidget {
       ],
       theme: AppTheme.theme,
       home: const InitializationScreen(), // Pantalla de inicialización
+      routes: {
+        '/profile': (context) => const UserProfileScreen(),
+      },
     );
   }
 }

@@ -4,6 +4,8 @@ class UserModel {
   final String email;
   final String rol; // 'admin', 'tecnico', 'cliente'
   final String telefono;
+  final String? direccion;
+  final String? photoUrl;
   final DateTime? fechaCreacion;
   final bool activo;
 
@@ -13,6 +15,8 @@ class UserModel {
     required this.email,
     required this.rol,
     required this.telefono,
+    this.direccion,
+    this.photoUrl,
     this.fechaCreacion,
     this.activo = true,
   });
@@ -24,6 +28,8 @@ class UserModel {
       'email': email,
       'rol': rol,
       'telefono': telefono,
+      'direccion': direccion,
+      'photoUrl': photoUrl,
       'fechaCreacion': fechaCreacion ?? DateTime.now(),
       'activo': activo,
     };
@@ -37,6 +43,8 @@ class UserModel {
       email: map['email'] ?? '',
       rol: map['rol'] ?? 'cliente',
       telefono: map['telefono'] ?? '',
+      direccion: map['direccion'],
+      photoUrl: map['photoUrl'],
       fechaCreacion: map['fechaCreacion']?.toDate(),
       activo: map['activo'] ?? true,
     );
@@ -135,6 +143,8 @@ class UserModel {
     String? email,
     String? rol,
     String? telefono,
+    String? direccion,
+    String? photoUrl,
     DateTime? fechaCreacion,
     bool? activo,
   }) {
@@ -144,6 +154,8 @@ class UserModel {
       email: email ?? this.email,
       rol: rol ?? this.rol,
       telefono: telefono ?? this.telefono,
+      direccion: direccion ?? this.direccion,
+      photoUrl: photoUrl ?? this.photoUrl,
       fechaCreacion: fechaCreacion ?? this.fechaCreacion,
       activo: activo ?? this.activo,
     );

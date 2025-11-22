@@ -2,10 +2,12 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
+import 'activity_log_service.dart';
 
 class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final ActivityLogService _activityLog = ActivityLogService();
   
   UserModel? _currentUser;
   bool _isLoading = false;
@@ -45,41 +47,74 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // Login con email y contraseña (OPTIMIZADO)
+  // Login con email y contraseña (ULTRA-OPTIMIZADO - RETORNO INMEDIATO)
   Future<bool> login(String email, String password) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
+      if (kDebugMode) {
+        debugPrint('🔐 Intentando login para: $email');
+        debugPrint('🔥 Firebase disponible: $_firebaseAvailable');
+      }
+      
       if (_firebaseAvailable) {
-        // Login con Firebase Auth con timeout más largo
+        // Login con Firebase Auth con timeout de 60 segundos
+        if (kDebugMode) {
+          debugPrint('📡 Conectando a Firebase Auth...');
+        }
+        
         final credential = await _auth.signInWithEmailAndPassword(
           email: email,
           password: password,
         ).timeout(
-          const Duration(seconds: 30),
+          const Duration(seconds: 60),  // Aumentado a 60s
           onTimeout: () {
-            throw Exception('Timeout: Firebase no responde. Verifica tu conexión a internet.');
+            if (kDebugMode) {
+              debugPrint('⏱️ TIMEOUT en Firebase Auth después de 60s');
+            }
+            throw Exception('Sin respuesta del servidor. Verifica tu conexión a internet.');
           },
         );
         
-        // Cargar datos de usuario en paralelo (no esperar)
-        _loadUserData(credential.user!.uid).catchError((e) {
-          debugPrint('⚠️ Error al cargar datos completos: $e');
-          // Continuar con datos básicos del usuario
-          _currentUser = UserModel(
-            uid: credential.user!.uid,
-            nombre: credential.user!.displayName ?? 'Usuario',
-            email: credential.user!.email ?? email,
-            rol: 'user',
-            telefono: '',
-          );
-        });
+        if (kDebugMode) {
+          debugPrint('✅ Credential obtenido: ${credential.user?.uid}');
+        }
         
-        // Retornar éxito inmediatamente después del login
+        // ⚡ OPTIMIZACIÓN: Establecer usuario básico PRIMERO para UI rápida
+        _currentUser = UserModel(
+          uid: credential.user!.uid,
+          nombre: credential.user!.displayName ?? 'Usuario',
+          email: credential.user!.email ?? email,
+          rol: 'user',
+          telefono: '',
+        );
+        
+        if (kDebugMode) {
+          debugPrint('⚡ Usuario básico establecido: ${_currentUser!.nombre}');
+        }
+        
+        // ✅ ESPERAR a cargar datos completos antes de continuar
+        // Esto es CRÍTICO para que el nombre real y userId estén disponibles
+        try {
+          await _loadUserData(credential.user!.uid);
+          if (kDebugMode) {
+            debugPrint('✅ Datos completos cargados: ${_currentUser!.nombre}');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('⚠️ Error cargando datos completos: $e (continuando con datos básicos)');
+          }
+        }
+        
+        // ⚡ Retornar éxito después de cargar datos completos
         _isLoading = false;
         notifyListeners();
+        
+        // 📝 Registrar actividad de login
+        _activityLog.logLogin(credential.user!.uid, email);
+        
         return true;
       } else {
         // Modo demo sin Firebase (más rápido)
@@ -116,14 +151,31 @@ class AuthService extends ChangeNotifier {
 
     try {
       if (_firebaseAvailable) {
+        if (kDebugMode) {
+          debugPrint('📝 Iniciando registro de usuario: $email');
+        }
+        
         // Registro con Firebase Auth
         final credential = await _auth.createUserWithEmailAndPassword(
           email: email,
           password: password,
+        ).timeout(
+          const Duration(seconds: 30),
+          onTimeout: () {
+            throw Exception('Timeout al registrar usuario. Verifica tu conexión a internet.');
+          },
         );
+        
+        if (kDebugMode) {
+          debugPrint('✅ Usuario creado en Firebase Auth: ${credential.user!.uid}');
+        }
         
         // Actualizar nombre de usuario en Firebase Auth
         await credential.user!.updateDisplayName(nombre);
+        
+        if (kDebugMode) {
+          debugPrint('✅ Display name actualizado: $nombre');
+        }
         
         // Crear documento de usuario en Firestore
         final user = UserModel(
@@ -135,7 +187,23 @@ class AuthService extends ChangeNotifier {
           fechaCreacion: DateTime.now(),
         );
         
-        await _firestore.collection('users').doc(user.uid).set(user.toMap());
+        if (kDebugMode) {
+          debugPrint('💾 Guardando usuario en Firestore: ${user.uid}');
+          debugPrint('📄 Datos: ${user.toMap()}');
+        }
+        
+        await _firestore.collection('users').doc(user.uid).set(user.toMap())
+            .timeout(
+          const Duration(seconds: 30),
+          onTimeout: () {
+            throw Exception('Timeout al guardar datos en Firestore. Verifica tu conexión a internet.');
+          },
+        );
+        
+        if (kDebugMode) {
+          debugPrint('✅ Usuario guardado exitosamente en Firestore');
+        }
+        
         _currentUser = user;
       } else {
         // Modo demo sin Firebase
@@ -212,9 +280,17 @@ class AuthService extends ChangeNotifier {
   // Cerrar sesión
   Future<void> logout() async {
     try {
+      final userId = _currentUser?.uid;
+      
       if (_firebaseAvailable) {
         await _auth.signOut();
       }
+      
+      // 📝 Registrar logout antes de limpiar usuario
+      if (userId != null) {
+        _activityLog.logLogout(userId);
+      }
+      
       _currentUser = null;
       notifyListeners();
     } catch (e) {
@@ -226,9 +302,19 @@ class AuthService extends ChangeNotifier {
   // Cargar datos del usuario desde Firestore
   Future<void> _loadUserData(String uid) async {
     try {
-      final doc = await _firestore.collection('users').doc(uid).get();
+      final doc = await _firestore.collection('users').doc(uid).get()
+          .timeout(const Duration(seconds: 30), onTimeout: () {
+        if (kDebugMode) {
+          debugPrint('⚠️ Timeout cargando datos de usuario desde Firestore');
+        }
+        throw Exception('Sin conexión a internet. Intenta nuevamente.');
+      });
+      
       if (doc.exists) {
         _currentUser = UserModel.fromMap(doc.data()!, uid);
+        if (kDebugMode) {
+          debugPrint('✅ Datos completos del usuario cargados: ${_currentUser!.nombre}');
+        }
       } else {
         // Si no existe el documento, crear uno con datos básicos
         final user = _auth.currentUser;
@@ -242,6 +328,9 @@ class AuthService extends ChangeNotifier {
             fechaCreacion: DateTime.now(),
           );
           await _firestore.collection('users').doc(uid).set(_currentUser!.toMap());
+          if (kDebugMode) {
+            debugPrint('✅ Documento de usuario creado en Firestore');
+          }
         }
       }
     } catch (e) {
@@ -280,11 +369,19 @@ class AuthService extends ChangeNotifier {
 
   // Obtener mensajes de error en español
   String _getFirebaseAuthErrorMessage(String code) {
+    if (kDebugMode) {
+      debugPrint('🔴 Firebase Auth Error Code: $code');
+    }
+    
     switch (code) {
       case 'user-not-found':
         return 'No existe una cuenta con este correo electrónico';
       case 'wrong-password':
         return 'Contraseña incorrecta';
+      case 'invalid-credential':
+        return 'Correo o contraseña incorrectos';
+      case 'invalid-login-credentials':
+        return 'Correo o contraseña incorrectos';
       case 'email-already-in-use':
         return 'Ya existe una cuenta con este correo electrónico';
       case 'invalid-email':
@@ -308,6 +405,8 @@ class AuthService extends ChangeNotifier {
   Future<bool> updateProfile({
     String? nombre,
     String? telefono,
+    String? direccion,
+    String? photoUrl,
   }) async {
     if (_currentUser == null) return false;
 
@@ -318,6 +417,8 @@ class AuthService extends ChangeNotifier {
       final updates = <String, dynamic>{};
       if (nombre != null) updates['nombre'] = nombre;
       if (telefono != null) updates['telefono'] = telefono;
+      if (direccion != null) updates['direccion'] = direccion;
+      if (photoUrl != null) updates['photoUrl'] = photoUrl;
 
       if (_firebaseAvailable && updates.isNotEmpty) {
         await _firestore.collection('users').doc(_currentUser!.uid).update(updates);
@@ -326,12 +427,27 @@ class AuthService extends ChangeNotifier {
         if (nombre != null) {
           await _auth.currentUser!.updateDisplayName(nombre);
         }
+        
+        // Actualizar también la foto de perfil en Firebase Auth
+        if (photoUrl != null) {
+          await _auth.currentUser!.updatePhotoURL(photoUrl);
+        }
+        
+        // 📝 Registrar actividad de actualización de perfil
+        _activityLog.logActivity(
+          userId: _currentUser!.uid,
+          type: ActivityType.other,
+          action: 'Perfil actualizado',
+          metadata: {'fields': updates.keys.toList()},
+        );
       }
 
       // Actualizar localmente
       _currentUser = _currentUser!.copyWith(
-        nombre: nombre ?? _currentUser!.nombre,
-        telefono: telefono ?? _currentUser!.telefono,
+        nombre: nombre,
+        telefono: telefono,
+        direccion: direccion,
+        photoUrl: photoUrl,
       );
 
       _isLoading = false;
@@ -339,6 +455,68 @@ class AuthService extends ChangeNotifier {
       return true;
     } catch (e) {
       _errorMessage = 'Error al actualizar perfil: $e';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Cambiar contraseña del usuario
+  /// Requiere la contraseña actual para re-autenticación
+  Future<bool> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    if (_currentUser == null) return false;
+
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      if (!_firebaseAvailable) {
+        _errorMessage = 'Cambio de contraseña no disponible en modo offline';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      final user = _auth.currentUser;
+      if (user == null || user.email == null) {
+        _errorMessage = 'Usuario no autenticado';
+        _isLoading = false;
+        notifyListeners();
+        return false;
+      }
+
+      // Re-autenticar al usuario con la contraseña actual
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+      
+      await user.reauthenticateWithCredential(credential);
+
+      // Cambiar la contraseña
+      await user.updatePassword(newPassword);
+
+      // 📝 Registrar cambio de contraseña
+      _activityLog.logActivity(
+        userId: _currentUser!.uid,
+        type: ActivityType.other,
+        action: 'Contraseña cambiada',
+      );
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } on FirebaseAuthException catch (e) {
+      _errorMessage = _getFirebaseAuthErrorMessage(e.code);
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      _errorMessage = 'Error al cambiar contraseña: $e';
       _isLoading = false;
       notifyListeners();
       return false;

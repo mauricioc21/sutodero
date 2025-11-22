@@ -94,11 +94,14 @@ class _AddEditPropertyScreenState extends State<AddEditPropertyScreen> {
               maxLines: 3,
             ),
             SizedBox(height: AppTheme.spacingXL),
-            ElevatedButton(
-              onPressed: _isSaving ? null : _save,
-              child: _isSaving
-                  ? const CircularProgressIndicator()
-                  : Text(isEdit ? 'Actualizar' : 'Guardar'),
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppTheme.safeBottomPadding),
+              child: ElevatedButton(
+                onPressed: _isSaving ? null : _save,
+                child: _isSaving
+                    ? const CircularProgressIndicator()
+                    : Text(isEdit ? 'Actualizar' : 'Guardar'),
+              ),
             ),
           ],
         ),
@@ -118,7 +121,13 @@ class _AddEditPropertyScreenState extends State<AddEditPropertyScreen> {
           descripcion: _descripcionController.text.isEmpty ? null : _descripcionController.text,
           tipo: _selectedType,
         );
-        await _inventoryService.updateProperty(updated);
+        
+        final authService = Provider.of<AuthService>(context, listen: false);
+        final userId = authService.currentUser?.uid;
+        if (userId == null) {
+          throw Exception('Usuario no autenticado');
+        }
+        await _inventoryService.updateProperty(userId, updated);
       } else {
         final authService = Provider.of<AuthService>(context, listen: false);
         
