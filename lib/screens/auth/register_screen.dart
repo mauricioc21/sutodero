@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../config/app_theme.dart';
+import '../../models/user_model.dart';
 import 'biometric_registration_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -18,6 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _telefonoController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  UserRole _selectedRole = UserRole.maestro; // Rol por defecto
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
@@ -43,6 +45,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _emailController.text.trim(),
       _passwordController.text,
       _telefonoController.text.trim(),
+      _selectedRole, // Pasar el rol seleccionado
     );
 
     setState(() => _isLoading = false);
@@ -314,6 +317,53 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       }
                       return null;
                     },
+                  ),
+                ),
+                
+                SizedBox(height: AppTheme.spacingMD),
+                
+                // Selector de Rol
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppTheme.grisOscuro,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                  child: DropdownButtonFormField<UserRole>(
+                    value: _selectedRole,
+                    dropdownColor: AppTheme.grisOscuro,
+                    style: const TextStyle(color: AppTheme.blanco),
+                    decoration: InputDecoration(
+                      hintText: 'Rol de Usuario',
+                      hintStyle: TextStyle(color: AppTheme.grisClaro),
+                      prefixIcon: const Icon(Icons.badge, color: Color(0xFFFAB334)),
+                      helperText: '* El rol Administrador solo puede ser asignado por otro Administrador',
+                      helperMaxLines: 2,
+                      helperStyle: TextStyle(color: AppTheme.grisClaro, fontSize: 11),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                      ),
+                    ),
+                    items: UserRole.values
+                        .where((role) => role != UserRole.administrador) // Excluir Administrador
+                        .map((role) {
+                      return DropdownMenuItem<UserRole>(
+                        value: role,
+                        child: Text(
+                          role.displayName,
+                          style: const TextStyle(color: AppTheme.blanco),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (UserRole? newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          _selectedRole = newValue;
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.arrow_drop_down, color: Color(0xFFFAB334)),
                   ),
                 ),
                 

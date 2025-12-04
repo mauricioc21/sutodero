@@ -64,22 +64,59 @@ class _ChatScreenState extends State<ChatScreen> {
     final user = authService.currentUser;
     
     if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error: Usuario no autenticado')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error: Usuario no autenticado'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return;
     }
 
+    // Limpiar el campo de texto inmediatamente para mejor UX
+    final messageToSend = message;
     _messageController.clear();
 
-    await _chatService.sendMessage(
-      ticketId: widget.ticket.id,
-      senderId: user.uid,
-      senderName: user.nombre,
-      content: message,
-    );
-
-    _scrollToBottom();
+    try {
+      final result = await _chatService.sendMessage(
+        ticketId: widget.ticket.id,
+        senderId: user.uid,
+        senderName: user.nombre,
+        content: messageToSend,
+      );
+      
+      if (result == null) {
+        // Error al enviar mensaje
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Error al enviar mensaje. Verifica tu conexión.'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 2),
+            ),
+          );
+          // Restaurar el mensaje en el campo de texto
+          _messageController.text = messageToSend;
+        }
+      } else {
+        // Mensaje enviado exitosamente
+        _scrollToBottom();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error inesperado: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        // Restaurar el mensaje en el campo de texto
+        _messageController.text = messageToSend;
+      }
+    }
   }
 
   @override

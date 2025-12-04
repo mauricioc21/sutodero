@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/ticket_model.dart';
+import '../../models/user_model.dart';
+import '../../models/maestro_profile_model.dart';
 import '../../services/ticket_service.dart';
+import '../../services/maestro_profile_service.dart';
 import 'add_edit_ticket_screen.dart';
 import 'ticket_detail_screen.dart';
 import '../../config/app_theme.dart';
 
 class TicketsScreen extends StatefulWidget {
-  const TicketsScreen({super.key});
+  final String? initialFilter; // Filtro inicial: 'todos', 'nuevo', 'completado', etc.
+  
+  const TicketsScreen({super.key, this.initialFilter});
 
   @override
   State<TicketsScreen> createState() => _TicketsScreenState();
@@ -16,15 +22,22 @@ class _TicketsScreenState extends State<TicketsScreen> {
   final TicketService _ticketService = TicketService();
   final TextEditingController _searchController = TextEditingController();
   List<TicketModel> _tickets = [];
+  List<UserModel> _maestros = [];
   bool _isLoading = true;
   String _filterStatus = 'todos';
+  String? _filterMaestro; // null = todos, id del maestro para filtrar
   String _searchQuery = '';
   String _sortBy = 'fecha_desc'; // fecha_desc, fecha_asc, prioridad, estado
 
   @override
   void initState() {
     super.initState();
+    // Aplicar filtro inicial si se proporciona
+    if (widget.initialFilter != null) {
+      _filterStatus = widget.initialFilter!;
+    }
     _loadTickets();
+    _loadMaestros();
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text.toLowerCase();
@@ -47,12 +60,109 @@ class _TicketsScreenState extends State<TicketsScreen> {
     });
   }
 
+  Future<void> _loadMaestros() async {
+    try {
+      List<UserModel> maestros = [];
+      
+      // 1. Cargar perfiles de maestros predefinidos (Rodrigo y Alexander)
+      try {
+        final maestroProfileService = MaestroProfileService();
+        final profiles = await maestroProfileService.getActiveMaestroProfiles()
+            .timeout(const Duration(seconds: 3))
+            .first;
+        
+        // Convertir perfiles a UserModel
+        for (var profile in profiles) {
+          maestros.add(UserModel(
+            uid: profile.id,
+            nombre: profile.nombre,
+            email: profile.email ?? '${profile.id}@sutodero.com',
+            rol: 'maestro',
+            telefono: profile.telefono,
+            fechaCreacion: profile.fechaCreacion,
+            activo: profile.activo,
+          ));
+        }
+      } catch (e) {
+        // Fallback: perfiles en memoria
+        maestros.addAll([
+          UserModel(
+            uid: 'rodrigo',
+            nombre: 'Rodrigo',
+            email: 'rodrigo@sutodero.com',
+            rol: 'maestro',
+            telefono: '3001234567',
+            fechaCreacion: DateTime.now(),
+            activo: true,
+          ),
+          UserModel(
+            uid: 'alexander',
+            nombre: 'Alexander',
+            email: 'alexander@sutodero.com',
+            rol: 'maestro',
+            telefono: '3007654321',
+            fechaCreacion: DateTime.now(),
+            activo: true,
+          ),
+        ]);
+      }
+      
+      // 2. Cargar usuarios adicionales con rol de maestro
+      try {
+        final querySnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('rol', isEqualTo: 'maestro')
+            .get()
+            .timeout(const Duration(seconds: 3));
+        
+        final userMaestros = querySnapshot.docs
+            .map((doc) => UserModel.fromMap(doc.data(), doc.id))
+            .toList();
+        
+        // Agregar solo si no están duplicados
+        for (var userMaestro in userMaestros) {
+          if (!maestros.any((m) => m.uid == userMaestro.uid)) {
+            maestros.add(userMaestro);
+          }
+        }
+      } catch (e) {
+        // Continuar con perfiles predefinidos
+      }
+      
+      // Filtrar solo maestros que tienen tareas asignadas
+      final maestrosConTareas = <UserModel>[];
+      for (final maestro in maestros) {
+        final tieneTickets = _tickets.any((ticket) => ticket.toderoId == maestro.uid);
+        if (tieneTickets) {
+          maestrosConTareas.add(maestro);
+        }
+      }
+      
+      if (mounted) {
+        setState(() {
+          _maestros = maestrosConTareas;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al cargar maestros: $e')),
+        );
+      }
+    }
+  }
+
   List<TicketModel> get _filteredTickets {
     var filtered = _tickets;
 
     // Filtro por estado
     if (_filterStatus != 'todos') {
       filtered = filtered.where((t) => t.estado.value == _filterStatus).toList();
+    }
+
+    // Filtro por maestro
+    if (_filterMaestro != null) {
+      filtered = filtered.where((t) => t.toderoId == _filterMaestro).toList();
     }
 
     // Filtro por búsqueda
@@ -179,7 +289,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
             ),
           ),
 
-          // Ordenamiento
+          // Ordenamiento con menú desplegable
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
@@ -192,19 +302,72 @@ class _TicketsScreenState extends State<TicketsScreen> {
                 ),
                 SizedBox(width: AppTheme.spacingSM),
                 Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _buildSortChip('Más reciente', 'fecha_desc', Icons.arrow_downward),
-                        SizedBox(width: AppTheme.spacingSM),
-                        _buildSortChip('Más antiguo', 'fecha_asc', Icons.arrow_upward),
-                        SizedBox(width: AppTheme.spacingSM),
-                        _buildSortChip('Prioridad', 'prioridad', Icons.priority_high),
-                        SizedBox(width: AppTheme.spacingSM),
-                        _buildSortChip('Estado', 'estado', Icons.label),
-                      ],
+                  child: PopupMenuButton<String>(
+                    initialValue: _sortBy,
+                    onSelected: (value) {
+                      setState(() => _sortBy = value);
+                    },
+                    color: AppTheme.grisOscuro,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                      side: BorderSide(color: AppTheme.dorado, width: 1),
                     ),
+                    offset: const Offset(0, 40),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.grisOscuro,
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                        border: Border.all(color: AppTheme.dorado, width: 1),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _getSortIcon(_sortBy),
+                            size: 16,
+                            color: AppTheme.dorado,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _getSortLabel(_sortBy),
+                              style: const TextStyle(
+                                color: AppTheme.dorado,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          const Icon(
+                            Icons.arrow_drop_down,
+                            color: AppTheme.dorado,
+                          ),
+                        ],
+                      ),
+                    ),
+                    itemBuilder: (context) => [
+                      _buildPopupMenuItem(
+                        'Más reciente',
+                        'fecha_desc',
+                        Icons.arrow_downward,
+                      ),
+                      _buildPopupMenuItem(
+                        'Más antiguo',
+                        'fecha_asc',
+                        Icons.arrow_upward,
+                      ),
+                      _buildPopupMenuItem(
+                        'Prioridad',
+                        'prioridad',
+                        Icons.priority_high,
+                      ),
+                      _buildPopupMenuItem(
+                        'Estado',
+                        'estado',
+                        Icons.label,
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -212,28 +375,162 @@ class _TicketsScreenState extends State<TicketsScreen> {
           ),
           SizedBox(height: AppTheme.spacingSM),
 
-          // Filtros por estado
+          // Filtros por estado con menú desplegable
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildFilterChip('Todos', 'todos', _tickets.length),
-                  SizedBox(width: AppTheme.spacingSM),
-                  _buildFilterChip('Nuevo', 'nuevo', 
-                    _tickets.where((t) => t.estado == TicketStatus.nuevo).length),
-                  SizedBox(width: AppTheme.spacingSM),
-                  _buildFilterChip('Pendiente', 'pendiente',
-                    _tickets.where((t) => t.estado == TicketStatus.pendiente).length),
-                  SizedBox(width: AppTheme.spacingSM),
-                  _buildFilterChip('En Progreso', 'en_progreso',
-                    _tickets.where((t) => t.estado == TicketStatus.enProgreso).length),
-                  SizedBox(width: AppTheme.spacingSM),
-                  _buildFilterChip('Completado', 'completado',
-                    _tickets.where((t) => t.estado == TicketStatus.completado).length),
-                ],
-              ),
+            child: Row(
+              children: [
+                const Icon(Icons.filter_list, color: Color(0xFFFAB334), size: 20),
+                SizedBox(width: AppTheme.spacingSM),
+                const Text(
+                  'Ver:',
+                  style: TextStyle(color: Color(0xFFFAB334), fontWeight: FontWeight.bold),
+                ),
+                SizedBox(width: AppTheme.spacingSM),
+                Expanded(
+                  child: PopupMenuButton<String>(
+                    initialValue: _filterStatus,
+                    onSelected: (value) {
+                      setState(() => _filterStatus = value);
+                    },
+                    color: AppTheme.grisOscuro,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                      side: BorderSide(color: AppTheme.dorado, width: 1),
+                    ),
+                    offset: const Offset(0, 40),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.grisOscuro,
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                        border: Border.all(color: AppTheme.dorado, width: 1),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _getFilterLabel(_filterStatus),
+                              style: const TextStyle(
+                                color: AppTheme.dorado,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          const Icon(
+                            Icons.arrow_drop_down,
+                            color: AppTheme.dorado,
+                          ),
+                        ],
+                      ),
+                    ),
+                    itemBuilder: (context) => [
+                      _buildFilterMenuItem(
+                        'Todos',
+                        'todos',
+                        _tickets.length,
+                      ),
+                      _buildFilterMenuItem(
+                        'Nuevo',
+                        'nuevo',
+                        _tickets.where((t) => t.estado == TicketStatus.nuevo).length,
+                      ),
+                      _buildFilterMenuItem(
+                        'Pendiente',
+                        'pendiente',
+                        _tickets.where((t) => t.estado == TicketStatus.pendiente).length,
+                      ),
+                      _buildFilterMenuItem(
+                        'En Progreso',
+                        'en_progreso',
+                        _tickets.where((t) => t.estado == TicketStatus.enProgreso).length,
+                      ),
+                      _buildFilterMenuItem(
+                        'Completado',
+                        'completado',
+                        _tickets.where((t) => t.estado == TicketStatus.completado).length,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: AppTheme.spacingSM),
+
+          // Filtro por Maestro
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                const Icon(Icons.person, color: Color(0xFFFAB334), size: 20),
+                SizedBox(width: AppTheme.spacingSM),
+                const Text(
+                  'Maestro:',
+                  style: TextStyle(color: Color(0xFFFAB334), fontWeight: FontWeight.bold),
+                ),
+                SizedBox(width: AppTheme.spacingSM),
+                Expanded(
+                  child: PopupMenuButton<String?>(
+                    initialValue: _filterMaestro,
+                    onSelected: (value) {
+                      setState(() => _filterMaestro = value);
+                    },
+                    color: AppTheme.grisOscuro,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                      side: BorderSide(color: AppTheme.dorado, width: 1),
+                    ),
+                    offset: const Offset(0, 40),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.grisOscuro,
+                        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                        border: Border.all(color: AppTheme.dorado, width: 1),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _getMaestroFilterLabel(),
+                              style: const TextStyle(
+                                color: AppTheme.dorado,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          const Icon(
+                            Icons.arrow_drop_down,
+                            color: AppTheme.dorado,
+                          ),
+                        ],
+                      ),
+                    ),
+                    itemBuilder: (context) => [
+                      _buildMaestroMenuItem(
+                        'Todos los Maestros',
+                        null,
+                        _tickets.length,
+                      ),
+                      ..._maestros.map((maestro) {
+                        final count = _tickets
+                            .where((t) => t.toderoId == maestro.uid)
+                            .length;
+                        return _buildMaestroMenuItem(
+                          maestro.nombre,
+                          maestro.uid,
+                          count,
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
           SizedBox(height: AppTheme.spacingSM),
@@ -292,44 +589,123 @@ class _TicketsScreenState extends State<TicketsScreen> {
     );
   }
 
-  Widget _buildFilterChip(String label, String value, int count) {
+  String _getFilterLabel(String filterStatus) {
+    final count = _getFilterCount(filterStatus);
+    switch (filterStatus) {
+      case 'todos':
+        return 'Todos ($count)';
+      case 'nuevo':
+        return 'Nuevo ($count)';
+      case 'pendiente':
+        return 'Pendiente ($count)';
+      case 'en_progreso':
+        return 'En Progreso ($count)';
+      case 'completado':
+        return 'Completado ($count)';
+      default:
+        return 'Todos ($count)';
+    }
+  }
+
+  int _getFilterCount(String filterStatus) {
+    switch (filterStatus) {
+      case 'todos':
+        return _tickets.length;
+      case 'nuevo':
+        return _tickets.where((t) => t.estado == TicketStatus.nuevo).length;
+      case 'pendiente':
+        return _tickets.where((t) => t.estado == TicketStatus.pendiente).length;
+      case 'en_progreso':
+        return _tickets.where((t) => t.estado == TicketStatus.enProgreso).length;
+      case 'completado':
+        return _tickets.where((t) => t.estado == TicketStatus.completado).length;
+      default:
+        return _tickets.length;
+    }
+  }
+
+  PopupMenuItem<String> _buildFilterMenuItem(String label, String value, int count) {
     final isSelected = _filterStatus == value;
-    return FilterChip(
-      label: Text('$label ($count)'),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() => _filterStatus = value);
-      },
-      backgroundColor: AppTheme.grisOscuro,
-      selectedColor: AppTheme.dorado,
-      labelStyle: TextStyle(
-        color: isSelected ? AppTheme.grisOscuro : AppTheme.dorado,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+    return PopupMenuItem<String>(
+      value: value,
+      child: Row(
+        children: [
+          Text(
+            '$label ($count)',
+            style: TextStyle(
+              color: isSelected ? AppTheme.dorado : AppTheme.blanco,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+          const Spacer(),
+          if (isSelected)
+            const Icon(
+              Icons.check,
+              color: AppTheme.dorado,
+              size: 18,
+            ),
+        ],
       ),
     );
   }
 
-  Widget _buildSortChip(String label, String value, IconData icon) {
+  String _getSortLabel(String sortBy) {
+    switch (sortBy) {
+      case 'fecha_desc':
+        return 'Más reciente';
+      case 'fecha_asc':
+        return 'Más antiguo';
+      case 'prioridad':
+        return 'Prioridad';
+      case 'estado':
+        return 'Estado';
+      default:
+        return 'Más reciente';
+    }
+  }
+
+  IconData _getSortIcon(String sortBy) {
+    switch (sortBy) {
+      case 'fecha_desc':
+        return Icons.arrow_downward;
+      case 'fecha_asc':
+        return Icons.arrow_upward;
+      case 'prioridad':
+        return Icons.priority_high;
+      case 'estado':
+        return Icons.label;
+      default:
+        return Icons.arrow_downward;
+    }
+  }
+
+  PopupMenuItem<String> _buildPopupMenuItem(String label, String value, IconData icon) {
     final isSelected = _sortBy == value;
-    return FilterChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
+    return PopupMenuItem<String>(
+      value: value,
+      child: Row(
         children: [
-          Icon(icon, size: 16, color: isSelected ? AppTheme.grisOscuro : AppTheme.dorado),
-          const SizedBox(width: 4),
-          Text(label),
+          Icon(
+            icon,
+            size: 18,
+            color: isSelected ? AppTheme.dorado : AppTheme.blanco,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? AppTheme.dorado : AppTheme.blanco,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+          const Spacer(),
+          if (isSelected)
+            const Icon(
+              Icons.check,
+              color: AppTheme.dorado,
+              size: 18,
+            ),
         ],
-      ),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() => _sortBy = value);
-      },
-      backgroundColor: AppTheme.grisOscuro,
-      selectedColor: AppTheme.dorado,
-      labelStyle: TextStyle(
-        color: isSelected ? AppTheme.grisOscuro : AppTheme.dorado,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        fontSize: 12,
       ),
     );
   }
@@ -454,6 +830,36 @@ class _TicketsScreenState extends State<TicketsScreen> {
                   ),
                 ],
               ),
+              
+              // Maestro asignado (si existe)
+              if (ticket.toderoNombre != null && ticket.toderoNombre!.isNotEmpty) ...[
+                SizedBox(height: AppTheme.spacingSM),
+                Row(
+                  children: [
+                    Icon(Icons.engineering, size: 16, color: AppTheme.dorado),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Maestro: ',
+                      style: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        ticket.toderoNombre!,
+                        style: TextStyle(
+                          color: AppTheme.dorado,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -474,5 +880,49 @@ class _TicketsScreenState extends State<TicketsScreen> {
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }
+  }
+
+  String _getMaestroFilterLabel() {
+    if (_filterMaestro == null) {
+      return 'Todos los Maestros';
+    }
+    final maestro = _maestros.firstWhere(
+      (m) => m.uid == _filterMaestro,
+      orElse: () => UserModel(
+        uid: '',
+        nombre: 'Desconocido',
+        email: '',
+        rol: 'maestro',
+        telefono: '',
+        fechaCreacion: DateTime.now(),
+      ),
+    );
+    final count = _tickets.where((t) => t.toderoId == _filterMaestro).length;
+    return '${maestro.nombre} ($count)';
+  }
+
+  PopupMenuItem<String?> _buildMaestroMenuItem(String label, String? value, int count) {
+    final isSelected = _filterMaestro == value;
+    return PopupMenuItem<String?>(
+      value: value,
+      child: Row(
+        children: [
+          Text(
+            '$label ($count)',
+            style: TextStyle(
+              color: isSelected ? AppTheme.dorado : AppTheme.blanco,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+          const Spacer(),
+          if (isSelected)
+            const Icon(
+              Icons.check,
+              color: AppTheme.dorado,
+              size: 18,
+            ),
+        ],
+      ),
+    );
   }
 }

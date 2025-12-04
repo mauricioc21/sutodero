@@ -140,6 +140,7 @@ class InventoryAct {
       'signatureTimestamp': signatureTimestamp?.toIso8601String(),
       'signatureLocation': signatureLocation,
       'createdBy': createdBy,
+      'userId': createdBy, // Compatibilidad con reglas antiguas de Firestore
       'createdByName': createdByName,
       'createdByRole': createdByRole,
       'createdAt': createdAt.toIso8601String(),

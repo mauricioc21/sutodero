@@ -107,10 +107,10 @@ service cloud.firestore {
     // Reglas para actas de inventario
     match /inventory_acts/{actId} {
       allow read: if isAdmin() || 
-                     (isAuthenticated() && resource.data.userId == request.auth.uid);
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+                     (isAuthenticated() && resource.data.createdBy == request.auth.uid);
+      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
       allow update: if isAdmin() || 
-                      (isAuthenticated() && resource.data.userId == request.auth.uid);
+                      (isAuthenticated() && resource.data.createdBy == request.auth.uid);
       allow delete: if isAdmin();
     }
     

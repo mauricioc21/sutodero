@@ -1,5 +1,6 @@
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter/foundation.dart';
 import '../services/auth_service.dart';
 import 'package:uuid/uuid.dart';
 import '../models/inventory_property.dart';
@@ -65,6 +66,18 @@ class InventoryService {
     double? area,
     int? numeroHabitaciones,
     int? numeroBanos,
+    String? pais,
+    String? ciudad,
+    String? municipio,
+    String? barrio,
+    int? numeroNiveles,
+    String? numeroInterior,
+    double? areaLote,
+    String? codigoInterno,
+    double? precioAlquilerDeseado,
+    String? nombreAgente,
+    String? tipoDocumento,
+    String? numeroDocumento,
   }) async {
     final property = InventoryProperty(
       id: _uuid.v4(),
@@ -78,6 +91,18 @@ class InventoryService {
       area: area,
       numeroHabitaciones: numeroHabitaciones,
       numeroBanos: numeroBanos,
+      pais: pais,
+      ciudad: ciudad,
+      municipio: municipio,
+      barrio: barrio,
+      numeroNiveles: numeroNiveles,
+      numeroInterior: numeroInterior,
+      areaLote: areaLote,
+      codigoInterno: codigoInterno,
+      precioAlquilerDeseado: precioAlquilerDeseado,
+      nombreAgente: nombreAgente,
+      tipoDocumento: tipoDocumento,
+      numeroDocumento: numeroDocumento,
     );
 
     await saveProperty(property);
@@ -108,11 +133,36 @@ class InventoryService {
   Future<List<PropertyRoom>> getRoomsByProperty(String propertyId) async {
     if (_roomsBox == null) await init();
     
-    return _roomsBox!.values
-        .map((map) => PropertyRoom.fromMap(Map<String, dynamic>.from(map)))
+    if (kDebugMode) {
+      debugPrint('🔍 [InventoryService] Buscando espacios para propiedad: $propertyId');
+      debugPrint('   Total de espacios en box: ${_roomsBox!.length}');
+    }
+    
+    final allRooms = _roomsBox!.values
+        .map((map) {
+          try {
+            return PropertyRoom.fromMap(Map<String, dynamic>.from(map));
+          } catch (e) {
+            if (kDebugMode) {
+              debugPrint('❌ Error deserializando espacio: $e');
+              debugPrint('   Datos del map: $map');
+            }
+            return null;
+          }
+        })
+        .whereType<PropertyRoom>()
         .where((room) => room.propertyId == propertyId)
         .toList()
       ..sort((a, b) => a.fechaCreacion.compareTo(b.fechaCreacion));
+    
+    if (kDebugMode) {
+      debugPrint('✅ Espacios encontrados: ${allRooms.length}');
+      for (var room in allRooms) {
+        debugPrint('   - ${room.nombre}: ${room.items.length} elementos');
+      }
+    }
+    
+    return allRooms;
   }
 
   /// Obtiene un espacio por ID
@@ -129,7 +179,28 @@ class InventoryService {
     if (_roomsBox == null) await init();
     
     room.fechaActualizacion = DateTime.now();
-    await _roomsBox!.put(room.id, room.toMap());
+    final roomMap = room.toMap();
+    
+    if (kDebugMode) {
+      debugPrint('💾 Guardando espacio: ${room.nombre}');
+      debugPrint('   ID: ${room.id}');
+      debugPrint('   Propiedad ID: ${room.propertyId}');
+      debugPrint('   Elementos: ${room.items.length}');
+      debugPrint('   Map serializado: ${roomMap.keys}');
+    }
+    
+    await _roomsBox!.put(room.id, roomMap);
+    
+    if (kDebugMode) {
+      debugPrint('✅ Espacio guardado exitosamente');
+      // Verificar que se guardó
+      final saved = _roomsBox!.get(room.id);
+      if (saved != null) {
+        debugPrint('✅ Verificación: Espacio encontrado en box');
+      } else {
+        debugPrint('❌ ERROR: Espacio NO encontrado en box después de guardar');
+      }
+    }
   }
 
   /// Crea un nuevo espacio

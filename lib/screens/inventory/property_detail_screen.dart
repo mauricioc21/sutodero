@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:io';
+import 'dart:io' if (dart.library.js) '../../stubs/io_stub.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../models/inventory_property.dart';
 import '../../models/property_room.dart';
@@ -59,7 +59,16 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   Future<void> _loadRooms() async {
     setState(() => _isLoading = true);
     try {
+      if (kDebugMode) {
+        debugPrint('🔍 Cargando espacios para propiedad: ${widget.property.id}');
+      }
       final rooms = await _inventoryService.getRoomsByProperty(widget.property.id);
+      if (kDebugMode) {
+        debugPrint('✅ Espacios cargados: ${rooms.length}');
+        for (var room in rooms) {
+          debugPrint('   - ${room.nombre} (${room.items.length} elementos)');
+        }
+      }
       // Cargar tickets relacionados
       final tickets = await _loadRelatedTickets();
       // Cargar tours virtuales
@@ -74,7 +83,8 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('Error loading rooms: $e');
+        debugPrint('❌ Error loading rooms: $e');
+        debugPrint('Stack trace: ${StackTrace.current}');
       }
       if (mounted) {
         setState(() => _isLoading = false);
@@ -922,10 +932,18 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
 
     try {
       // Recopilar todas las fotos de la propiedad y sus espacios
+      // IMPORTANTE: Filtrar solo URLs de Firebase Storage (http/https)
+      // Evitar data URLs (base64) que son muy grandes para Firestore
       final allPhotos = <String>[
-        ...widget.property.fotos,
-        ..._rooms.expand((room) => room.fotos),
+        ...widget.property.fotos.where((url) => url.startsWith('http')),
+        ..._rooms.expand((room) => room.fotos.where((url) => url.startsWith('http'))),
       ];
+
+      if (kDebugMode) {
+        debugPrint('📸 Total fotos para acta: ${allPhotos.length}');
+        debugPrint('📸 Fotos de propiedad: ${widget.property.fotos.where((url) => url.startsWith('http')).length}');
+        debugPrint('📸 Fotos de espacios: ${_rooms.expand((room) => room.fotos.where((url) => url.startsWith('http'))).length}');
+      }
 
       // Crear acta inicial
       final act = await _actService.createAct(
@@ -1033,13 +1051,8 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
         // En web: descargar automáticamente
         _downloadPdfWeb(pdfBytes, 'Acta_${act.validationCode}.pdf');
       } else {
-        // En móvil: guardar y compartir
-        final dir = await getApplicationDocumentsDirectory();
-        final file = File('${dir.path}/Acta_${act.validationCode}.pdf');
-        await file.writeAsBytes(pdfBytes);
-
-        // Subir PDF a Firebase Storage
-        final pdfUrl = await _actService.uploadPdf(act.id, file);
+        // En móvil/web: subir PDF a Firebase Storage directamente desde bytes
+        final pdfUrl = await _actService.uploadPdf(act.id, pdfBytes);
         await _actService.updatePdfUrl(act.id, pdfUrl);
 
         if (mounted) {

@@ -43,12 +43,12 @@ class _PropertyListingsScreenState extends State<PropertyListingsScreen> {
         listings = await _listingService.filterByTransactionType(
           transactionType: _filterType!,
           userId: user.uid,
-          isAdmin: user.isAdmin,
+          isAdmin: user.hasAdminAccess,
         );
       } else {
         listings = await _listingService.getAllListings(
           userId: user.uid,
-          isAdmin: user.isAdmin,
+          isAdmin: user.hasAdminAccess,
         );
       }
 
@@ -83,7 +83,7 @@ class _PropertyListingsScreenState extends State<PropertyListingsScreen> {
       final results = await _listingService.searchListings(
         query: query,
         userId: user.uid,
-        isAdmin: user.isAdmin,
+        isAdmin: user.hasAdminAccess,
       );
       
       if (mounted) {

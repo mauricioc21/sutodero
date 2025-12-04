@@ -18,7 +18,7 @@ extension TicketStatusExtension on TicketStatus {
       case TicketStatus.pendiente:
         return 'Pendiente';
       case TicketStatus.enProgreso:
-        return 'En Progreso';
+        return 'En Proceso';
       case TicketStatus.completado:
         return 'Completado';
       case TicketStatus.cancelado:
@@ -173,6 +173,10 @@ class TicketModel {
   final String? firmaTodero; // Base64 de la firma del todero
   final DateTime? fechaFirmaCliente;
   final DateTime? fechaFirmaTodero;
+  
+  // Cotización aprobada
+  final bool cotizacionAprobada;
+  final DateTime? fechaCotizacionAprobada;
 
   TicketModel({
     required this.id,
@@ -209,6 +213,8 @@ class TicketModel {
     this.firmaTodero,
     this.fechaFirmaCliente,
     this.fechaFirmaTodero,
+    this.cotizacionAprobada = false,
+    this.fechaCotizacionAprobada,
   });
 
   /// Convertir a Map para Firestore
@@ -247,6 +253,8 @@ class TicketModel {
       'firmaTodero': firmaTodero,
       'fechaFirmaCliente': fechaFirmaCliente != null ? Timestamp.fromDate(fechaFirmaCliente!) : null,
       'fechaFirmaTodero': fechaFirmaTodero != null ? Timestamp.fromDate(fechaFirmaTodero!) : null,
+      'cotizacionAprobada': cotizacionAprobada,
+      'fechaCotizacionAprobada': fechaCotizacionAprobada != null ? Timestamp.fromDate(fechaCotizacionAprobada!) : null,
     };
   }
 
@@ -296,6 +304,8 @@ class TicketModel {
       firmaTodero: map['firmaTodero'],
       fechaFirmaCliente: map['fechaFirmaCliente'] != null ? (map['fechaFirmaCliente'] as Timestamp).toDate() : null,
       fechaFirmaTodero: map['fechaFirmaTodero'] != null ? (map['fechaFirmaTodero'] as Timestamp).toDate() : null,
+      cotizacionAprobada: map['cotizacionAprobada'] ?? false,
+      fechaCotizacionAprobada: map['fechaCotizacionAprobada'] != null ? (map['fechaCotizacionAprobada'] as Timestamp).toDate() : null,
     );
   }
 
@@ -333,6 +343,8 @@ class TicketModel {
     String? firmaTodero,
     DateTime? fechaFirmaCliente,
     DateTime? fechaFirmaTodero,
+    bool? cotizacionAprobada,
+    DateTime? fechaCotizacionAprobada,
   }) {
     return TicketModel(
       id: id,
@@ -369,6 +381,8 @@ class TicketModel {
       firmaTodero: firmaTodero ?? this.firmaTodero,
       fechaFirmaCliente: fechaFirmaCliente ?? this.fechaFirmaCliente,
       fechaFirmaTodero: fechaFirmaTodero ?? this.fechaFirmaTodero,
+      cotizacionAprobada: cotizacionAprobada ?? this.cotizacionAprobada,
+      fechaCotizacionAprobada: fechaCotizacionAprobada ?? this.fechaCotizacionAprobada,
     );
   }
 }

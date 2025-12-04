@@ -70,8 +70,10 @@ dependencies:
   # UI Components
   flutter_svg: 2.0.10+1
   cached_network_image: 3.4.1
+  flutter_cache_manager: 3.4.1
   shimmer: 3.0.0
   fl_chart: 0.69.0
+  video_player: 2.9.2
   
   # Communication
   url_launcher: 6.3.1
@@ -141,6 +143,7 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+    - assets/videos/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

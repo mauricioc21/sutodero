@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:io';
+import 'dart:typed_data';
 import '../models/inventory_act.dart';
 import '../models/inventory_property.dart';
 
@@ -72,24 +72,24 @@ class InventoryActService {
     return act;
   }
 
-  /// Sube firma digital a Firebase Storage
-  Future<String> uploadSignature(String actId, File signatureFile) async {
+  /// Sube firma digital a Firebase Storage (compatible con Web)
+  Future<String> uploadSignature(String actId, Uint8List signatureBytes) async {
     final ref = _storage.ref().child('inventory_acts/$actId/signature.png');
-    final uploadTask = await ref.putFile(signatureFile);
+    final uploadTask = await ref.putData(signatureBytes, SettableMetadata(contentType: 'image/png'));
     return await uploadTask.ref.getDownloadURL();
   }
 
-  /// Sube foto de reconocimiento facial a Firebase Storage
-  Future<String> uploadFacialRecognition(String actId, File facialPhoto) async {
+  /// Sube foto de reconocimiento facial a Firebase Storage (compatible con Web)
+  Future<String> uploadFacialRecognition(String actId, Uint8List facialBytes) async {
     final ref = _storage.ref().child('inventory_acts/$actId/facial_recognition.jpg');
-    final uploadTask = await ref.putFile(facialPhoto);
+    final uploadTask = await ref.putData(facialBytes, SettableMetadata(contentType: 'image/jpeg'));
     return await uploadTask.ref.getDownloadURL();
   }
 
-  /// Sube PDF generado a Firebase Storage
-  Future<String> uploadPdf(String actId, File pdfFile) async {
+  /// Sube PDF generado a Firebase Storage (compatible con Web)
+  Future<String> uploadPdf(String actId, Uint8List pdfBytes) async {
     final ref = _storage.ref().child('inventory_acts/$actId/acta_${actId}.pdf');
-    final uploadTask = await ref.putFile(pdfFile);
+    final uploadTask = await ref.putData(pdfBytes, SettableMetadata(contentType: 'application/pdf'));
     return await uploadTask.ref.getDownloadURL();
   }
 

@@ -18,22 +18,22 @@ class PdfService {
   Future<Uint8List> generateTicketPdf(TicketModel ticket) async {
     final pdf = pw.Document();
     
-    // Cargar logo corporativo SU TODERO (texto amarillo)
+    // Cargar logo corporativo SU TODERO (principal con personaje)
     pw.ImageProvider? logoImage;
     try {
-      logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_yellow.png');
+      logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_principal.png');
       if (kDebugMode) {
-        debugPrint('✅ Logo corporativo SU TODERO cargado exitosamente');
+        debugPrint('✅ Logo corporativo SU TODERO cargado exitosamente (principal)');
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('⚠️ No se pudo cargar el logo corporativo: $e');
+        debugPrint('⚠️ No se pudo cargar el logo principal: $e');
       }
-      // Intentar con logo blanco como fallback
+      // Intentar con logo alternativo como fallback
       try {
-        logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_white.png');
+        logoImage = await imageFromAssetBundle('assets/images/sutodero_login_logo.png');
         if (kDebugMode) {
-          debugPrint('✅ Logo alternativo (blanco) cargado');
+          debugPrint('✅ Logo alternativo cargado');
         }
       } catch (e2) {
         if (kDebugMode) {
@@ -115,23 +115,23 @@ class PdfService {
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.letter,
-        margin: const pw.EdgeInsets.all(40),
+        margin: const pw.EdgeInsets.all(24),
         build: (context) => [
           // Encabezado con logo
           _buildHeader(logoImage),
-          pw.SizedBox(height: 20),
+          pw.SizedBox(height: 12),
           
           // Título del documento
           pw.Text(
             'ORDEN DE TRABAJO',
             style: pw.TextStyle(
-              fontSize: 24,
+              fontSize: 20,
               fontWeight: pw.FontWeight.bold,
               color: PdfColor.fromHex('#FAB334'), // Dorado corporativo
             ),
             textAlign: pw.TextAlign.center,
           ),
-          pw.SizedBox(height: 10),
+          pw.SizedBox(height: 8),
           
           // ID del ticket y estado
           pw.Row(
@@ -141,8 +141,8 @@ class PdfService {
               _buildStatusBadge(ticket.estado),
             ],
           ),
-          pw.Divider(thickness: 2, color: PdfColor.fromHex('#FAB334')),
-          pw.SizedBox(height: 20),
+          pw.Divider(thickness: 1.5, color: PdfColor.fromHex('#FAB334')),
+          pw.SizedBox(height: 10),
           
           // Información del ticket
           _buildSection('Información del Servicio', [
@@ -155,7 +155,33 @@ class PdfService {
             if (ticket.costoFinal != null)
               _buildInfoRow('Costo Final:', '\$${ticket.costoFinal!.toStringAsFixed(0)}'),
           ]),
-          pw.SizedBox(height: 15),
+          pw.SizedBox(height: 8),
+          
+          // Información de Cotización Aprobada
+          if (ticket.cotizacionAprobada)
+            _buildSection('Cotización Aprobada', [
+              pw.Row(
+                children: [
+                  pw.Icon(
+                    pw.IconData(0xe86c), // check_circle icon
+                    color: PdfColors.green,
+                    size: 18,
+                  ),
+                  pw.SizedBox(width: 8),
+                  pw.Text(
+                    'Cotización aprobada',
+                    style: pw.TextStyle(
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.green900,
+                    ),
+                  ),
+                ],
+              ),
+              if (ticket.fechaCotizacionAprobada != null)
+                _buildInfoRow('Fecha de Aprobación:', _formatDate(ticket.fechaCotizacionAprobada!)),
+            ]),
+          if (ticket.cotizacionAprobada)
+            pw.SizedBox(height: 8),
           
           // Información del cliente
           _buildSection('Datos del Cliente', [
@@ -165,7 +191,7 @@ class PdfService {
             if (ticket.clienteEmail != null)
               _buildInfoRow('Email:', ticket.clienteEmail!),
           ]),
-          pw.SizedBox(height: 15),
+          pw.SizedBox(height: 8),
           
           // Información del todero (si está asignado)
           if (ticket.toderoNombre != null)
@@ -173,7 +199,7 @@ class PdfService {
               _buildInfoRow('Nombre:', ticket.toderoNombre!),
             ]),
           if (ticket.toderoNombre != null)
-            pw.SizedBox(height: 15),
+            pw.SizedBox(height: 8),
           
           // Información de la propiedad (si existe)
           if (ticket.propiedadDireccion != null)
@@ -183,7 +209,7 @@ class PdfService {
                 _buildInfoRow('Espacio:', ticket.espacioNombre!),
             ]),
           if (ticket.propiedadDireccion != null)
-            pw.SizedBox(height: 15),
+            pw.SizedBox(height: 8),
           
           // Fechas
           _buildSection('Fechas', [
@@ -195,7 +221,7 @@ class PdfService {
             if (ticket.fechaCompletado != null)
               _buildInfoRow('Completado:', _formatDate(ticket.fechaCompletado!)),
           ]),
-          pw.SizedBox(height: 15),
+          pw.SizedBox(height: 8),
           
           // Notas
           if (ticket.notasCliente != null || ticket.notasTodero != null)
@@ -206,7 +232,7 @@ class PdfService {
                 _buildInfoRow('Notas del Todero:', ticket.notasTodero!),
             ]),
           if (ticket.notasCliente != null || ticket.notasTodero != null)
-            pw.SizedBox(height: 15),
+            pw.SizedBox(height: 8),
           
           // Calificación (si existe)
           if (ticket.calificacion != null)
@@ -226,7 +252,7 @@ class PdfService {
                 _buildInfoRow('Comentario:', ticket.comentarioCalificacion!),
             ]),
           if (ticket.calificacion != null)
-            pw.SizedBox(height: 15),
+            pw.SizedBox(height: 8),
           
           // Fotos del problema
           if (fotosProblema.isNotEmpty) ...[
@@ -240,7 +266,7 @@ class PdfService {
             ),
             pw.SizedBox(height: 10),
             _buildPhotoGrid(fotosProblema),
-            pw.SizedBox(height: 15),
+            pw.SizedBox(height: 8),
           ],
           
           // Fotos del resultado
@@ -255,7 +281,7 @@ class PdfService {
             ),
             pw.SizedBox(height: 10),
             _buildPhotoGrid(fotosResultado),
-            pw.SizedBox(height: 15),
+            pw.SizedBox(height: 8),
           ],
           
           // Firmas digitales
@@ -271,47 +297,42 @@ class PdfService {
           
           pw.Spacer(),
           
-          // Pie de página con diseño corporativo
-          pw.Container(
-            padding: const pw.EdgeInsets.all(16),
-            decoration: pw.BoxDecoration(
-              color: PdfColor.fromHex('#2C2C2C'),
-              borderRadius: pw.BorderRadius.circular(8),
-            ),
-            child: pw.Column(
-              children: [
-                pw.Text(
-                  'SU TODERO',
-                  style: pw.TextStyle(
-                    fontSize: 12,
-                    fontWeight: pw.FontWeight.bold,
-                    color: PdfColor.fromHex('#FAB334'),
-                  ),
-                  textAlign: pw.TextAlign.center,
+          // Pie de página limpio y centrado (sin fondo)
+          pw.Column(
+            children: [
+              pw.Divider(thickness: 1, color: PdfColor.fromHex('#FAB334')),
+              pw.SizedBox(height: 8),
+              pw.Text(
+                'SU TODERO',
+                style: pw.TextStyle(
+                  fontSize: 12,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColor.fromHex('#FAB334'),
                 ),
-                pw.SizedBox(height: 4),
-                pw.Text(
-                  'Gestión Profesional de Servicios de Reparación y Mantenimiento',
-                  style: pw.TextStyle(
-                    fontSize: 9,
-                    color: PdfColor.fromHex('#F5E6C8'),
-                  ),
-                  textAlign: pw.TextAlign.center,
+                textAlign: pw.TextAlign.center,
+              ),
+              pw.SizedBox(height: 4),
+              pw.Text(
+                'Gestión Profesional de Servicios de Reparación y Mantenimiento',
+                style: pw.TextStyle(
+                  fontSize: 9,
+                  color: PdfColors.black,
                 ),
-                pw.SizedBox(height: 6),
-                pw.Text(
-                  'Cra 14b #112-85 Segundo Piso, Bogotá, Colombia | Tel: (601) 703-9495 | www.sutodero.com',
-                  style: pw.TextStyle(fontSize: 8, color: PdfColor.fromHex('#FFFFFF')),
-                  textAlign: pw.TextAlign.center,
-                ),
-                pw.SizedBox(height: 8),
-                pw.Text(
-                  'Documento generado el ${_formatDate(DateTime.now())}',
-                  style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey),
-                  textAlign: pw.TextAlign.center,
-                ),
-              ],
-            ),
+                textAlign: pw.TextAlign.center,
+              ),
+              pw.SizedBox(height: 6),
+              pw.Text(
+                'Cra 14b #112-85 Segundo Piso, Bogotá, Colombia | Tel: (601) 703-9495 | www.sutodero.com',
+                style: const pw.TextStyle(fontSize: 8, color: PdfColors.black),
+                textAlign: pw.TextAlign.center,
+              ),
+              pw.SizedBox(height: 6),
+              pw.Text(
+                'Documento generado el ${_formatDate(DateTime.now())}',
+                style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey700),
+                textAlign: pw.TextAlign.center,
+              ),
+            ],
           ),
         ],
       ),
@@ -323,25 +344,26 @@ class PdfService {
   /// Construir encabezado con logo y colores corporativos
   pw.Widget _buildHeader(pw.ImageProvider? logo) {
     return pw.Container(
-      padding: const pw.EdgeInsets.all(16),
+      padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: pw.BoxDecoration(
         color: PdfColor.fromHex('#000000'), // Negro corporativo
-        borderRadius: pw.BorderRadius.circular(12),
+        borderRadius: pw.BorderRadius.circular(8),
       ),
       child: pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: pw.MainAxisAlignment.start,
+        crossAxisAlignment: pw.CrossAxisAlignment.center,
         children: [
-          // Logo SU TODERO
+          // Logo SU TODERO (tamaño optimizado)
           if (logo != null)
             pw.Container(
-              width: 80,
-              height: 80,
+              width: 70,
+              height: 70,
               child: pw.Image(logo, fit: pw.BoxFit.contain),
             )
           else
             pw.Container(
-              width: 80,
-              height: 80,
+              width: 70,
+              height: 70,
               decoration: pw.BoxDecoration(
                 color: PdfColor.fromHex('#FAB334'), // Dorado
                 shape: pw.BoxShape.circle,
@@ -349,33 +371,24 @@ class PdfService {
               child: pw.Center(
                 child: pw.Icon(
                   pw.IconData(0xe1a3), // handyman icon
-                  size: 40,
+                  size: 35,
                   color: PdfColor.fromHex('#000000'),
                 ),
               ),
             ),
-          pw.SizedBox(width: 16),
+          pw.SizedBox(width: 12),
+          // Solo eslogan (sin texto "SU TODERO")
           pw.Expanded(
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text(
-                  'SU TODERO',
-                  style: pw.TextStyle(
-                    fontSize: 24,
-                    fontWeight: pw.FontWeight.bold,
-                    color: PdfColor.fromHex('#FAB334'), // Dorado corporativo
-                  ),
+            child: pw.Align(
+              alignment: pw.Alignment.centerLeft,
+              child: pw.Text(
+                'Servicios Profesionales de Reparación y Mantenimiento',
+                style: pw.TextStyle(
+                  fontSize: 10,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColor.fromHex('#F5E6C8'), // Beige claro
                 ),
-                pw.SizedBox(height: 4),
-                pw.Text(
-                  'Servicios Profesionales de Reparación y Mantenimiento',
-                  style: pw.TextStyle(
-                    fontSize: 10,
-                    color: PdfColor.fromHex('#F5E6C8'), // Beige claro
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ],
@@ -423,27 +436,27 @@ class PdfService {
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.Container(
-          padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: pw.BoxDecoration(
             color: PdfColor.fromHex('#2C2C2C'), // Gris oscuro corporativo
-            borderRadius: pw.BorderRadius.circular(8),
+            borderRadius: pw.BorderRadius.circular(6),
           ),
           child: pw.Text(
             title,
             style: pw.TextStyle(
-              fontSize: 14,
+              fontSize: 12,
               fontWeight: pw.FontWeight.bold,
               color: PdfColor.fromHex('#FAB334'), // Dorado corporativo
             ),
           ),
         ),
-        pw.SizedBox(height: 8),
+        pw.SizedBox(height: 4),
         pw.Container(
-          padding: const pw.EdgeInsets.all(12),
+          padding: const pw.EdgeInsets.all(8),
           decoration: pw.BoxDecoration(
             color: PdfColor.fromHex('#F5E6C8'), // Beige claro
-            border: pw.Border.all(color: PdfColor.fromHex('#FAB334'), width: 1),
-            borderRadius: pw.BorderRadius.circular(8),
+            border: pw.Border.all(color: PdfColor.fromHex('#FAB334'), width: 0.5),
+            borderRadius: pw.BorderRadius.circular(6),
           ),
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -457,19 +470,19 @@ class PdfService {
   /// Construir fila de información
   pw.Widget _buildInfoRow(String label, String value) {
     return pw.Padding(
-      padding: const pw.EdgeInsets.symmetric(vertical: 4),
+      padding: const pw.EdgeInsets.symmetric(vertical: 2),
       child: pw.Row(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.SizedBox(
-            width: 150,
+            width: 130,
             child: pw.Text(
               label,
-              style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
             ),
           ),
           pw.Expanded(
-            child: pw.Text(value),
+            child: pw.Text(value, style: const pw.TextStyle(fontSize: 10)),
           ),
         ],
       ),

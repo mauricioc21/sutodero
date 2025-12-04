@@ -36,6 +36,8 @@ class TicketService {
     DateTime? fechaProgramada,
     String? notasCliente,
     List<String> fotosProblema = const [],
+    String? toderoId,
+    String? toderoNombre,
   }) async {
     final now = DateTime.now();
     final ticket = TicketModel(
@@ -60,6 +62,8 @@ class TicketService {
       fechaProgramada: fechaProgramada,
       notasCliente: notasCliente,
       fotosProblema: fotosProblema,
+      toderoId: toderoId,
+      toderoNombre: toderoNombre,
     );
 
     try {
@@ -305,6 +309,125 @@ class TicketService {
     }
   }
 
+  /// Aprobar cotización y asignar maestro
+  Future<bool> approveCotizacionAndAssignMaestro({
+    required String ticketId,
+    required String maestroId,
+    required String maestroNombre,
+    String? userId,
+    String? userName,
+  }) async {
+    try {
+      if (_firebaseAvailable) {
+        final ticket = await getTicket(ticketId);
+        if (ticket == null) return false;
+        
+        final now = DateTime.now();
+        
+        // Crear map de updates base
+        final updates = <String, dynamic>{
+          'cotizacionAprobada': true,
+          'fechaCotizacionAprobada': Timestamp.fromDate(now),
+          'fechaActualizacion': Timestamp.fromDate(now),
+        };
+        
+        // Solo agregar maestro si se proporcionó uno válido
+        if (maestroId.isNotEmpty && maestroNombre != 'Sin asignar') {
+          updates['toderoId'] = maestroId;
+          updates['toderoNombre'] = maestroNombre;
+          updates['estado'] = TicketStatus.pendiente.value;
+        }
+        
+        await _firestore.collection('tickets').doc(ticketId).update(updates);
+        
+        // Registrar evento de aprobación de cotización
+        final userName_ = userName ?? ticket.clienteNombre;
+        final userId_ = userId ?? ticket.clienteId;
+        
+        // Descripción según si se asignó maestro o no
+        final descripcion = maestroId.isNotEmpty && maestroNombre != 'Sin asignar'
+            ? 'Cotización aprobada - Maestro asignado: $maestroNombre'
+            : 'Cotización aprobada - Sin maestro asignado aún';
+        
+        final metadata = <String, dynamic>{
+          'cotizacionAprobada': true,
+        };
+        
+        // Agregar datos del maestro al metadata solo si existe
+        if (maestroId.isNotEmpty && maestroNombre != 'Sin asignar') {
+          metadata['maestroId'] = maestroId;
+          metadata['maestroNombre'] = maestroNombre;
+        }
+        
+        await _historyService.addEvent(
+          ticketId: ticketId,
+          type: EventType.statusChanged,
+          description: descripcion,
+          userId: userId_,
+          userName: userName_,
+          metadata: metadata,
+        );
+        
+        return true;
+      }
+      return false;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ Error aprobando cotización: $e');
+      }
+      return false;
+    }
+  }
+
+  /// Asignar maestro a un ticket con cotización ya aprobada
+  Future<bool> assignMaestroToTicket({
+    required String ticketId,
+    required String maestroId,
+    required String maestroNombre,
+    String? userId,
+    String? userName,
+  }) async {
+    try {
+      if (_firebaseAvailable) {
+        final ticket = await getTicket(ticketId);
+        if (ticket == null) return false;
+        
+        final now = DateTime.now();
+        
+        await _firestore.collection('tickets').doc(ticketId).update({
+          'toderoId': maestroId,
+          'toderoNombre': maestroNombre,
+          'estado': TicketStatus.pendiente.value,
+          'fechaActualizacion': Timestamp.fromDate(now),
+        });
+        
+        // Registrar evento de asignación de maestro
+        final userName_ = userName ?? ticket.clienteNombre;
+        final userId_ = userId ?? ticket.clienteId;
+        
+        await _historyService.addEvent(
+          ticketId: ticketId,
+          type: EventType.statusChanged,
+          description: 'Maestro asignado: $maestroNombre',
+          userId: userId_,
+          userName: userName_,
+          metadata: {
+            'maestroId': maestroId,
+            'maestroNombre': maestroNombre,
+          },
+        );
+        
+        return true;
+      }
+      return false;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ Error asignando maestro: $e');
+      }
+      return false;
+    }
+  }
+
   /// Agregar foto al ticket
   Future<bool> addPhoto(String ticketId, String photoPath, {bool isResult = false, String? userId, String? userName}) async {
     try {
@@ -494,7 +617,7 @@ class TicketService {
           'total': tickets.length,
           'nuevo': tickets.where((t) => t.estado == TicketStatus.nuevo).length,
           'pendiente': tickets.where((t) => t.estado == TicketStatus.pendiente).length,
-          'enProgreso': tickets.where((t) => t.estado == TicketStatus.enProgreso).length,
+          'en_progreso': tickets.where((t) => t.estado == TicketStatus.enProgreso).length,
           'completado': tickets.where((t) => t.estado == TicketStatus.completado).length,
           'cancelado': tickets.where((t) => t.estado == TicketStatus.cancelado).length,
         };

@@ -3,7 +3,9 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../models/ticket_model.dart';
 import '../../services/ticket_service.dart';
 import 'ticket_detail_screen.dart';
+import 'tickets_screen.dart';
 import '../../config/app_theme.dart';
+import '../empleados/empleados_por_rol_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -98,6 +100,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                     // Actividad reciente
                     _buildActividadReciente(),
+                    SizedBox(height: AppTheme.spacingXL),
+
+                    // Roles Su Todero (al final)
+                    _buildRolesSuTodero(),
                   ],
                 ),
               ),
@@ -132,15 +138,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 value: total.toString(),
                 icon: Icons.assignment,
                 color: AppTheme.dorado,
+                onTap: () {
+                  // Navegar a tickets sin filtro (todos)
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TicketsScreen(initialFilter: 'todos'),
+                    ),
+                  );
+                },
               ),
             ),
             SizedBox(width: AppTheme.spacingMD),
             Expanded(
               child: _buildStatCard(
-                title: 'Activos',
-                value: (nuevo + pendiente + enProgreso).toString(),
-                icon: Icons.schedule,
+                title: 'En Proceso',
+                value: enProgreso.toString(),
+                icon: Icons.autorenew,
                 color: const Color(0xFF2196F3),
+                onTap: () {
+                  // Navegar a tickets en progreso
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TicketsScreen(initialFilter: 'en_progreso'),
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -154,6 +178,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 value: completado.toString(),
                 icon: Icons.check_circle,
                 color: const Color(0xFF4CAF50),
+                onTap: () {
+                  // Navegar a tickets completados
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TicketsScreen(initialFilter: 'completado'),
+                    ),
+                  );
+                },
               ),
             ),
             SizedBox(width: AppTheme.spacingMD),
@@ -163,6 +196,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 value: nuevo.toString(),
                 icon: Icons.fiber_new,
                 color: AppTheme.dorado,
+                onTap: () {
+                  // Navegar a tickets nuevos
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => TicketsScreen(initialFilter: 'nuevo'),
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -176,40 +218,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required String value,
     required IconData icon,
     required Color color,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: EdgeInsets.all(AppTheme.paddingMD),
-      decoration: BoxDecoration(
-        color: AppTheme.grisOscuro,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Container(
+          padding: EdgeInsets.all(AppTheme.paddingMD),
+          decoration: BoxDecoration(
+            color: AppTheme.grisOscuro,
+            borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, color: color, size: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Icon(icon, color: color, size: 24),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: AppTheme.spacingSM),
               Text(
-                value,
+                title,
                 style: TextStyle(
-                  color: color,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[400],
+                  fontSize: 14,
                 ),
               ),
             ],
           ),
-          SizedBox(height: AppTheme.spacingSM),
-          Text(
-            title,
-            style: TextStyle(
-              color: Colors.grey[400],
-              fontSize: 14,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -636,6 +686,143 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Sección de Roles Su Todero
+  Widget _buildRolesSuTodero() {
+    final roles = [
+      {
+        'nombre': 'Administrador',
+        'cargo': 'administrador',
+        'icon': Icons.admin_panel_settings,
+        'color': const Color(0xFF9C27B0),
+      },
+      {
+        'nombre': 'Coordinador',
+        'cargo': 'coordinador',
+        'icon': Icons.manage_accounts,
+        'color': const Color(0xFF2196F3),
+      },
+      {
+        'nombre': 'Maestro',
+        'cargo': 'maestro',
+        'icon': Icons.engineering,
+        'color': AppTheme.dorado,
+      },
+      {
+        'nombre': 'Inventarios',
+        'cargo': 'inventarios',
+        'icon': Icons.inventory_2,
+        'color': const Color(0xFF4CAF50),
+      },
+      {
+        'nombre': 'Duppla',
+        'cargo': 'duppla',
+        'icon': Icons.domain,
+        'color': const Color(0xFFFF9800),
+      },
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Roles Su Todero',
+          style: TextStyle(
+            color: AppTheme.dorado,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: AppTheme.spacingMD),
+        
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 1.5,
+          ),
+          itemCount: roles.length,
+          itemBuilder: (context, index) {
+            final rol = roles[index];
+            return _buildRolCard(
+              nombre: rol['nombre'] as String,
+              cargo: rol['cargo'] as String,
+              icon: rol['icon'] as IconData,
+              color: rol['color'] as Color,
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRolCard({
+    required String nombre,
+    required String cargo,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => EmpleadosPorRolScreen(
+                cargo: cargo,
+                nombreCargo: nombre,
+                colorCargo: color,
+              ),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppTheme.grisOscuro,
+            borderRadius: BorderRadius.circular(AppTheme.radiusLG),
+            border: Border.all(
+              color: color.withValues(alpha: 0.3),
+              width: 2,
+            ),
+          ),
+          padding: EdgeInsets.all(AppTheme.paddingMD),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 28,
+                ),
+              ),
+              SizedBox(height: AppTheme.spacingSM),
+              Text(
+                nombre,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),

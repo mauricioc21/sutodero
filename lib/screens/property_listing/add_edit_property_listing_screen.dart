@@ -40,12 +40,19 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
   late TextEditingController _propietarioTelefonoController;
   late TextEditingController _propietarioEmailController;
   
+  // Nuevos controladores para campos adicionales
+  late TextEditingController _paisController;
+  late TextEditingController _numeroInteriorController;
+  late TextEditingController _areaLoteController;
+  late TextEditingController _codigoInternoController;
+  
   String _tipo = 'casa';
   TransactionType _transaccionTipo = TransactionType.venta;
   int? _numeroHabitaciones;
   int? _numeroBanos;
   int? _numeroParqueaderos;
   int? _estrato;
+  int? _numeroNiveles; // Nuevos niveles
   bool _isLoading = false;
 
   // Photo management
@@ -88,6 +95,12 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
     _propietarioTelefonoController = TextEditingController(text: widget.listing?.propietarioTelefono ?? '');
     _propietarioEmailController = TextEditingController(text: widget.listing?.propietarioEmail ?? '');
     
+    // Inicializar nuevos controladores
+    _paisController = TextEditingController(text: widget.listing?.pais ?? 'CO');
+    _numeroInteriorController = TextEditingController(text: widget.listing?.numeroInterior ?? '');
+    _areaLoteController = TextEditingController(text: widget.listing?.areaLote?.toString() ?? '');
+    _codigoInternoController = TextEditingController(text: widget.listing?.codigoInterno ?? '');
+    
     if (widget.listing != null) {
       _tipo = widget.listing!.tipo;
       _transaccionTipo = widget.listing!.transaccionTipo;
@@ -95,6 +108,7 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
       _numeroBanos = widget.listing!.numeroBanos;
       _numeroParqueaderos = widget.listing!.numeroParqueaderos;
       _estrato = widget.listing!.estrato;
+      _numeroNiveles = widget.listing!.numeroNiveles;
       
       // Load existing photos
       _photoUrls = List<String>.from(widget.listing!.fotos);
@@ -118,6 +132,10 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
     _propietarioNombreController.dispose();
     _propietarioTelefonoController.dispose();
     _propietarioEmailController.dispose();
+    _paisController.dispose();
+    _numeroInteriorController.dispose();
+    _areaLoteController.dispose();
+    _codigoInternoController.dispose();
     super.dispose();
   }
 
@@ -432,11 +450,21 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
         await _uploadPhotos(listingId);
       }
 
+      // Generar título automáticamente si está vacío
+      String titulo = _tituloController.text.trim();
+      if (titulo.isEmpty) {
+        // Generar título automático: "Tipo en Barrio, Ciudad"
+        final tipoCap = _tipo[0].toUpperCase() + _tipo.substring(1);
+        final barrio = _barrioController.text.trim();
+        final ciudad = _ciudadController.text.trim().split(',').first;
+        titulo = '$tipoCap en $barrio, $ciudad';
+      }
+      
       // Create listing object with uploaded photo URLs
       final listing = PropertyListing(
         id: listingId,
         userId: user.uid,
-        titulo: _tituloController.text.trim(),
+        titulo: titulo,
         direccion: _direccionController.text.trim(),
         ciudad: _ciudadController.text.trim().isNotEmpty ? _ciudadController.text.trim() : null,
         barrio: _barrioController.text.trim().isNotEmpty ? _barrioController.text.trim() : null,
@@ -448,9 +476,16 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
         numeroBanos: _numeroBanos,
         numeroParqueaderos: _numeroParqueaderos,
         estrato: _estrato,
-        precioVenta: double.tryParse(_precioVentaController.text),
-        precioArriendo: double.tryParse(_precioArriendoController.text),
+        precioVenta: double.tryParse(_precioVentaController.text.replaceAll('.', '')),
+        precioArriendo: double.tryParse(_precioArriendoController.text.replaceAll('.', '')),
         administracion: double.tryParse(_administracionController.text),
+        pais: _paisController.text.trim().isNotEmpty ? _paisController.text.trim() : null,
+        numeroNiveles: _numeroNiveles,
+        numeroInterior: _numeroInteriorController.text.trim().isNotEmpty 
+            ? _numeroInteriorController.text.trim() : null,
+        areaLote: double.tryParse(_areaLoteController.text),
+        codigoInterno: _codigoInternoController.text.trim().isNotEmpty 
+            ? _codigoInternoController.text.trim() : null,
         propietarioNombre: _propietarioNombreController.text.trim().isNotEmpty 
             ? _propietarioNombreController.text.trim() : null,
         propietarioTelefono: _propietarioTelefonoController.text.trim().isNotEmpty 
@@ -505,57 +540,146 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
         child: ListView(
           padding: EdgeInsets.all(AppTheme.paddingMD),
           children: [
-            // Título
-            _buildTextField(
-              controller: _tituloController,
-              label: 'Título del Inmueble *',
-              hint: 'Ej: Apartamento moderno en Chapinero',
-              icon: Icons.title,
-              validator: (value) => value?.isEmpty ?? true ? 'Ingresa un título' : null,
+            // Sección: Datos del inmueble
+            const Text(
+              'Datos del inmueble',
+              style: TextStyle(
+                fontSize: 20,
+                color: AppTheme.dorado,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: AppTheme.spacingSM),
+            const Text(
+              'Información básica',
+              style: TextStyle(
+                fontSize: 16,
+                color: AppTheme.grisClaro,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             SizedBox(height: AppTheme.spacingMD),
-
-            // Dirección
+            
+            // País
+            _buildTextField(
+              controller: _paisController,
+              label: 'País *',
+              hint: 'CO',
+              icon: Icons.flag,
+              validator: (value) => value?.isEmpty ?? true ? 'Ingresa el país' : null,
+            ),
+            SizedBox(height: AppTheme.spacingMD),
+            
+            // Ciudad
+            _buildTextField(
+              controller: _ciudadController,
+              label: 'Ciudad *',
+              hint: 'Bogotá, Cundinamarca',
+              icon: Icons.location_city,
+              validator: (value) => value?.isEmpty ?? true ? 'Ingresa la ciudad' : null,
+            ),
+            SizedBox(height: AppTheme.spacingMD),
+            
+            // Barrio/Colonia
+            _buildTextField(
+              controller: _barrioController,
+              label: 'Barrio/Colonia *',
+              hint: 'Castilla',
+              icon: Icons.map,
+              validator: (value) => value?.isEmpty ?? true ? 'Ingresa el barrio' : null,
+            ),
+            SizedBox(height: AppTheme.spacingMD),
+            
+            // Dirección completa
             _buildTextField(
               controller: _direccionController,
-              label: 'Dirección *',
-              hint: 'Calle, número, piso, apto',
+              label: 'Dirección completa *',
+              hint: 'KENNEDY_C797_92025',
               icon: Icons.location_on,
               validator: (value) => value?.isEmpty ?? true ? 'Ingresa la dirección' : null,
             ),
             SizedBox(height: AppTheme.spacingMD),
-
-            // Ciudad y Barrio
-            Row(
-              children: [
-                Expanded(
-                  child: _buildTextField(
-                    controller: _ciudadController,
-                    label: 'Ciudad',
-                    hint: 'Bogotá',
-                    icon: Icons.location_city,
-                  ),
-                ),
-                SizedBox(width: AppTheme.spacingMD),
-                Expanded(
-                  child: _buildTextField(
-                    controller: _barrioController,
-                    label: 'Barrio',
-                    hint: 'Chapinero',
-                    icon: Icons.map,
-                  ),
-                ),
-              ],
+            
+            // ¿Cuántos niveles tiene?
+            _buildNumberField(
+              label: '¿Cuántos niveles tiene? *',
+              icon: Icons.layers,
+              value: _numeroNiveles,
+              onChanged: (val) => setState(() => _numeroNiveles = val),
+              isRequired: true,
             ),
             SizedBox(height: AppTheme.spacingMD),
-
-            // Tipo de inmueble y transacción
+            
+            // Número de casa, apto, etc (opcional)
+            _buildTextField(
+              controller: _numeroInteriorController,
+              label: 'Número de casa, apto, etc (opcional)',
+              hint: 'apto 350 interior 9A',
+              icon: Icons.numbers,
+            ),
+            SizedBox(height: AppTheme.spacingMD),
+            
+            // Tipo de propiedad
             _buildDropdown(
-              label: 'Tipo de Inmueble *',
+              label: 'Tipo de propiedad *',
               value: _tipo,
               items: ['casa', 'apartamento', 'oficina', 'local', 'bodega', 'terreno'],
               displayNames: ['Casa', 'Apartamento', 'Oficina', 'Local', 'Bodega', 'Terreno'],
               onChanged: (value) => setState(() => _tipo = value!),
+            ),
+            SizedBox(height: AppTheme.spacingMD),
+            
+            // Área construida
+            _buildTextField(
+              controller: _areaController,
+              label: 'Área construida *',
+              hint: '61',
+              icon: Icons.square_foot,
+              keyboardType: TextInputType.number,
+              validator: (value) => value?.isEmpty ?? true ? 'Ingresa el área construida' : null,
+              suffixText: 'm²',
+            ),
+            SizedBox(height: AppTheme.spacingMD),
+            
+            // Área lote (opcional)
+            _buildTextField(
+              controller: _areaLoteController,
+              label: 'Área lote (opcional)',
+              hint: '0',
+              icon: Icons.landscape,
+              keyboardType: TextInputType.number,
+              suffixText: 'm²',
+            ),
+            SizedBox(height: AppTheme.spacingMD),
+            
+            // Código interno (opcional)
+            _buildTextField(
+              controller: _codigoInternoController,
+              label: 'Código interno (opcional)',
+              hint: 'KENNEDY_C797_92025',
+              icon: Icons.qr_code,
+            ),
+            const SizedBox(height: 4),
+            const Padding(
+              padding: EdgeInsets.only(left: 12),
+              child: Text(
+                'Este código pertenece a la Agencia inmobiliaria',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.grisClaro,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+            SizedBox(height: AppTheme.spacingXL),
+            
+            // Campos antiguos (ocultos para el nuevo flujo)
+            // Título (ahora opcional, generado automáticamente)
+            _buildTextField(
+              controller: _tituloController,
+              label: 'Título del Inmueble (Opcional)',
+              hint: 'Se generará automáticamente si se deja vacío',
+              icon: Icons.title,
             ),
             SizedBox(height: AppTheme.spacingMD),
 
@@ -670,7 +794,7 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
                 ],
               ),
 
-            // Botón guardar
+            // Botón Continuar
             SizedBox(
               height: 56,
               child: ElevatedButton(
@@ -691,9 +815,9 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
                           valueColor: AlwaysStoppedAnimation<Color>(AppTheme.negro),
                         ),
                       )
-                    : Text(
-                        widget.listing == null ? 'CREAR CAPTACIÓN' : 'ACTUALIZAR CAPTACIÓN',
-                        style: const TextStyle(
+                    : const Text(
+                        'Continuar',
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1,
@@ -701,12 +825,98 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
                       ),
               ),
             ),
+            
+            // Botón Eliminar propiedad (solo en modo edición)
+            if (widget.listing != null) ...[
+              SizedBox(height: AppTheme.spacingMD),
+              SizedBox(
+                height: 56,
+                child: OutlinedButton(
+                  onPressed: _isLoading ? null : _deleteProperty,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red, width: 2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                    ),
+                  ),
+                  child: const Text(
+                    'Eliminar propiedad',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 
+  // Método para eliminar propiedad
+  Future<void> _deleteProperty() async {
+    // Mostrar diálogo de confirmación
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.grisOscuro,
+        title: const Text(
+          '¿Eliminar propiedad?',
+          style: TextStyle(color: AppTheme.dorado),
+        ),
+        content: const Text(
+          'Esta acción no se puede deshacer. ¿Estás seguro?',
+          style: TextStyle(color: AppTheme.blanco),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar', style: TextStyle(color: AppTheme.grisClaro)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirm != true || widget.listing == null) return;
+    
+    setState(() => _isLoading = true);
+    
+    try {
+      await _listingService.deleteListing(widget.listing!.id);
+      
+      if (mounted) {
+        Navigator.pop(context, true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Propiedad eliminada exitosamente'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al eliminar: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+  
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -715,7 +925,8 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
     String? Function(String?)? validator,
     int maxLines = 1,
     TextInputType? keyboardType,
-    List<TextInputFormatter>? inputFormatters,  // ✅ FIX: Agregar soporte para formatters
+    List<TextInputFormatter>? inputFormatters,
+    String? suffixText,
   }) {
     return TextFormField(
       controller: controller,
@@ -729,6 +940,8 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey[600]),
         prefixIcon: icon != null ? Icon(icon, color: AppTheme.dorado) : null,
+        suffixText: suffixText,
+        suffixStyle: const TextStyle(color: AppTheme.grisClaro),
         filled: true,
         fillColor: AppTheme.grisOscuro,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMD)),
@@ -914,6 +1127,7 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
     required IconData icon,
     required int? value,
     required Function(int?) onChanged,
+    bool isRequired = false,
   }) {
     return Container(
       padding: EdgeInsets.all(AppTheme.paddingMD),
@@ -928,7 +1142,12 @@ class _AddEditPropertyListingScreenState extends State<AddEditPropertyListingScr
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(fontSize: 12, color: AppTheme.grisClaro),
+            style: TextStyle(
+              fontSize: 12, 
+              color: AppTheme.grisClaro,
+              fontWeight: isRequired ? FontWeight.bold : FontWeight.normal,
+            ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 4),
           Row(

@@ -1,56 +1,204 @@
 import 'inventory_property.dart';
 import 'room_features.dart';
+import 'room_item.dart';
 
 /// Tipos de espacios/habitaciones
 enum RoomType {
-  sala,
-  comedor,
-  cocina,
-  dormitorio,
-  bano,
-  estudio,
+  alcoba,
+  alcobaAuxiliar,
+  antejardin,
+  areaDeServicio,
+  atico,
   balcon,
-  terraza,
+  bano,
+  biblioteca,
+  bodega,
+  closetAbierto,
+  cochera,
+  cocina,
+  cocinaAmericana,
+  cocineta,
+  cocinaZonaOficios,
+  comedor,
+  contadores,
+  corredor,
+  cuartoDeServicio,
+  cuartoUtil,
+  cubierta,
+  deposito,
+  despacho,
+  dormitorio,
+  entrada,
+  entresuelo,
+  escaleras,
+  estacionamiento,
+  estudio,
+  fachada,
   garaje,
+  gradas,
+  habitacion,
+  hallDeAlcobas,
+  hallDeEntrada,
   jardin,
   lavanderia,
-  bodega,
+  linderos,
+  living,
+  local,
+  medidores,
+  mezzanine,
+  oficina,
+  parqueadero,
   pasillo,
+  patio,
+  recepcion,
   recibidor,
+  sala,
+  salaAuxiliar,
+  salaComedor,
+  salaDeTV,
+  salaDeEstar,
+  salaDeJuntas,
+  salon,
+  serviciosPublicos,
+  sotano,
+  terraza,
+  vestier,
+  walkInCloset,
+  zonaBBQ,
+  zonaDeOficios,
+  zonaDeRopas,
   otro,
 }
 
 extension RoomTypeExtension on RoomType {
   String get displayName {
     switch (this) {
-      case RoomType.sala:
-        return 'Sala';
-      case RoomType.comedor:
-        return 'Comedor';
-      case RoomType.cocina:
-        return 'Cocina';
-      case RoomType.dormitorio:
-        return 'Dormitorio';
-      case RoomType.bano:
-        return 'Baño';
-      case RoomType.estudio:
-        return 'Estudio';
+      case RoomType.alcoba:
+        return 'Alcoba';
+      case RoomType.alcobaAuxiliar:
+        return 'Alcoba auxiliar';
+      case RoomType.antejardin:
+        return 'Antejardín';
+      case RoomType.areaDeServicio:
+        return 'Área de servicio';
+      case RoomType.atico:
+        return 'Ático';
       case RoomType.balcon:
         return 'Balcón';
-      case RoomType.terraza:
-        return 'Terraza';
+      case RoomType.bano:
+        return 'Baño';
+      case RoomType.biblioteca:
+        return 'Biblioteca';
+      case RoomType.bodega:
+        return 'Bodega';
+      case RoomType.closetAbierto:
+        return 'Closet abierto';
+      case RoomType.cochera:
+        return 'Cochera';
+      case RoomType.cocina:
+        return 'Cocina';
+      case RoomType.cocinaAmericana:
+        return 'Cocina americana';
+      case RoomType.cocineta:
+        return 'Cocineta';
+      case RoomType.cocinaZonaOficios:
+        return 'Cocina / zona de oficios';
+      case RoomType.comedor:
+        return 'Comedor';
+      case RoomType.contadores:
+        return 'Contadores';
+      case RoomType.corredor:
+        return 'Corredor';
+      case RoomType.cuartoDeServicio:
+        return 'Cuarto de servicio';
+      case RoomType.cuartoUtil:
+        return 'Cuarto útil';
+      case RoomType.cubierta:
+        return 'Cubierta';
+      case RoomType.deposito:
+        return 'Depósito';
+      case RoomType.despacho:
+        return 'Despacho';
+      case RoomType.dormitorio:
+        return 'Dormitorio';
+      case RoomType.entrada:
+        return 'Entrada';
+      case RoomType.entresuelo:
+        return 'Entresuelo';
+      case RoomType.escaleras:
+        return 'Escaleras';
+      case RoomType.estacionamiento:
+        return 'Estacionamiento';
+      case RoomType.estudio:
+        return 'Estudio';
+      case RoomType.fachada:
+        return 'Fachada';
       case RoomType.garaje:
         return 'Garaje';
+      case RoomType.gradas:
+        return 'Gradas';
+      case RoomType.habitacion:
+        return 'Habitación';
+      case RoomType.hallDeAlcobas:
+        return 'Hall de alcobas';
+      case RoomType.hallDeEntrada:
+        return 'Hall de entrada';
       case RoomType.jardin:
         return 'Jardín';
       case RoomType.lavanderia:
         return 'Lavandería';
-      case RoomType.bodega:
-        return 'Bodega';
+      case RoomType.linderos:
+        return 'Linderos';
+      case RoomType.living:
+        return 'Living';
+      case RoomType.local:
+        return 'Local';
+      case RoomType.medidores:
+        return 'Medidores';
+      case RoomType.mezzanine:
+        return 'Mezzanine';
+      case RoomType.oficina:
+        return 'Oficina';
+      case RoomType.parqueadero:
+        return 'Parqueadero';
       case RoomType.pasillo:
         return 'Pasillo';
+      case RoomType.patio:
+        return 'Patio';
+      case RoomType.recepcion:
+        return 'Recepción';
       case RoomType.recibidor:
         return 'Recibidor';
+      case RoomType.sala:
+        return 'Sala';
+      case RoomType.salaAuxiliar:
+        return 'Sala auxiliar';
+      case RoomType.salaComedor:
+        return 'Sala comedor';
+      case RoomType.salaDeTV:
+        return 'Sala de TV';
+      case RoomType.salaDeEstar:
+        return 'Sala de estar';
+      case RoomType.salaDeJuntas:
+        return 'Sala de juntas';
+      case RoomType.salon:
+        return 'Salón';
+      case RoomType.serviciosPublicos:
+        return 'Servicios públicos';
+      case RoomType.sotano:
+        return 'Sótano';
+      case RoomType.terraza:
+        return 'Terraza';
+      case RoomType.vestier:
+        return 'Vestier';
+      case RoomType.walkInCloset:
+        return 'Walk-in closet';
+      case RoomType.zonaBBQ:
+        return 'Zona BBQ';
+      case RoomType.zonaDeOficios:
+        return 'Zona de oficios';
+      case RoomType.zonaDeRopas:
+        return 'Zona de ropas';
       case RoomType.otro:
         return 'Otro';
     }
@@ -58,34 +206,132 @@ extension RoomTypeExtension on RoomType {
 
   String get icon {
     switch (this) {
-      case RoomType.sala:
-        return '🛋️';
-      case RoomType.comedor:
-        return '🍽️';
-      case RoomType.cocina:
-        return '🍳';
-      case RoomType.dormitorio:
+      case RoomType.alcoba:
         return '🛏️';
-      case RoomType.bano:
-        return '🚿';
-      case RoomType.estudio:
-        return '📚';
+      case RoomType.alcobaAuxiliar:
+        return '🛏️';
+      case RoomType.antejardin:
+        return '🌱';
+      case RoomType.areaDeServicio:
+        return '🧹';
+      case RoomType.atico:
+        return '🏠';
       case RoomType.balcon:
         return '🌇';
-      case RoomType.terraza:
-        return '🏖️';
+      case RoomType.bano:
+        return '🚿';
+      case RoomType.biblioteca:
+        return '📚';
+      case RoomType.bodega:
+        return '📦';
+      case RoomType.closetAbierto:
+        return '👔';
+      case RoomType.cochera:
+        return '🚗';
+      case RoomType.cocina:
+        return '🍳';
+      case RoomType.cocinaAmericana:
+        return '🍳';
+      case RoomType.cocineta:
+        return '🍳';
+      case RoomType.cocinaZonaOficios:
+        return '🍳';
+      case RoomType.comedor:
+        return '🍽️';
+      case RoomType.contadores:
+        return '🔢';
+      case RoomType.corredor:
+        return '🚶';
+      case RoomType.cuartoDeServicio:
+        return '🧹';
+      case RoomType.cuartoUtil:
+        return '🔧';
+      case RoomType.cubierta:
+        return '🏠';
+      case RoomType.deposito:
+        return '📦';
+      case RoomType.despacho:
+        return '💼';
+      case RoomType.dormitorio:
+        return '🛏️';
+      case RoomType.entrada:
+        return '🚪';
+      case RoomType.entresuelo:
+        return '🏠';
+      case RoomType.escaleras:
+        return '🪜';
+      case RoomType.estacionamiento:
+        return '🅿️';
+      case RoomType.estudio:
+        return '📚';
+      case RoomType.fachada:
+        return '🏛️';
       case RoomType.garaje:
         return '🚗';
+      case RoomType.gradas:
+        return '🪜';
+      case RoomType.habitacion:
+        return '🛏️';
+      case RoomType.hallDeAlcobas:
+        return '🚪';
+      case RoomType.hallDeEntrada:
+        return '🚪';
       case RoomType.jardin:
         return '🌿';
       case RoomType.lavanderia:
         return '🧺';
-      case RoomType.bodega:
-        return '📦';
+      case RoomType.linderos:
+        return '🌳';
+      case RoomType.living:
+        return '🛋️';
+      case RoomType.local:
+        return '🏪';
+      case RoomType.medidores:
+        return '⚡';
+      case RoomType.mezzanine:
+        return '🏠';
+      case RoomType.oficina:
+        return '💼';
+      case RoomType.parqueadero:
+        return '🅿️';
       case RoomType.pasillo:
-        return '🚪';
+        return '🚶';
+      case RoomType.patio:
+        return '🏡';
+      case RoomType.recepcion:
+        return '🏢';
       case RoomType.recibidor:
         return '🚪';
+      case RoomType.sala:
+        return '🛋️';
+      case RoomType.salaAuxiliar:
+        return '🛋️';
+      case RoomType.salaComedor:
+        return '🍽️';
+      case RoomType.salaDeTV:
+        return '📺';
+      case RoomType.salaDeEstar:
+        return '🛋️';
+      case RoomType.salaDeJuntas:
+        return '🏢';
+      case RoomType.salon:
+        return '🏢';
+      case RoomType.serviciosPublicos:
+        return '⚙️';
+      case RoomType.sotano:
+        return '⬇️';
+      case RoomType.terraza:
+        return '🏖️';
+      case RoomType.vestier:
+        return '👔';
+      case RoomType.walkInCloset:
+        return '👗';
+      case RoomType.zonaBBQ:
+        return '🍖';
+      case RoomType.zonaDeOficios:
+        return '🧹';
+      case RoomType.zonaDeRopas:
+        return '👕';
       case RoomType.otro:
         return '📍';
     }
@@ -107,8 +353,10 @@ class PropertyRoom {
   double? ancho; // en metros
   double? largo; // en metros
   double? altura; // en metros
+  String? nivel; // Nivel del espacio (ej: "Nivel 1", "Nivel 2", "Sótano", etc.)
   String? observaciones;
   List<String> problemas; // Lista de problemas detectados
+  List<RoomItem> items; // Lista de elementos/items del espacio (del inventario)
   
   // Campos adicionales de características (estilo MLS/Metrocuadrado/Fincaraiz)
   FloorType? tipoPiso;
@@ -134,8 +382,10 @@ class PropertyRoom {
     this.ancho,
     this.largo,
     this.altura,
+    this.nivel,
     this.observaciones,
     List<String>? problemas,
+    List<RoomItem>? items,
     this.tipoPiso,
     this.tipoCocina,
     this.materialMeson,
@@ -146,6 +396,7 @@ class PropertyRoom {
     this.iluminacionNatural,
   })  : fotos = fotos ?? [],
         problemas = problemas ?? [],
+        items = items ?? [],
         fechaCreacion = fechaCreacion ?? DateTime.now();
 
   /// Área calculada (ancho × largo) - Igual a área de piso
@@ -208,8 +459,10 @@ class PropertyRoom {
       'ancho': ancho,
       'largo': largo,
       'altura': altura,
+      'nivel': nivel,
       'observaciones': observaciones,
       'problemas': problemas,
+      'items': items.map((item) => item.toMap()).toList(),
       'tipoPiso': tipoPiso?.name,
       'tipoCocina': tipoCocina?.name,
       'materialMeson': materialMeson?.name,
@@ -245,8 +498,12 @@ class PropertyRoom {
       ancho: map['ancho']?.toDouble(),
       largo: map['largo']?.toDouble(),
       altura: map['altura']?.toDouble(),
+      nivel: map['nivel'],
       observaciones: map['observaciones'],
       problemas: List<String>.from(map['problemas'] ?? []),
+      items: (map['items'] as List?)
+          ?.map((itemMap) => RoomItem.fromMap(itemMap as Map<String, dynamic>))
+          .toList(),
       tipoPiso: map['tipoPiso'] != null
           ? FloorType.values.firstWhere(
               (e) => e.name == map['tipoPiso'],
@@ -313,8 +570,10 @@ class PropertyRoom {
     double? ancho,
     double? largo,
     double? altura,
+    String? nivel,
     String? observaciones,
     List<String>? problemas,
+    List<RoomItem>? items,
     FloorType? tipoPiso,
     KitchenType? tipoCocina,
     CountertopMaterial? materialMeson,
@@ -338,8 +597,10 @@ class PropertyRoom {
       ancho: ancho ?? this.ancho,
       largo: largo ?? this.largo,
       altura: altura ?? this.altura,
+      nivel: nivel ?? this.nivel,
       observaciones: observaciones ?? this.observaciones,
       problemas: problemas ?? this.problemas,
+      items: items ?? this.items,
       tipoPiso: tipoPiso ?? this.tipoPiso,
       tipoCocina: tipoCocina ?? this.tipoCocina,
       materialMeson: materialMeson ?? this.materialMeson,

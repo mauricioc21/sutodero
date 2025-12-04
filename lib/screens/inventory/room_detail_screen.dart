@@ -1,10 +1,13 @@
 import 'dart:io';
+import 'dart:convert';
 import 'dart:math' show cos, sin;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../models/property_room.dart';
 import '../../models/inventory_property.dart';
 import '../../models/room_features.dart';
+import '../../models/room_item.dart';
 import '../../services/inventory_service.dart';
 import '../../services/floor_plan_service.dart';
 import '../../services/qr_service.dart';
@@ -34,7 +37,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
   void initState() {
     super.initState();
     _room = widget.room;
-    _isLoading = false;
+    _loadRoom(); // Cargar el room completo con sus items
   }
 
   Future<void> _loadRoom() async {
@@ -54,6 +57,64 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
           SnackBar(content: Text('Error al cargar espacio: $e')),
         );
       }
+    }
+  }
+
+  /// Helper para construir widget de imagen según plataforma
+  Widget _buildImageWidget(String imagePath, BoxFit fit, {double? height}) {
+    // Data URL (base64) - usado en web
+    if (imagePath.startsWith('data:image')) {
+      try {
+        final base64String = imagePath.split(',')[1];
+        final bytes = base64Decode(base64String);
+        return Image.memory(
+          bytes,
+          fit: fit,
+          height: height,
+          errorBuilder: (context, error, stackTrace) {
+            return const Icon(Icons.broken_image, size: 64, color: Colors.grey);
+          },
+        );
+      } catch (e) {
+        return const Icon(Icons.broken_image, size: 64, color: Colors.grey);
+      }
+    }
+    
+    // URL (http/https) - network image
+    if (imagePath.startsWith('http')) {
+      return Image.network(
+        imagePath,
+        fit: fit,
+        height: height,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                  : null,
+              color: AppTheme.dorado,
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return const Icon(Icons.broken_image, size: 64, color: Colors.grey);
+        },
+      );
+    }
+    
+    // Path local - file image (solo para casos específicos)
+    try {
+      return Image.file(
+        File(imagePath),
+        fit: fit,
+        height: height,
+        errorBuilder: (context, error, stackTrace) {
+          return const Icon(Icons.broken_image, size: 64, color: Colors.grey);
+        },
+      );
+    } catch (e) {
+      return const Icon(Icons.broken_image, size: 64, color: Colors.grey);
     }
   }
 
@@ -159,8 +220,17 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
         });
         
         if (photo != null) {
-          // Guardar foto localmente primero
-          await _inventoryService.addRoomPhoto(_room!.id, photo.path);
+          // En web, convertir a Data URL para que funcione la visualización
+          String photoPath;
+          if (kIsWeb) {
+            final bytes = await photo.readAsBytes();
+            final base64String = base64Encode(bytes);
+            photoPath = 'data:image/png;base64,$base64String';
+          } else {
+            photoPath = photo.path;
+          }
+          
+          await _inventoryService.addRoomPhoto(_room!.id, photoPath);
           await _loadRoom();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -181,7 +251,17 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
         
         if (photos.isNotEmpty) {
           for (final photo in photos) {
-            await _inventoryService.addRoomPhoto(_room!.id, photo.path);
+            // En web, convertir a Data URL para que funcione la visualización
+            String photoPath;
+            if (kIsWeb) {
+              final bytes = await photo.readAsBytes();
+              final base64String = base64Encode(bytes);
+              photoPath = 'data:image/png;base64,$base64String';
+            } else {
+              photoPath = photo.path;
+            }
+            
+            await _inventoryService.addRoomPhoto(_room!.id, photoPath);
           }
           await _loadRoom();
           if (mounted) {
@@ -420,6 +500,19 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
     }
   }
 
+  /// Mostrar galería de fotos del espacio
+  void _showPhotoGallery() {
+    if (_room == null || _room!.fotos.isEmpty) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => _PhotoGalleryDialog(
+        photos: _room!.fotos,
+        roomName: _room!.nombre,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -642,6 +735,25 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                 foregroundColor: AppTheme.blanco,
               ),
             ),
+            SizedBox(height: AppTheme.spacingSM),
+            
+            // Botón Ver Fotos (SIEMPRE VISIBLE)
+            ElevatedButton.icon(
+              onPressed: _room!.fotos.isEmpty ? null : _showPhotoGallery,
+              icon: const Icon(Icons.photo_library),
+              label: Text(_room!.fotos.isEmpty 
+                ? 'Ver Fotos (0)' 
+                : 'Ver Fotos (${_room!.fotos.length})'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _room!.fotos.isEmpty 
+                  ? AppTheme.grisClaro.withValues(alpha: 0.3)
+                  : AppTheme.grisOscuro,
+                foregroundColor: _room!.fotos.isEmpty 
+                  ? AppTheme.grisClaro
+                  : AppTheme.dorado,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
             SizedBox(height: AppTheme.spacingMD),
             
             // Botón generar plano
@@ -666,6 +778,77 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
             ),
             SizedBox(height: AppTheme.spacingMD),
 
+            // Elementos del Inventario
+            const Text(
+              'Elementos del Inventario',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: AppTheme.spacingSM),
+            
+            if (_room!.items.isEmpty)
+              Card(
+                child: Padding(
+                  padding: EdgeInsets.all(AppTheme.paddingMD),
+                  child: const Center(
+                    child: Text(
+                      'No hay elementos registrados.\nAgrega pisos, paredes, puertas, etc.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: AppTheme.grisClaro),
+                    ),
+                  ),
+                ),
+              )
+            else
+              ...(_room!.items.map((item) {
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    onTap: () {
+                      _showItemDetailDialog(item);
+                    },
+                    leading: CircleAvatar(
+                      backgroundColor: AppTheme.dorado,
+                      foregroundColor: AppTheme.negro,
+                      child: Text(
+                        item.cantidad.toString(),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    title: Text(
+                      item.nombreElemento,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Material: ${item.nombreMaterial}'),
+                        Text('${item.estado.emoji} ${item.estado.displayName}'),
+                        if (item.comentarios != null && item.comentarios!.isNotEmpty)
+                          Text(
+                            item.comentarios!,
+                            style: const TextStyle(fontStyle: FontStyle.italic),
+                          ),
+                        if (item.fotos.isNotEmpty)
+                          Text(
+                            '📷 ${item.fotos.length} foto(s)',
+                            style: const TextStyle(color: AppTheme.dorado),
+                          ),
+                      ],
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (item.fotos.isNotEmpty)
+                          const Icon(Icons.photo_library, color: AppTheme.dorado),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.chevron_right, color: AppTheme.grisClaro),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList()),
+            SizedBox(height: AppTheme.spacingMD),
+
             // Galería de fotos
             if (_room!.fotos.isNotEmpty) ...[
               GridView.builder(
@@ -681,10 +864,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                   final photoPath = _room!.fotos[index];
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                    child: Image.file(
-                      File(photoPath),
-                      fit: BoxFit.cover,
-                    ),
+                    child: _buildImageWidget(photoPath, BoxFit.cover),
                   );
                 },
               ),
@@ -700,11 +880,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
               SizedBox(height: AppTheme.spacingSM),
               ClipRRect(
                 borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                child: Image.file(
-                  File(_room!.foto360Url!),
-                  fit: BoxFit.cover,
-                  height: 200,
-                ),
+                child: _buildImageWidget(_room!.foto360Url!, BoxFit.cover, height: 200),
               ),
               SizedBox(height: AppTheme.spacingMD),
             ],
@@ -739,6 +915,140 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Mostrar diálogo con detalles completos de un elemento del inventario
+  void _showItemDetailDialog(RoomItem item) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          item.tipo.displayName,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppTheme.dorado,
+          ),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Cantidad
+              _buildDetailRow('Cantidad', '${item.cantidad}'),
+              const Divider(),
+              
+              // Material
+              _buildDetailRow('Material', item.material.displayName),
+              const Divider(),
+              
+              // Estado
+              _buildDetailRow('Estado', '${item.estado.emoji} ${item.estado.displayName}'),
+              const Divider(),
+              
+              // Comentarios
+              if (item.comentarios != null && item.comentarios!.isNotEmpty) ...[
+                _buildDetailRow('Comentarios', item.comentarios!),
+                const Divider(),
+              ],
+              
+              // Fotografías del elemento
+              if (item.fotos.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                const Text(
+                  'Fotografías del elemento',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemCount: item.fotos.length,
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context);
+                        _showFullScreenImage(item.fotos[index]);
+                      },
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: _buildImageWidget(
+                          item.fotos[index],
+                          BoxFit.cover,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Helper para construir filas de detalles
+  Widget _buildDetailRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$label: ',
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 14),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Mostrar imagen en pantalla completa
+  void _showFullScreenImage(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.black,
+        child: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(
+                child: _buildImageWidget(imageUrl, BoxFit.contain),
+              ),
+            ),
+            Positioned(
+              top: 16,
+              right: 16,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 32),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1391,5 +1701,287 @@ class Rotatable3DPainter extends CustomPainter {
            oldDelegate.largo != largo ||
            oldDelegate.altura != altura ||
            oldDelegate.rotationAngle != rotationAngle;
+  }
+}
+
+/// Helper global para construir widget de imagen según tipo de ruta
+Widget _buildImageWidgetGlobal(String imagePath, BoxFit fit, {double? height}) {
+  // Data URL (base64) - usado en web
+  if (imagePath.startsWith('data:image')) {
+    try {
+      final base64String = imagePath.split(',')[1];
+      final bytes = base64Decode(base64String);
+      return Image.memory(
+        bytes,
+        fit: fit,
+        height: height,
+        errorBuilder: (context, error, stackTrace) {
+          return const Icon(Icons.broken_image, size: 64, color: Colors.grey);
+        },
+      );
+    } catch (e) {
+      return const Icon(Icons.broken_image, size: 64, color: Colors.grey);
+    }
+  }
+  
+  // URL (http/https) - network image
+  if (imagePath.startsWith('http')) {
+    return Image.network(
+      imagePath,
+      fit: fit,
+      height: height,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Center(
+          child: CircularProgressIndicator(
+            value: loadingProgress.expectedTotalBytes != null
+                ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                : null,
+            color: AppTheme.dorado,
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return const Icon(Icons.broken_image, size: 64, color: Colors.grey);
+      },
+    );
+  }
+  
+  // Path local - file image (solo para casos específicos)
+  try {
+    return Image.file(
+      File(imagePath),
+      fit: fit,
+      height: height,
+      errorBuilder: (context, error, stackTrace) {
+        return const Icon(Icons.broken_image, size: 64, color: Colors.grey);
+      },
+    );
+  } catch (e) {
+    return const Icon(Icons.broken_image, size: 64, color: Colors.grey);
+  }
+}
+
+/// Widget de galería de fotos flotante
+class _PhotoGalleryDialog extends StatefulWidget {
+  final List<String> photos;
+  final String roomName;
+
+  const _PhotoGalleryDialog({
+    required this.photos,
+    required this.roomName,
+  });
+
+  @override
+  State<_PhotoGalleryDialog> createState() => _PhotoGalleryDialogState();
+}
+
+class _PhotoGalleryDialogState extends State<_PhotoGalleryDialog> {
+  late PageController _pageController;
+  int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.all(16),
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+          maxWidth: 600,
+        ),
+        decoration: BoxDecoration(
+          color: AppTheme.negro,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.dorado, width: 2),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.grisOscuro,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(14),
+                  topRight: Radius.circular(14),
+                ),
+                border: Border(
+                  bottom: BorderSide(color: AppTheme.dorado, width: 1),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.photo_library, color: AppTheme.dorado),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Fotos de ${widget.roomName}',
+                          style: const TextStyle(
+                            color: AppTheme.blanco,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '${_currentIndex + 1} de ${widget.photos.length}',
+                          style: const TextStyle(
+                            color: AppTheme.grisClaro,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, color: AppTheme.blanco),
+                  ),
+                ],
+              ),
+            ),
+
+            // Galería con PageView
+            Expanded(
+              child: Stack(
+                children: [
+                  PageView.builder(
+                    controller: _pageController,
+                    itemCount: widget.photos.length,
+                    onPageChanged: (index) {
+                      setState(() => _currentIndex = index);
+                    },
+                    itemBuilder: (context, index) {
+                      return InteractiveViewer(
+                        minScale: 0.5,
+                        maxScale: 4.0,
+                        child: Center(
+                          child: _buildImageWidgetGlobal(widget.photos[index], BoxFit.contain),
+                        ),
+                      );
+                    },
+                  ),
+
+                  // Botón anterior
+                  if (_currentIndex > 0)
+                    Positioned(
+                      left: 16,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: IconButton(
+                          onPressed: () {
+                            _pageController.previousPage(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            );
+                          },
+                          icon: const Icon(Icons.arrow_back_ios),
+                          style: IconButton.styleFrom(
+                            backgroundColor: AppTheme.grisOscuro.withValues(alpha: 0.8),
+                            foregroundColor: AppTheme.dorado,
+                            padding: const EdgeInsets.all(12),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  // Botón siguiente
+                  if (_currentIndex < widget.photos.length - 1)
+                    Positioned(
+                      right: 16,
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: IconButton(
+                          onPressed: () {
+                            _pageController.nextPage(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                            );
+                          },
+                          icon: const Icon(Icons.arrow_forward_ios),
+                          style: IconButton.styleFrom(
+                            backgroundColor: AppTheme.grisOscuro.withValues(alpha: 0.8),
+                            foregroundColor: AppTheme.dorado,
+                            padding: const EdgeInsets.all(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            // Indicadores de página (thumbnails)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: AppTheme.grisOscuro,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(14),
+                  bottomRight: Radius.circular(14),
+                ),
+              ),
+              child: SizedBox(
+                height: 60,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: widget.photos.length,
+                  itemBuilder: (context, index) {
+                    final isSelected = index == _currentIndex;
+                    return GestureDetector(
+                      onTap: () {
+                        _pageController.animateToPage(
+                          index,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(right: 8),
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: isSelected ? AppTheme.dorado : AppTheme.grisClaro,
+                            width: isSelected ? 3 : 1,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: _buildImageWidgetGlobal(
+                            widget.photos[index],
+                            BoxFit.cover,
+                            height: 60,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 /// Gestor de caché optimizado para imágenes de la app
 /// Reduce uso de datos y mejora velocidad de carga

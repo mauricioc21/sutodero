@@ -109,7 +109,7 @@ class AuthService extends ChangeNotifier {
   }
 
   // Registro de nuevo usuario
-  Future<bool> register(String nombre, String email, String password, String telefono) async {
+  Future<bool> register(String nombre, String email, String password, String telefono, UserRole userRole) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -130,7 +130,7 @@ class AuthService extends ChangeNotifier {
           uid: credential.user!.uid,
           nombre: nombre,
           email: email,
-          rol: 'cliente',
+          rol: userRole.name, // Usar el rol seleccionado
           telefono: telefono,
           fechaCreacion: DateTime.now(),
         );
@@ -144,7 +144,7 @@ class AuthService extends ChangeNotifier {
           uid: 'demo_${DateTime.now().millisecondsSinceEpoch}',
           nombre: nombre,
           email: email,
-          rol: 'cliente',
+          rol: userRole.name, // Usar el rol seleccionado
           telefono: telefono,
           fechaCreacion: DateTime.now(),
         );
@@ -203,6 +203,47 @@ class AuthService extends ChangeNotifier {
       }
     } catch (e) {
       _errorMessage = 'Error al autenticar con userId: $e';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Login rápido por rol (sin autenticación - para desarrollo/demostración)
+  Future<bool> quickLoginByRole(UserRole role, {String? maestroId, String? maestroNombre}) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      // Si es maestro y se proporcionó un perfil específico, usar ese nombre
+      String userName;
+      String userUid;
+      
+      if (role == UserRole.maestro && maestroId != null && maestroNombre != null) {
+        userName = maestroNombre;
+        userUid = 'maestro_${maestroId}';
+      } else {
+        userName = 'Usuario ${role.displayName}';
+        userUid = 'quick_${role.name}_${DateTime.now().millisecondsSinceEpoch}';
+      }
+      
+      // Crear usuario temporal con el rol seleccionado
+      _currentUser = UserModel(
+        uid: userUid,
+        nombre: userName,
+        email: '${role.name}@sutodero.demo',
+        rol: role.name,
+        telefono: '300000000',
+        fechaCreacion: DateTime.now(),
+        activo: true,
+      );
+      
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Error al iniciar sesión rápida: $e';
       _isLoading = false;
       notifyListeners();
       return false;
@@ -342,6 +383,25 @@ class AuthService extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return false;
+    }
+  }
+
+  // Actualizar usuario actual (para cambios desde pantalla de perfil)
+  void updateCurrentUser(UserModel updatedUser) {
+    _currentUser = updatedUser;
+    notifyListeners();
+  }
+
+  // Cambiar contraseña
+  Future<void> changePassword(String newPassword) async {
+    if (_auth.currentUser == null) {
+      throw Exception('Usuario no autenticado');
+    }
+
+    try {
+      await _auth.currentUser!.updatePassword(newPassword);
+    } catch (e) {
+      throw Exception('Error al cambiar contraseña: $e');
     }
   }
 }

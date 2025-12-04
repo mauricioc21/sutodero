@@ -4,18 +4,39 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'firebase_options.dart';
 import 'config/app_theme.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/splash/video_splash_screen.dart';
 import 'services/auth_service.dart';
+import 'services/role_change_service.dart';
+import 'services/maestro_profile_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // ✅ Inicializar Hive para almacenamiento local
+  if (kDebugMode) {
+    debugPrint('🚀 Iniciando app SU TODERO');
+    debugPrint('💾 Inicializando Hive...');
+  }
+  
+  try {
+    await Hive.initFlutter();
+    if (kDebugMode) {
+      debugPrint('✅ Hive inicializado correctamente');
+    }
+  } catch (e) {
+    if (kDebugMode) {
+      debugPrint('❌ Error al inicializar Hive: $e');
+      debugPrint('⚠️ El almacenamiento local no estará disponible');
+    }
+  }
+  
   // ✅ FIX: Inicializar Firebase ANTES de crear la app
   // Esto asegura que Firebase esté disponible cuando el usuario intente hacer login
   if (kDebugMode) {
-    debugPrint('🚀 Iniciando app SU TODERO');
     debugPrint('🔥 Inicializando Firebase...');
   }
   
@@ -36,6 +57,33 @@ void main() async {
     if (kDebugMode) {
       debugPrint('✅ Firebase inicializado correctamente');
     }
+    
+    // Inicializar perfiles de maestros automáticamente
+    if (kDebugMode) {
+      debugPrint('👷 Inicializando perfiles de maestros...');
+    }
+    
+    try {
+      final maestroService = MaestroProfileService();
+      await maestroService.initializeDefaultProfiles().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          if (kDebugMode) {
+            debugPrint('⏱️ Timeout al crear perfiles de maestros');
+          }
+          return false;
+        },
+      );
+      
+      if (kDebugMode) {
+        debugPrint('✅ Perfiles de maestros inicializados');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ Error al inicializar perfiles: $e');
+        debugPrint('💡 Los perfiles se crearán cuando sea necesario');
+      }
+    }
   } catch (e) {
     if (kDebugMode) {
       debugPrint('⚠️ Error al inicializar Firebase: $e');
@@ -47,6 +95,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthService()),
+        ChangeNotifierProvider(create: (_) => RoleChangeService()),
       ],
       child: const SuToderoApp(),
     ),
@@ -70,7 +119,7 @@ class SuToderoApp extends StatelessWidget {
         Locale('es', 'ES'),
       ],
       theme: AppTheme.theme,
-      home: const InitializationScreen(), // Pantalla de inicialización
+      home: const LoginScreen(), // Login directo - el video se reproduce en HTML
     );
   }
 }

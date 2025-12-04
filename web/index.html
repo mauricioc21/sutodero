@@ -1,23 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
-
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="description" content="SU TODERO - Gestión profesional de inventarios, reparaciones y mantenimiento">
 
   <!-- iOS meta tags & icons -->
@@ -31,8 +18,152 @@
 
   <title>SU TODERO - Gestión de Inventarios</title>
   <link rel="manifest" href="manifest.json">
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #000000;
+      overflow: hidden;
+    }
+    
+    /* Video splash screen */
+    #splash-video-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #000000;
+      z-index: 10000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+    
+    #splash-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    #loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background-color: #1a1a1a;
+      z-index: 9999;
+    }
+    
+    #loading-logo {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 30px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.05); }
+    }
+    
+    #loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #333;
+      border-top: 4px solid #FAB334;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    #loading-text {
+      margin-top: 20px;
+      color: #FAB334;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+    }
+  </style>
 </head>
 <body>
+  <!-- Video Splash Screen - Tu video de Su Todero -->
+  <div id="splash-video-container">
+    <video id="splash-video" autoplay muted playsinline>
+      <source src="assets/assets/videos/splash_video.mp4" type="video/mp4">
+    </video>
+  </div>
+
+  <!-- Loading indicator -->
+  <div id="loading" style="display: none;">
+    <svg id="loading-logo" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="100" cy="100" r="90" fill="#FAB334" opacity="0.2"/>
+      <text x="100" y="120" font-family="Arial, sans-serif" font-size="80" font-weight="bold" 
+            text-anchor="middle" fill="#FAB334">ST</text>
+    </svg>
+    <div id="loading-spinner"></div>
+    <div id="loading-text">Cargando SU TODERO...</div>
+  </div>
+
+  <script>
+    // Manejar el video splash
+    const splashVideoContainer = document.getElementById('splash-video-container');
+    const splashVideo = document.getElementById('splash-video');
+    const loadingDiv = document.getElementById('loading');
+    let videoEnded = false;
+    
+    // Cuando el video termina
+    splashVideo.addEventListener('ended', function() {
+      console.log('✅ Video splash terminado');
+      videoEnded = true;
+      hideSplashVideo();
+    });
+    
+    // Error del video - ocultar y mostrar loading
+    splashVideo.addEventListener('error', function(e) {
+      console.log('⚠️ Error cargando video splash:', e);
+      hideSplashVideo();
+    });
+    
+    // Timeout de seguridad: 10 segundos máximo
+    setTimeout(function() {
+      if (!videoEnded) {
+        console.log('⏱️ Timeout video splash - continuando');
+        hideSplashVideo();
+      }
+    }, 10000);
+    
+    function hideSplashVideo() {
+      splashVideoContainer.style.opacity = '0';
+      splashVideoContainer.style.transition = 'opacity 0.5s ease-out';
+      setTimeout(function() {
+        splashVideoContainer.remove();
+        loadingDiv.style.display = 'flex';
+      }, 500);
+    }
+    
+    // Hide loading indicator when Flutter is ready
+    window.addEventListener('flutter-first-frame', function() {
+      const loading = document.getElementById('loading');
+      if (loading) {
+        loading.style.opacity = '0';
+        loading.style.transition = 'opacity 0.5s ease-out';
+        setTimeout(() => loading.remove(), 500);
+      }
+    });
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

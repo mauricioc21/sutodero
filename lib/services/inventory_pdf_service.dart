@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -5,13 +6,20 @@ import 'package:printing/printing.dart';
 import 'package:flutter/foundation.dart';
 import '../models/inventory_property.dart';
 import '../models/property_room.dart';
+import '../models/room_item.dart';
 import 'package:intl/intl.dart';
 
-/// Servicio para generar PDFs de inventarios
+/// Servicio para generar PDFs de inventarios con formato profesional
 class InventoryPdfService {
   static final InventoryPdfService _instance = InventoryPdfService._internal();
   factory InventoryPdfService() => _instance;
   InventoryPdfService._internal();
+
+  /// Colores corporativos SU TODERO
+  static final PdfColor primaryYellow = PdfColor.fromHex('#FAB334');
+  static final PdfColor darkGray = PdfColor.fromHex('#2C2C2C');
+  static final PdfColor lightGray = PdfColors.grey300;
+  static final PdfColor white = PdfColors.white;
 
   /// Generar PDF completo de una propiedad con todos sus espacios
   Future<Uint8List> generatePropertyPdf(
@@ -20,67 +28,69 @@ class InventoryPdfService {
   ) async {
     final pdf = pw.Document();
     
-    // Cargar logo corporativo Su Todero
+    // Cargar logo corporativo Su Todero (sin fondo) - mismo del login
     pw.ImageProvider? logoImage;
     try {
-      logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_yellow.png');
+      logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_login.png');
       if (kDebugMode) {
-        debugPrint('✅ Logo corporativo SU TODERO cargado exitosamente (amarillo)');
+        debugPrint('✅ Logo corporativo SU TODERO del login cargado exitosamente');
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('⚠️ No se pudo cargar el logo amarillo: $e');
+        debugPrint('⚠️ No se pudo cargar el logo del login: $e');
       }
-      // Intentar con logo blanco como fallback
       try {
-        logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_white.png');
-        if (kDebugMode) {
-          debugPrint('✅ Logo alternativo (blanco) cargado');
-        }
+        logoImage = await imageFromAssetBundle('assets/images/logo_sutodero_nobg.png');
       } catch (e2) {
         if (kDebugMode) {
-          debugPrint('⚠️ No se pudo cargar ningún logo corporativo: $e2');
+          debugPrint('⚠️ No se pudo cargar ningún logo: $e2');
         }
       }
     }
 
+    // Agrupar espacios por nivel (si no hay nivel, usar "Nivel 1")
+    final roomsByLevel = <String, List<PropertyRoom>>{};
+    for (final room in rooms) {
+      final nivel = room.nivel ?? 'Nivel 1';
+      if (!roomsByLevel.containsKey(nivel)) {
+        roomsByLevel[nivel] = [];
+      }
+      roomsByLevel[nivel]!.add(room);
+    }
+
+    // Generar páginas
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.letter,
-        margin: const pw.EdgeInsets.all(40),
+        margin: const pw.EdgeInsets.all(30),
         build: (context) => [
-          // Encabezado
-          _buildHeader(logoImage),
+          // Header superior
+          _buildHeader(property, logoImage),
+          pw.SizedBox(height: 15),
+
+          // Datos de la empresa
+          _buildCompanyInfo(),
+          pw.SizedBox(height: 15),
+
+          // Datos básicos e Información de captación
+          _buildBasicInfo(property),
           pw.SizedBox(height: 20),
-          
-          // Título
-          pw.Text(
-            'REPORTE DE INVENTARIO',
-            style: pw.TextStyle(
-              fontSize: 24,
-              fontWeight: pw.FontWeight.bold,
-              color: PdfColor.fromHex('#FAB334'),
-            ),
-            textAlign: pw.TextAlign.center,
-          ),
+
+          // Espacios por nivel
+          ...roomsByLevel.entries.expand((entry) => [
+            _buildNivelHeader(entry.key),
+            pw.SizedBox(height: 10),
+            ...entry.value.expand((room) => [
+              _buildRoomSection(room),
+              pw.SizedBox(height: 15),
+            ]),
+          ]),
+
+          // Textos jurídicos
           pw.SizedBox(height: 20),
-          
-          // Información de la propiedad
-          _buildPropertySection(property),
-          pw.SizedBox(height: 20),
-          
-          // Resumen de espacios
-          _buildRoomsSummary(rooms),
-          pw.SizedBox(height: 20),
-          
-          // Detalle de cada espacio
-          ..._buildRoomsDetail(rooms),
-          
-          pw.Spacer(),
-          
-          // Pie de página
-          _buildFooter(),
+          _buildLegalText(property),
         ],
+        footer: (context) => _buildFooter(context),
       ),
     );
 
@@ -94,26 +104,15 @@ class InventoryPdfService {
   ) async {
     final pdf = pw.Document();
     
-    // Cargar logo corporativo Su Todero
     pw.ImageProvider? logoImage;
     try {
-      logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_yellow.png');
-      if (kDebugMode) {
-        debugPrint('✅ Logo corporativo SU TODERO cargado exitosamente (amarillo)');
-      }
+      logoImage = await imageFromAssetBundle('assets/images/logo_sutodero_nobg.png');
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('⚠️ No se pudo cargar el logo amarillo: $e');
-      }
-      // Intentar con logo blanco como fallback
       try {
-        logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_white.png');
-        if (kDebugMode) {
-          debugPrint('✅ Logo alternativo (blanco) cargado');
-        }
+        logoImage = await imageFromAssetBundle('assets/images/logo_sutodero_transparente.png');
       } catch (e2) {
         if (kDebugMode) {
-          debugPrint('⚠️ No se pudo cargar ningún logo corporativo: $e2');
+          debugPrint('⚠️ No se pudo cargar el logo: $e2');
         }
       }
     }
@@ -121,355 +120,525 @@ class InventoryPdfService {
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.letter,
-        margin: const pw.EdgeInsets.all(40),
+        margin: const pw.EdgeInsets.all(30),
         build: (context) => [
-          _buildHeader(logoImage),
+          _buildHeader(property, logoImage),
+          pw.SizedBox(height: 15),
+          _buildCompanyInfo(),
+          pw.SizedBox(height: 15),
+          _buildBasicInfo(property),
+          pw.SizedBox(height: 15),
+          _buildRoomSection(room),
           pw.SizedBox(height: 20),
-          
-          pw.Text(
-            'REPORTE DE ESPACIO',
-            style: pw.TextStyle(
-              fontSize: 24,
-              fontWeight: pw.FontWeight.bold,
-              color: PdfColor.fromHex('#FAB334'),
-            ),
-            textAlign: pw.TextAlign.center,
-          ),
-          pw.SizedBox(height: 10),
-          
-          // Info de la propiedad (resumida)
-          pw.Text(
-            property.direccion,
-            style: const pw.TextStyle(fontSize: 14, color: PdfColors.grey700),
-            textAlign: pw.TextAlign.center,
-          ),
-          pw.SizedBox(height: 20),
-          
-          // Detalle del espacio
-          _buildRoomDetailSection(room),
-          
-          pw.Spacer(),
-          _buildFooter(),
+          _buildLegalText(property),
         ],
+        footer: (context) => _buildFooter(context),
       ),
     );
 
     return pdf.save();
   }
 
-  /// Construir encabezado
-  pw.Widget _buildHeader(pw.ImageProvider? logo) {
-    return pw.Container(
-      padding: const pw.EdgeInsets.all(16),
-      decoration: pw.BoxDecoration(
-        color: PdfColor.fromHex('#000000'),
-        borderRadius: pw.BorderRadius.circular(8),
-      ),
-      child: pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: pw.CrossAxisAlignment.center,
-        children: [
-          if (logo != null)
-            pw.Image(logo, height: 35, fit: pw.BoxFit.contain)
-          else
-            pw.Text(
-              'SU TODERO',
-              style: pw.TextStyle(
-                fontSize: 20,
-                fontWeight: pw.FontWeight.bold,
-                color: PdfColor.fromHex('#FAB334'),
-              ),
-            ),
-          pw.Column(
+  /// Header con fecha, serial y logo
+  pw.Widget _buildHeader(InventoryProperty property, pw.ImageProvider? logoImage) {
+    final now = DateTime.now();
+    final dateFormat = DateFormat('dd \'de\' MMMM \'de\' yyyy \'a las\' HH:mm', 'es_ES');
+    
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        // Logo a la izquierda
+        if (logoImage != null)
+          pw.Container(
+            width: 120,
+            height: 60,
+            child: pw.Image(logoImage, fit: pw.BoxFit.contain),
+          )
+        else
+          pw.SizedBox(width: 120),
+        
+        // Información a la derecha
+        pw.Expanded(
+          child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: [
               pw.Text(
-                'Gestión de Inventarios',
-                style: pw.TextStyle(fontSize: 12, color: PdfColor.fromHex('#FFFFFF')),
+                'Generado el ${dateFormat.format(now)}',
+                style: const pw.TextStyle(fontSize: 9, color: PdfColors.black),
+                textAlign: pw.TextAlign.right,
+              ),
+              pw.SizedBox(height: 2),
+              pw.Text(
+                'Serial inventario: ${property.id}',
+                style: const pw.TextStyle(fontSize: 9, color: PdfColors.black),
+                textAlign: pw.TextAlign.right,
+              ),
+              pw.SizedBox(height: 2),
+              pw.Text(
+                'Generado con SU TODERO App',
+                style: const pw.TextStyle(fontSize: 9, color: PdfColors.black),
+                textAlign: pw.TextAlign.right,
               ),
             ],
           ),
-        ],
+        ),
+      ],
+    );
+  }
+
+  /// Información de la empresa
+  pw.Widget _buildCompanyInfo() {
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text(
+          'SU TODERO',
+          style: pw.TextStyle(
+            fontSize: 14,
+            fontWeight: pw.FontWeight.bold,
+            color: darkGray,
+          ),
+        ),
+        pw.SizedBox(height: 2),
+        pw.Text(
+          'NIT. 900.158.284 - 9',
+          style: const pw.TextStyle(fontSize: 9, color: PdfColors.black),
+        ),
+        pw.Text(
+          'Cra 14b #112-85 Segundo Piso',
+          style: const pw.TextStyle(fontSize: 9, color: PdfColors.black),
+        ),
+        pw.Text(
+          'info@sutodero.com',
+          style: const pw.TextStyle(fontSize: 9, color: PdfColors.black),
+        ),
+        pw.Text(
+          '6017039495',
+          style: const pw.TextStyle(fontSize: 9, color: PdfColors.black),
+        ),
+      ],
+    );
+  }
+
+  /// Datos básicos de la propiedad
+  pw.Widget _buildBasicInfo(InventoryProperty property) {
+    return pw.Row(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        // Columna izquierda - Datos básicos
+        pw.Expanded(
+          child: pw.Container(
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.grey100,
+              borderRadius: pw.BorderRadius.circular(8),
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  'Datos básicos',
+                  style: pw.TextStyle(
+                    fontSize: 11,
+                    fontWeight: pw.FontWeight.bold,
+                    color: darkGray,
+                  ),
+                ),
+                pw.SizedBox(height: 8),
+                _buildSimpleInfoRow('País: ${property.pais ?? 'CO'}'),
+                _buildSimpleInfoRow('Ciudad: ${property.ciudad ?? 'N/A'}'),
+                if (property.municipio != null && property.municipio!.isNotEmpty)
+                  _buildSimpleInfoRow('Municipio: ${property.municipio}'),
+                _buildSimpleInfoRow('Barrio: ${property.barrio ?? 'N/A'}'),
+                _buildSimpleInfoRow('Direccion: ${property.direccion}${property.numeroInterior != null && property.numeroInterior!.isNotEmpty ? ' ${property.numeroInterior}' : ''}'),
+                _buildSimpleInfoRow('Area Construida: ${property.area?.toStringAsFixed(0) ?? '0'} m²'),
+                _buildSimpleInfoRow('Area Lote: ${property.areaLote?.toStringAsFixed(0) ?? '0'} m²'),
+                _buildSimpleInfoRow('Tipo de propiedad: ${property.tipo.displayName}'),
+                _buildSimpleInfoRow('Codigo del Inmueble: ${property.codigoInterno ?? property.id.substring(0, 12).toUpperCase()}'),
+              ],
+            ),
+          ),
+        ),
+        pw.SizedBox(width: 12),
+        // Columna derecha - Información de Captación
+        pw.Expanded(
+          child: pw.Container(
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              color: PdfColors.grey100,
+              borderRadius: pw.BorderRadius.circular(8),
+            ),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  'Información de Captacion',
+                  style: pw.TextStyle(
+                    fontSize: 11,
+                    fontWeight: pw.FontWeight.bold,
+                    color: darkGray,
+                  ),
+                ),
+                pw.SizedBox(height: 8),
+                _buildSimpleInfoRow('Precio deseado de alquiler: \$ ${property.precioAlquilerDeseado?.toStringAsFixed(0) ?? (property.area != null ? (property.area! * 20).toStringAsFixed(0) : '0')}'),
+                _buildSimpleInfoRow('Nombre del Propietario: ${property.clienteNombre ?? 'N/A'}'),
+                if (property.numeroDocumento != null && property.numeroDocumento!.isNotEmpty)
+                  _buildSimpleInfoRow('Documento: ${property.tipoDocumento ?? 'C.C.'} ${property.numeroDocumento}'),
+                _buildSimpleInfoRow('Teléfono del Propietario: ${property.clienteTelefono ?? 'N/A'}'),
+                _buildSimpleInfoRow('Nombre del Agente: ${property.nombreAgente ?? 'N/A'}'),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Fila de información simple
+  pw.Widget _buildSimpleInfoRow(String text) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 4),
+      child: pw.Text(
+        text,
+        style: const pw.TextStyle(fontSize: 9, color: PdfColors.black),
       ),
     );
   }
 
-  /// Sección de información de propiedad
-  pw.Widget _buildPropertySection(InventoryProperty property) {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text(
-          'Información de la Propiedad',
-          style: pw.TextStyle(
-            fontSize: 18,
-            fontWeight: pw.FontWeight.bold,
-            color: PdfColor.fromHex('#000000'),
-          ),
-        ),
-        pw.SizedBox(height: 12),
-        pw.Container(
-          padding: const pw.EdgeInsets.all(16),
-          decoration: pw.BoxDecoration(
-            border: pw.Border.all(color: PdfColors.grey400),
-            borderRadius: pw.BorderRadius.circular(8),
-          ),
-          child: pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              _buildInfoRow('Tipo:', property.tipo.displayName),
-              _buildInfoRow('Dirección:', property.direccion),
-              if (property.clienteNombre != null)
-                _buildInfoRow('Cliente:', property.clienteNombre!),
-              if (property.clienteTelefono != null)
-                _buildInfoRow('Teléfono:', property.clienteTelefono!),
-              if (property.area != null)
-                _buildInfoRow('Área:', '${property.area!.toStringAsFixed(1)} m²'),
-              if (property.numeroHabitaciones != null)
-                _buildInfoRow('Habitaciones:', '${property.numeroHabitaciones}'),
-              if (property.numeroBanos != null)
-                _buildInfoRow('Baños:', '${property.numeroBanos}'),
-              if (property.descripcion != null)
-                _buildInfoRow('Descripción:', property.descripcion!),
-              _buildInfoRow('Fecha de registro:', _formatDate(property.fechaCreacion)),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
 
-  /// Resumen de espacios
-  pw.Widget _buildRoomsSummary(List<PropertyRoom> rooms) {
-    final porEstado = <SpaceCondition, int>{};
-    for (var room in rooms) {
-      porEstado[room.estado] = (porEstado[room.estado] ?? 0) + 1;
+
+  /// Header de nivel
+  pw.Widget _buildNivelHeader(String nivel) {
+    // Formatear el nivel para asegurar que siempre diga "Nivel X"
+    String nivelFormateado = nivel;
+    if (!nivel.toLowerCase().contains('nivel')) {
+      nivelFormateado = 'Nivel $nivel';
     }
-
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text(
-          'Resumen de Espacios (${rooms.length} total)',
-          style: pw.TextStyle(
-            fontSize: 18,
-            fontWeight: pw.FontWeight.bold,
-            color: PdfColor.fromHex('#000000'),
-          ),
-        ),
-        pw.SizedBox(height: 12),
-        pw.Container(
-          padding: const pw.EdgeInsets.all(16),
-          decoration: pw.BoxDecoration(
-            border: pw.Border.all(color: PdfColors.grey400),
-            borderRadius: pw.BorderRadius.circular(8),
-            color: PdfColors.grey100,
-          ),
-          child: pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
-            children: SpaceCondition.values.map((condition) {
-              final count = porEstado[condition] ?? 0;
-              if (count == 0) return pw.SizedBox();
-              
-              return pw.Column(
-                children: [
-                  pw.Text(
-                    '${condition.emoji} ${condition.displayName}',
-                    style: const pw.TextStyle(fontSize: 12),
-                  ),
-                  pw.SizedBox(height: 4),
-                  pw.Text(
-                    '$count',
-                    style: pw.TextStyle(
-                      fontSize: 20,
-                      fontWeight: pw.FontWeight.bold,
-                      color: _getConditionColor(condition),
-                    ),
-                  ),
-                ],
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Detalle de espacios
-  List<pw.Widget> _buildRoomsDetail(List<PropertyRoom> rooms) {
-    if (rooms.isEmpty) {
-      return [
-        pw.Text(
-          'No hay espacios registrados',
-          style: const pw.TextStyle(color: PdfColors.grey),
-        ),
-      ];
-    }
-
-    return rooms.map((room) {
-      return pw.Column(
-        children: [
-          _buildRoomDetailSection(room),
-          pw.SizedBox(height: 16),
-        ],
-      );
-    }).toList();
-  }
-
-  /// Sección de detalle de un espacio
-  pw.Widget _buildRoomDetailSection(PropertyRoom room) {
-    final area = (room.ancho != null && room.largo != null)
-        ? (room.ancho! * room.largo!).toStringAsFixed(2)
-        : 'N/A';
-
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-          children: [
-            pw.Text(
-              '${room.tipo.icon} ${room.nombre}',
-              style: pw.TextStyle(
-                fontSize: 16,
-                fontWeight: pw.FontWeight.bold,
-              ),
-            ),
-            _buildConditionBadge(room.estado),
-          ],
-        ),
-        pw.SizedBox(height: 8),
-        pw.Container(
-          padding: const pw.EdgeInsets.all(12),
-          decoration: pw.BoxDecoration(
-            border: pw.Border.all(color: PdfColors.grey300),
-            borderRadius: pw.BorderRadius.circular(8),
-          ),
-          child: pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              _buildInfoRow('Tipo:', room.tipo.displayName),
-              _buildInfoRow('Dimensiones:', 
-                  '${room.ancho?.toStringAsFixed(2) ?? 'N/A'} × ${room.largo?.toStringAsFixed(2) ?? 'N/A'} m'),
-              _buildInfoRow('Área:', '$area m²'),
-              if (room.altura != null)
-                _buildInfoRow('Altura:', '${room.altura!.toStringAsFixed(2)} m'),
-              if (room.descripcion != null)
-                _buildInfoRow('Descripción:', room.descripcion!),
-              if (room.problemas.isNotEmpty)
-                pw.Padding(
-                  padding: const pw.EdgeInsets.only(top: 8),
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        'Problemas detectados:',
-                        style: pw.TextStyle(
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.red,
-                        ),
-                      ),
-                      pw.SizedBox(height: 4),
-                      ...room.problemas.map((problema) => pw.Text('• $problema')),
-                    ],
-                  ),
-                ),
-              if (room.observaciones != null)
-                pw.Padding(
-                  padding: const pw.EdgeInsets.only(top: 8),
-                  child: _buildInfoRow('Observaciones:', room.observaciones!),
-                ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Badge de condición
-  pw.Widget _buildConditionBadge(SpaceCondition condition) {
+    
     return pw.Container(
-      padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: pw.BoxDecoration(
-        color: _getConditionColor(condition),
-        borderRadius: pw.BorderRadius.circular(12),
+        color: darkGray,
+        borderRadius: pw.BorderRadius.circular(8),
       ),
       child: pw.Text(
-        '${condition.emoji} ${condition.displayName}',
-        style: const pw.TextStyle(color: PdfColors.white, fontSize: 10),
+        nivelFormateado,
+        style: pw.TextStyle(
+          fontSize: 13,
+          fontWeight: pw.FontWeight.bold,
+          color: primaryYellow,
+        ),
       ),
     );
   }
 
-  /// Color según condición
-  PdfColor _getConditionColor(SpaceCondition condition) {
-    switch (condition) {
-      case SpaceCondition.excelente:
-        return PdfColors.green;
-      case SpaceCondition.bueno:
-        return PdfColors.blue;
-      case SpaceCondition.regular:
-        return PdfColors.orange;
-      case SpaceCondition.malo:
-        return PdfColors.deepOrange;
-      case SpaceCondition.critico:
-        return PdfColors.red;
+  /// Sección de espacio/habitación
+  pw.Widget _buildRoomSection(PropertyRoom room) {
+    final items = room.items ?? [];
+    
+    if (items.isEmpty) {
+      return pw.SizedBox.shrink();
     }
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        // Nombre del espacio
+        pw.Container(
+          padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: pw.BoxDecoration(
+            color: lightGray,
+            borderRadius: pw.BorderRadius.circular(6),
+          ),
+          child: pw.Text(
+            '${room.nombre} / ${room.tipo.displayName}',
+            style: pw.TextStyle(
+              fontSize: 11,
+              fontWeight: pw.FontWeight.bold,
+              color: darkGray,
+            ),
+          ),
+        ),
+        pw.SizedBox(height: 8),
+
+        // Tabla de elementos
+        pw.Table(
+          border: pw.TableBorder.all(color: lightGray, width: 1),
+          columnWidths: {
+            0: const pw.FixedColumnWidth(58),    // Cantidad: compacto
+            1: const pw.FixedColumnWidth(72),    // Elemento: compacto
+            2: const pw.FixedColumnWidth(68),    // Material: compacto
+            3: const pw.FixedColumnWidth(58),    // Estado: compacto
+            4: const pw.FlexColumnWidth(1),      // Comentarios: toma espacio restante
+            5: const pw.FixedColumnWidth(120),   // Fotos: AMPLIADO para foto a ancho completo
+          },
+          children: [
+            // Header
+            pw.TableRow(
+              decoration: pw.BoxDecoration(color: primaryYellow),
+              children: [
+                _buildTableHeaderCell('Cantidad'),
+                _buildTableHeaderCell('Elemento'),
+                _buildTableHeaderCell('Material'),
+                _buildTableHeaderCell('Estado'),
+                _buildTableHeaderCell('Comentarios'),
+                _buildTableHeaderCell('Fotos'),
+              ],
+            ),
+            // Filas de elementos
+            ...items.map((item) {
+              // Obtener fotos del elemento específico
+              final elementoFotos = item.fotos ?? [];
+              
+              return pw.TableRow(
+                children: [
+                  _buildTableCell(item.cantidad.toString(), centered: true),
+                  _buildTableCell(item.nombreElemento.toUpperCase(), centered: true),  // CENTRADO
+                  _buildTableCell(item.nombreMaterial, centered: true),  // CENTRADO
+                  _buildTableCell(item.estado.displayName, centered: true),
+                  _buildTableCell(item.comentarios ?? '', fontSize: 8),
+                  // Si el elemento tiene fotos, mostrar la primera foto como imagen pequeña
+                  elementoFotos.isNotEmpty
+                      ? _buildTableCellWithImage(elementoFotos[0])
+                      : _buildTableCell('-', centered: true, fontSize: 8),
+                ],
+              );
+            }),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Textos jurídicos
+  pw.Widget _buildLegalText(InventoryProperty property) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(12),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: lightGray),
+        borderRadius: pw.BorderRadius.circular(8),
+        color: PdfColors.grey100,
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            'Textos Jurídicos:',
+            style: pw.TextStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+              color: darkGray,
+            ),
+          ),
+          pw.SizedBox(height: 6),
+          pw.Text(
+            'Los elementos que hacen parte del ${property.tipo.displayName}, ubicado en ${property.direccion}${property.numeroInterior != null && property.numeroInterior!.isNotEmpty ? ' ${property.numeroInterior}' : ''}, que aquí se relacionan corresponde a un inventario general, mas exime a la inmobiliaria de todo daño, hurto, desgaste, faltante y/o deterioro que se genere en el inmueble mientras el inmueble está desocupado. Esto, de acuerdo a lo establecido en la ley de arrendamientos.',
+            style: const pw.TextStyle(fontSize: 9, color: PdfColors.black),
+            textAlign: pw.TextAlign.justify,
+          ),
+          pw.SizedBox(height: 10),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Expanded(
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(
+                      'Propietario',
+                      style: pw.TextStyle(
+                        fontSize: 10,
+                        fontWeight: pw.FontWeight.bold,
+                        color: darkGray,
+                      ),
+                    ),
+                    pw.SizedBox(height: 4),
+                    pw.Text(
+                      'Nombre: ${property.clienteNombre}',
+                      style: const pw.TextStyle(fontSize: 9),
+                    ),
+                    pw.SizedBox(height: 20),
+                    pw.Container(
+                      height: 1,
+                      width: 150,
+                      color: PdfColors.black,
+                    ),
+                    pw.SizedBox(height: 4),
+                    pw.Text(
+                      'Firma Digital',
+                      style: pw.TextStyle(
+                        fontSize: 9,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Celda de header de tabla
+  pw.Widget _buildTableHeaderCell(String text) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(6),
+      alignment: pw.Alignment.center,  // Centrado vertical y horizontal
+      child: pw.Text(
+        text,
+        style: pw.TextStyle(
+          fontSize: 9,
+          fontWeight: pw.FontWeight.bold,
+          color: white,
+        ),
+        textAlign: pw.TextAlign.center,
+      ),
+    );
+  }
+
+  /// Celda de tabla
+  pw.Widget _buildTableCell(String text, {bool centered = false, double fontSize = 9}) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(6),
+      alignment: centered ? pw.Alignment.center : pw.Alignment.centerLeft,  // Centrado vertical
+      child: pw.Text(
+        text,
+        style: pw.TextStyle(fontSize: fontSize, color: darkGray),
+        textAlign: centered ? pw.TextAlign.center : pw.TextAlign.left,
+      ),
+    );
+  }
+
+  /// Celda de tabla con enlace
+  pw.Widget _buildTableCellWithLink(String text, String url, {bool centered = false, double fontSize = 9}) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(6),
+      child: pw.UrlLink(
+        destination: url,
+        child: pw.Text(
+          text,
+          style: pw.TextStyle(
+            fontSize: fontSize,
+            color: PdfColors.blue,
+            decoration: pw.TextDecoration.underline,
+          ),
+          textAlign: centered ? pw.TextAlign.center : pw.TextAlign.left,
+        ),
+      ),
+    );
+  }
+
+  /// Celda de tabla con múltiples vínculos de fotos
+  pw.Widget _buildTableCellWithMultipleLinks(List<String> urls, {double fontSize = 7}) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(6),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: urls.asMap().entries.map((entry) {
+          final index = entry.key + 1;
+          final url = entry.value;
+          return pw.Padding(
+            padding: const pw.EdgeInsets.only(bottom: 2),
+            child: pw.UrlLink(
+              destination: url,
+              child: pw.Text(
+                '📷 Foto $index',
+                style: pw.TextStyle(
+                  fontSize: fontSize,
+                  color: PdfColors.blue,
+                  decoration: pw.TextDecoration.underline,
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  /// Celda de tabla con imagen del elemento (primera foto)
+  pw.Widget _buildTableCellWithImage(String imageUrl) {
+    try {
+      // Si es una data URL (base64)
+      if (imageUrl.startsWith('data:image')) {
+        final base64String = imageUrl.split(',')[1];
+        final bytes = base64Decode(base64String);
+        final imageProvider = pw.MemoryImage(bytes);
+        
+        return pw.Container(
+          padding: const pw.EdgeInsets.all(4),
+          alignment: pw.Alignment.center,  // Centrado vertical y horizontal
+          child: pw.Container(
+            width: 110,   // Ancho completo de columna (120pts - 10pts padding)
+            height: 62,   // Altura para mantener proporción 16:9 (110 / 16 * 9 ≈ 62)
+            child: pw.Image(
+              imageProvider,
+              fit: pw.BoxFit.contain,  // Mantiene proporción original sin recortar
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error al decodificar imagen: $e');
+      }
+    }
+    
+    // Si no se puede decodificar o no es base64, mostrar texto de fallback
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(4),
+      alignment: pw.Alignment.center,  // Centrado vertical y horizontal
+      child: pw.Text(
+        '📷',
+        style: const pw.TextStyle(fontSize: 16),
+      ),
+    );
   }
 
   /// Fila de información
-  pw.Widget _buildInfoRow(String label, String value) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.symmetric(vertical: 3),
-      child: pw.Row(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          pw.SizedBox(
-            width: 120,
-            child: pw.Text(
-              label,
-              style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+  pw.TableRow _buildInfoTableRow(String label, String value) {
+    return pw.TableRow(
+      children: [
+        pw.Padding(
+          padding: const pw.EdgeInsets.symmetric(vertical: 3),
+          child: pw.Text(
+            label,
+            style: pw.TextStyle(
+              fontSize: 9,
+              fontWeight: pw.FontWeight.bold,
+              color: darkGray,
             ),
           ),
-          pw.Expanded(
-            child: pw.Text(value),
+        ),
+        pw.Padding(
+          padding: const pw.EdgeInsets.symmetric(vertical: 3),
+          child: pw.Text(
+            value,
+            style: const pw.TextStyle(fontSize: 9, color: PdfColors.black),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   /// Pie de página
-  pw.Widget _buildFooter() {
+  pw.Widget _buildFooter(pw.Context context) {
     return pw.Container(
-      padding: const pw.EdgeInsets.symmetric(vertical: 12),
+      alignment: pw.Alignment.center,
+      margin: const pw.EdgeInsets.only(top: 10),
+      padding: const pw.EdgeInsets.symmetric(vertical: 8),
       decoration: pw.BoxDecoration(
-        border: pw.Border(
-          top: pw.BorderSide(color: PdfColor.fromHex('#FAB334'), width: 2),
-        ),
+        border: pw.Border(top: pw.BorderSide(color: primaryYellow, width: 2)),
       ),
       child: pw.Column(
         children: [
           pw.Text(
-            'SU TODERO - Gestión Profesional de Inventarios',
-            style: pw.TextStyle(
-              fontSize: 10,
-              fontWeight: pw.FontWeight.bold,
-              color: PdfColor.fromHex('#000000'),
-            ),
-            textAlign: pw.TextAlign.center,
-          ),
-          pw.SizedBox(height: 4),
-          pw.Text(
-            'Cra 14b #112-85 Segundo Piso, Bogotá, Colombia | Tel: (601) 703-9495 | www.sutodero.com',
-            style: pw.TextStyle(fontSize: 8, color: PdfColor.fromHex('#2C2C2C')),
-            textAlign: pw.TextAlign.center,
-          ),
-          pw.SizedBox(height: 4),
-          pw.Text(
-            'Generado el ${_formatDate(DateTime.now())}',
-            style: pw.TextStyle(fontSize: 8, color: PdfColor.fromHex('#2C2C2C')),
-            textAlign: pw.TextAlign.center,
+            'Página ${context.pageNumber}',
+            style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
           ),
         ],
       ),
@@ -477,17 +646,18 @@ class InventoryPdfService {
   }
 
   /// Formatear fecha
-  String _formatDate(DateTime date) {
-    return DateFormat('dd/MM/yyyy HH:mm', 'es').format(date);
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'N/A';
+    return DateFormat('dd/MM/yyyy', 'es_ES').format(date);
   }
 
   /// Compartir PDF
   Future<void> sharePdf(Uint8List pdfBytes, String fileName) async {
     try {
-      await Printing.sharePdf(
-        bytes: pdfBytes,
-        filename: fileName,
-      );
+      await Printing.sharePdf(bytes: pdfBytes, filename: fileName);
+      if (kDebugMode) {
+        debugPrint('PDF compartido: $fileName');
+      }
     } catch (e) {
       if (kDebugMode) {
         debugPrint('⚠️ Error compartiendo PDF: $e');

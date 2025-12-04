@@ -69,6 +69,13 @@ class PropertyListing {
   TransactionType transaccionTipo;
   ListingStatus estado;
   
+  // Nuevos campos del formulario
+  String? pais; // País
+  int? numeroNiveles; // Niveles del inmueble
+  String? numeroInterior; // Número de casa, apto, etc (opcional)
+  double? areaLote; // Área del lote en m² (opcional)
+  String? codigoInterno; // Código interno de la agencia (opcional)
+  
   // Detalles del inmueble
   String? descripcion;
   double? area; // en m²
@@ -114,6 +121,10 @@ class PropertyListing {
     required this.tipo,
     this.transaccionTipo = TransactionType.venta,
     this.estado = ListingStatus.activo,
+    this.pais,
+    this.numeroNiveles,
+    this.numeroInterior,
+    this.areaLote,
     this.descripcion,
     this.area,
     this.numeroHabitaciones,
@@ -121,6 +132,7 @@ class PropertyListing {
     this.numeroParqueaderos,
     this.estrato,
     this.antiguedad,
+    this.codigoInterno,
     this.precioVenta,
     this.precioArriendo,
     this.administracion,
@@ -177,6 +189,11 @@ class PropertyListing {
       'fechaActualizacion': fechaActualizacion?.toIso8601String(),
       'observaciones': observaciones,
       'activo': activo,
+      'pais': pais,
+      'numeroNiveles': numeroNiveles,
+      'numeroInterior': numeroInterior,
+      'areaLote': areaLote,
+      'codigoInterno': codigoInterno,
     };
   }
 
@@ -223,6 +240,11 @@ class PropertyListing {
           : null,
       observaciones: map['observaciones'],
       activo: map['activo'] ?? true,
+      pais: map['pais'],
+      numeroNiveles: map['numeroNiveles'],
+      numeroInterior: map['numeroInterior'],
+      areaLote: map['areaLote']?.toDouble(),
+      codigoInterno: map['codigoInterno'],
     );
   }
 
@@ -311,6 +333,11 @@ class PropertyListing {
     DateTime? fechaActualizacion,
     String? observaciones,
     bool? activo,
+    String? pais,
+    int? numeroNiveles,
+    String? numeroInterior,
+    double? areaLote,
+    String? codigoInterno,
   }) {
     return PropertyListing(
       id: id ?? this.id,
@@ -345,6 +372,11 @@ class PropertyListing {
       fechaActualizacion: fechaActualizacion ?? this.fechaActualizacion,
       observaciones: observaciones ?? this.observaciones,
       activo: activo ?? this.activo,
+      pais: pais ?? this.pais,
+      numeroNiveles: numeroNiveles ?? this.numeroNiveles,
+      numeroInterior: numeroInterior ?? this.numeroInterior,
+      areaLote: areaLote ?? this.areaLote,
+      codigoInterno: codigoInterno ?? this.codigoInterno,
     );
   }
 }

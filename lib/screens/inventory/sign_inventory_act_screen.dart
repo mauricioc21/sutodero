@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:signature/signature.dart';
 import 'package:camera/camera.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import 'dart:typed_data';
 import '../../models/inventory_act.dart';
 import '../../services/inventory_act_service.dart';
@@ -32,7 +32,7 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
 
   final ImagePicker _imagePicker = ImagePicker();
   
-  File? _facialPhoto;
+  Uint8List? _facialPhotoBytes;
   Uint8List? _signatureBytes;
   bool _isLoading = false;
   bool _signatureCompleted = false;
@@ -55,8 +55,9 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
       );
 
       if (photo != null) {
+        final bytes = await photo.readAsBytes();
         setState(() {
-          _facialPhoto = File(photo.path);
+          _facialPhotoBytes = bytes;
           _facialCompleted = true;
         });
 
@@ -145,11 +146,10 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
 
     try {
       // 1. Subir firma digital
-      final signatureFile = await _saveBytesToFile(_signatureBytes!, 'signature.png');
-      final signatureUrl = await _actService.uploadSignature(widget.act.id, signatureFile);
+      final signatureUrl = await _actService.uploadSignature(widget.act.id, _signatureBytes!);
 
       // 2. Subir foto facial
-      final facialUrl = await _actService.uploadFacialRecognition(widget.act.id, _facialPhoto!);
+      final facialUrl = await _actService.uploadFacialRecognition(widget.act.id, _facialPhotoBytes!);
 
       // 3. Actualizar acta con URLs
       await _actService.updateAuthentication(
@@ -189,12 +189,7 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
     }
   }
 
-  Future<File> _saveBytesToFile(Uint8List bytes, String filename) async {
-    final tempDir = Directory.systemTemp;
-    final file = File('${tempDir.path}/$filename');
-    await file.writeAsBytes(bytes);
-    return file;
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -461,7 +456,7 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
             ],
           ),
           SizedBox(height: AppTheme.spacingMD),
-          if (_facialPhoto != null)
+          if (_facialPhotoBytes != null)
             Container(
               height: 250,
               decoration: BoxDecoration(
@@ -470,8 +465,8 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(6),
-                child: Image.file(
-                  _facialPhoto!,
+                child: Image.memory(
+                  _facialPhotoBytes!,
                   fit: BoxFit.cover,
                 ),
               ),
@@ -544,7 +539,7 @@ class _SignInventoryActScreenState extends State<SignInventoryActScreen> {
                 IconButton(
                   onPressed: () {
                     setState(() {
-                      _facialPhoto = null;
+                      _facialPhotoBytes = null;
                       _facialCompleted = false;
                     });
                   },

@@ -108,6 +108,24 @@ class InventoryProperty {
   int? numeroHabitaciones;
   int? numeroBanos;
   bool activa;
+  
+  // Nuevos campos - alineados con PropertyListing
+  String? pais; // País
+  String? ciudad; // Ciudad
+  String? municipio; // Municipio/Departamento/Estado
+  String? barrio; // Barrio/Colonia
+  int? numeroNiveles; // Niveles del inmueble
+  String? numeroInterior; // Número de casa, apto, etc (opcional)
+  double? areaLote; // Área del lote en m² (opcional)
+  String? codigoInterno; // Código interno de la agencia (opcional)
+  
+  // Información de captación
+  double? precioAlquilerDeseado; // Precio de alquiler deseado
+  String? nombreAgente; // Nombre del agente inmobiliario
+  
+  // Documento de identidad del propietario
+  String? tipoDocumento; // Tipo de documento: C.C., C.E., NIT
+  String? numeroDocumento; // Número de documento de identidad
 
   InventoryProperty({
     required this.id,
@@ -126,6 +144,18 @@ class InventoryProperty {
     this.numeroHabitaciones,
     this.numeroBanos,
     this.activa = true,
+    this.pais,
+    this.ciudad,
+    this.municipio,
+    this.barrio,
+    this.numeroNiveles,
+    this.numeroInterior,
+    this.areaLote,
+    this.codigoInterno,
+    this.precioAlquilerDeseado,
+    this.nombreAgente,
+    this.tipoDocumento,
+    this.numeroDocumento,
   })  : fotos = fotos ?? [],
         fechaCreacion = fechaCreacion ?? DateTime.now();
 
@@ -148,6 +178,18 @@ class InventoryProperty {
       'numeroHabitaciones': numeroHabitaciones,
       'numeroBanos': numeroBanos,
       'activa': activa,
+      'pais': pais,
+      'ciudad': ciudad,
+      'municipio': municipio,
+      'barrio': barrio,
+      'numeroNiveles': numeroNiveles,
+      'numeroInterior': numeroInterior,
+      'areaLote': areaLote,
+      'codigoInterno': codigoInterno,
+      'precioAlquilerDeseado': precioAlquilerDeseado,
+      'nombreAgente': nombreAgente,
+      'tipoDocumento': tipoDocumento,
+      'numeroDocumento': numeroDocumento,
     };
   }
 
@@ -175,6 +217,18 @@ class InventoryProperty {
       numeroHabitaciones: map['numeroHabitaciones'],
       numeroBanos: map['numeroBanos'],
       activa: map['activa'] ?? true,
+      pais: map['pais'],
+      ciudad: map['ciudad'],
+      municipio: map['municipio'],
+      barrio: map['barrio'],
+      numeroNiveles: map['numeroNiveles'],
+      numeroInterior: map['numeroInterior'],
+      areaLote: map['areaLote']?.toDouble(),
+      codigoInterno: map['codigoInterno'],
+      precioAlquilerDeseado: map['precioAlquilerDeseado']?.toDouble(),
+      nombreAgente: map['nombreAgente'],
+      tipoDocumento: map['tipoDocumento'],
+      numeroDocumento: map['numeroDocumento'],
     );
   }
 
@@ -196,6 +250,18 @@ class InventoryProperty {
     int? numeroHabitaciones,
     int? numeroBanos,
     bool? activa,
+    String? pais,
+    String? ciudad,
+    String? municipio,
+    String? barrio,
+    int? numeroNiveles,
+    String? numeroInterior,
+    double? areaLote,
+    String? codigoInterno,
+    double? precioAlquilerDeseado,
+    String? nombreAgente,
+    String? tipoDocumento,
+    String? numeroDocumento,
   }) {
     return InventoryProperty(
       id: id ?? this.id,
@@ -214,6 +280,18 @@ class InventoryProperty {
       numeroHabitaciones: numeroHabitaciones ?? this.numeroHabitaciones,
       numeroBanos: numeroBanos ?? this.numeroBanos,
       activa: activa ?? this.activa,
+      pais: pais ?? this.pais,
+      ciudad: ciudad ?? this.ciudad,
+      municipio: municipio ?? this.municipio,
+      barrio: barrio ?? this.barrio,
+      numeroNiveles: numeroNiveles ?? this.numeroNiveles,
+      numeroInterior: numeroInterior ?? this.numeroInterior,
+      areaLote: areaLote ?? this.areaLote,
+      codigoInterno: codigoInterno ?? this.codigoInterno,
+      precioAlquilerDeseado: precioAlquilerDeseado ?? this.precioAlquilerDeseado,
+      nombreAgente: nombreAgente ?? this.nombreAgente,
+      tipoDocumento: tipoDocumento ?? this.tipoDocumento,
+      numeroDocumento: numeroDocumento ?? this.numeroDocumento,
     );
   }
 }

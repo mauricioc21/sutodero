@@ -22,22 +22,22 @@ class InventoryActPdfService {
   }) async {
     final pdf = pw.Document();
 
-    // Cargar logo corporativo Su Todero
+    // Cargar logo corporativo Su Todero (principal con personaje)
     pw.ImageProvider? logoImage;
     try {
-      logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_yellow.png');
+      logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_principal.png');
       if (kDebugMode) {
-        debugPrint('✅ Logo corporativo SU TODERO cargado exitosamente (amarillo)');
+        debugPrint('✅ Logo corporativo SU TODERO cargado exitosamente (principal)');
       }
     } catch (e) {
       if (kDebugMode) {
-        debugPrint('⚠️ No se pudo cargar el logo amarillo: $e');
+        debugPrint('⚠️ No se pudo cargar el logo principal: $e');
       }
-      // Intentar con logo blanco como fallback
+      // Intentar con logo alternativo como fallback
       try {
-        logoImage = await imageFromAssetBundle('assets/images/sutodero_logo_white.png');
+        logoImage = await imageFromAssetBundle('assets/images/sutodero_login_logo.png');
         if (kDebugMode) {
-          debugPrint('✅ Logo alternativo (blanco) cargado');
+          debugPrint('✅ Logo alternativo cargado');
         }
       } catch (e2) {
         if (kDebugMode) {

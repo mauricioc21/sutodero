@@ -3,12 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/ticket_model.dart';
 import '../../models/inventory_property.dart';
+import '../../models/user_model.dart';
+import '../../models/maestro_profile_model.dart';
 import '../../services/ticket_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/inventory_service.dart';
 import '../../services/storage_service.dart';
+import '../../services/maestro_profile_service.dart';
 import '../../config/app_theme.dart';
 
 class AddEditTicketScreen extends StatefulWidget {
@@ -45,6 +49,10 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
   List<InventoryProperty> _propiedades = [];
   InventoryProperty? _propiedadSeleccionada;
   
+  // Selector de maestro
+  List<UserModel> _maestros = [];
+  UserModel? _maestroSeleccionado;
+  
   // Fotos del ticket
   List<String> _fotos = [];
 
@@ -69,6 +77,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
     }
     
     _loadPropiedades();
+    _loadMaestros();
   }
 
   Future<void> _loadPropiedades() async {
@@ -83,6 +92,96 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error al cargar propiedades: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _loadMaestros() async {
+    try {
+      List<UserModel> maestros = [];
+      
+      // 1. Cargar perfiles de maestros predefinidos (Rodrigo y Alexander)
+      try {
+        final maestroProfileService = MaestroProfileService();
+        final profiles = await maestroProfileService.getActiveMaestroProfiles()
+            .timeout(const Duration(seconds: 3))
+            .first;
+        
+        // Convertir perfiles a UserModel para compatibilidad
+        for (var profile in profiles) {
+          maestros.add(UserModel(
+            uid: profile.id,
+            nombre: profile.nombre,
+            email: profile.email ?? '${profile.id}@sutodero.com',
+            rol: 'maestro',
+            telefono: profile.telefono,
+            fechaCreacion: profile.fechaCreacion,
+            activo: profile.activo,
+          ));
+        }
+      } catch (e) {
+        // Si no se pueden cargar los perfiles, crear los predeterminados en memoria
+        maestros.addAll([
+          UserModel(
+            uid: 'rodrigo',
+            nombre: 'Rodrigo',
+            email: 'rodrigo@sutodero.com',
+            rol: 'maestro',
+            telefono: '3001234567',
+            fechaCreacion: DateTime.now(),
+            activo: true,
+          ),
+          UserModel(
+            uid: 'alexander',
+            nombre: 'Alexander',
+            email: 'alexander@sutodero.com',
+            rol: 'maestro',
+            telefono: '3007654321',
+            fechaCreacion: DateTime.now(),
+            activo: true,
+          ),
+        ]);
+      }
+      
+      // 2. Cargar usuarios con rol de maestro de la colección users
+      try {
+        final querySnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('rol', isEqualTo: 'maestro')
+            .get()
+            .timeout(const Duration(seconds: 3));
+        
+        final userMaestros = querySnapshot.docs
+            .map((doc) => UserModel.fromMap(doc.data(), doc.id))
+            .toList();
+        
+        // Agregar solo si no están duplicados (por uid)
+        for (var userMaestro in userMaestros) {
+          if (!maestros.any((m) => m.uid == userMaestro.uid)) {
+            maestros.add(userMaestro);
+          }
+        }
+      } catch (e) {
+        // Si falla la carga de users, continuar con los perfiles predefinidos
+      }
+      
+      if (mounted) {
+        setState(() {
+          _maestros = maestros;
+          // Si estamos editando y hay un toderoId, pre-seleccionar el maestro
+          if (widget.ticket?.toderoId != null && maestros.isNotEmpty) {
+            _maestroSeleccionado = maestros.firstWhere(
+              (m) => m.uid == widget.ticket!.toderoId,
+              orElse: () => maestros.first,
+            );
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al cargar maestros: $e')),
         );
       }
     }
@@ -198,6 +297,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: _horaVisitaPreferida ?? const TimeOfDay(hour: 9, minute: 0),
+      initialEntryMode: TimePickerEntryMode.input, // Modo rectangular/input
       builder: (context, child) {
         return Theme(
           data: ThemeData.dark().copyWith(
@@ -531,6 +631,8 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
         fechaProgramada: fechaProgramada,
         notasCliente: 'Barrio: ${_barrioController.text.trim()}',
         fotosProblema: fotosUrls,
+        toderoId: _maestroSeleccionado?.uid,
+        toderoNombre: _maestroSeleccionado?.nombre,
       );
 
       if (mounted) {
@@ -897,6 +999,50 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
                 onChanged: (value) => setState(() => _propiedadSeleccionada = value),
               ),
             if (_propiedades.isNotEmpty) SizedBox(height: AppTheme.spacingMD),
+
+            // Selector de maestro
+            if (_maestros.isNotEmpty)
+              DropdownButtonFormField<UserModel>(
+                value: _maestroSeleccionado,
+                dropdownColor: AppTheme.grisOscuro,
+                style: const TextStyle(color: AppTheme.blanco),
+                decoration: InputDecoration(
+                  labelText: 'Asignar Maestro (Opcional)',
+                  labelStyle: const TextStyle(color: Color(0xFFFAB334)),
+                  hintText: 'Selecciona un maestro',
+                  hintStyle: TextStyle(color: Colors.grey[600]),
+                  filled: true,
+                  fillColor: AppTheme.grisOscuro,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMD)),
+                  prefixIcon: const Icon(Icons.engineering, color: Color(0xFFFAB334)),
+                ),
+                items: _maestros
+                    .map((maestro) => DropdownMenuItem(
+                          value: maestro,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                maestro.nombre,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if (maestro.telefono.isNotEmpty)
+                                Text(
+                                  maestro.telefono,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[400],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ))
+                    .toList(),
+                onChanged: (value) => setState(() => _maestroSeleccionado = value),
+              ),
+            if (_maestros.isNotEmpty) SizedBox(height: AppTheme.spacingMD),
 
             // Fotos de los daños
             Container(

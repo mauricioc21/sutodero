@@ -1,9 +1,47 @@
+/// Roles disponibles en el sistema
+enum UserRole {
+  administrador('Administrador'),
+  coordinador('Coordinador'),
+  maestro('Maestro'),
+  inventarios('Inventarios'),
+  duppla('Duppla');
+
+  final String displayName;
+  const UserRole(this.displayName);
+
+  static UserRole fromString(String value) {
+    switch (value.toLowerCase()) {
+      case 'administrador':
+      case 'admin':
+        return UserRole.administrador;
+      case 'coordinador':
+        return UserRole.coordinador;
+      case 'maestro':
+      case 'tecnico':
+        return UserRole.maestro;
+      case 'inventarios':
+        return UserRole.inventarios;
+      case 'duppla':
+        return UserRole.duppla;
+      default:
+        return UserRole.maestro; // Por defecto
+    }
+  }
+
+  String get value {
+    return name;
+  }
+}
+
 class UserModel {
   final String uid;
   final String nombre;
   final String email;
-  final String rol; // 'admin', 'tecnico', 'cliente'
+  final String rol; // 'administrador', 'coordinador', 'maestro', 'inventarios', 'duppla'
   final String telefono;
+  final String? direccion;
+  final String? genero; // 'masculino', 'femenino', 'otro'
+  final String? photoURL; // URL de la foto de perfil
   final DateTime? fechaCreacion;
   final bool activo;
 
@@ -13,6 +51,9 @@ class UserModel {
     required this.email,
     required this.rol,
     required this.telefono,
+    this.direccion,
+    this.genero,
+    this.photoURL,
     this.fechaCreacion,
     this.activo = true,
   });
@@ -24,6 +65,9 @@ class UserModel {
       'email': email,
       'rol': rol,
       'telefono': telefono,
+      'direccion': direccion,
+      'genero': genero,
+      'photoURL': photoURL,
       'fechaCreacion': fechaCreacion ?? DateTime.now(),
       'activo': activo,
     };
@@ -37,6 +81,9 @@ class UserModel {
       email: map['email'] ?? '',
       rol: map['rol'] ?? 'cliente',
       telefono: map['telefono'] ?? '',
+      direccion: map['direccion'],
+      genero: map['genero'],
+      photoURL: map['photoURL'],
       fechaCreacion: map['fechaCreacion']?.toDate(),
       activo: map['activo'] ?? true,
     );
@@ -44,6 +91,11 @@ class UserModel {
 
   /// Detecta el género basado en el nombre (heurística simple)
   String detectarGenero() {
+    // Si el usuario ya tiene género definido, usarlo
+    if (genero != null && genero!.isNotEmpty) {
+      return genero!;
+    }
+    
     final nombreLower = nombre.toLowerCase();
     
     // Lista de nombres comunes masculinos
@@ -88,14 +140,38 @@ class UserModel {
     return 'neutro';
   }
   
+  /// Obtener el rol como enum
+  UserRole get roleEnum => UserRole.fromString(rol);
+  
+  /// Alias para roleEnum (para compatibilidad)
+  UserRole get userRole => roleEnum;
+  
   /// Verifica si el usuario es administrador
-  bool get isAdmin => rol.toLowerCase() == 'admin';
+  bool get isAdministrador => roleEnum == UserRole.administrador;
   
-  /// Verifica si el usuario es técnico
-  bool get isTecnico => rol.toLowerCase() == 'tecnico';
+  /// Verifica si el usuario es coordinador
+  bool get isCoordinador => roleEnum == UserRole.coordinador;
   
-  /// Verifica si el usuario es cliente
-  bool get isCliente => rol.toLowerCase() == 'cliente';
+  /// Verifica si el usuario es maestro
+  bool get isMaestro => roleEnum == UserRole.maestro;
+  
+  /// Verifica si el usuario es de inventarios
+  bool get isInventarios => roleEnum == UserRole.inventarios;
+  
+  /// Verifica si el usuario es de Duppla
+  bool get isDuppla => roleEnum == UserRole.duppla;
+  
+  /// Verifica si el usuario tiene acceso administrativo
+  bool get hasAdminAccess => isAdministrador || isCoordinador;
+  
+  /// Verifica si el usuario puede gestionar tickets
+  bool get canManageTickets => isAdministrador || isCoordinador || isMaestro;
+  
+  /// Verifica si el usuario puede gestionar inventarios
+  bool get canManageInventories => isAdministrador || isInventarios;
+  
+  /// Verifica si el usuario puede gestionar captaciones
+  bool get canManageCaptaciones => isAdministrador || isCoordinador || isDuppla;
   
   /// Genera un saludo personalizado según el género y hora del día
   String obtenerSaludoPersonalizado() {
@@ -135,6 +211,9 @@ class UserModel {
     String? email,
     String? rol,
     String? telefono,
+    String? direccion,
+    String? genero,
+    String? photoURL,
     DateTime? fechaCreacion,
     bool? activo,
   }) {
@@ -144,6 +223,9 @@ class UserModel {
       email: email ?? this.email,
       rol: rol ?? this.rol,
       telefono: telefono ?? this.telefono,
+      direccion: direccion ?? this.direccion,
+      genero: genero ?? this.genero,
+      photoURL: photoURL ?? this.photoURL,
       fechaCreacion: fechaCreacion ?? this.fechaCreacion,
       activo: activo ?? this.activo,
     );
