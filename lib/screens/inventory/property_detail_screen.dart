@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:io' if (dart.library.js) '../../stubs/io_stub.dart';
@@ -21,8 +22,16 @@ import 'room_detail_screen.dart';
 import 'sign_inventory_act_screen.dart';
 import '../camera_360/camera_360_capture_screen.dart';
 import '../virtual_tour/virtual_tour_viewer_screen.dart';
+import '../virtual_tour/virtual_tour_op1_viewer_screen.dart';
+import '../virtual_tour/tour_builder_op1_screen.dart';
+import '../virtual_tour/tour_builder_op1_webview_screen.dart';
+import '../virtual_tour/tour_builder_op2_screen.dart';
+import '../virtual_tour/tour_builder_test_screen.dart'; // 🧪 TEST
+import '../virtual_tour/simple_tour_builder_screen.dart'; // ✅ Solución simple
 import '../../models/virtual_tour_model.dart';
 import '../../config/app_theme.dart';
+import '../actas/acta_entrega_form_screen.dart';
+import '../actas/acta_recibido_form_screen.dart';
 
 class PropertyDetailScreen extends StatefulWidget {
   final InventoryProperty property;
@@ -103,6 +112,22 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
         debugPrint('Error loading related tickets: $e');
       }
       return [];
+    }
+  }
+
+  /// Recargar tours virtuales después de crear uno nuevo
+  Future<void> _reloadVirtualTours() async {
+    try {
+      final tours = await _virtualTourService.getToursByProperty(widget.property.id);
+      if (mounted) {
+        setState(() {
+          _virtualTours = tours;
+        });
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Error loading virtual tours: $e');
+      }
     }
   }
 
@@ -539,6 +564,43 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
               style: const TextStyle(color: AppTheme.blanco),
             ),
           ],
+          // Botones de Actas
+          SizedBox(height: AppTheme.spacingLG),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _openActaEntrega,
+                  icon: const Icon(Icons.assignment_turned_in, size: 20),
+                  label: const Text('Acta de\nEntrega'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.dorado,
+                    foregroundColor: AppTheme.negro,
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _openActaRecibido,
+                  icon: const Icon(Icons.assignment_return, size: 20),
+                  label: const Text('Acta de\nRecibido'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.dorado,
+                    foregroundColor: AppTheme.negro,
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -1150,11 +1212,32 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                     ),
                   ),
                   SizedBox(width: AppTheme.spacingSM),
-                  IconButton(
-                    onPressed: _showCreateTourDialog,
-                    icon: const Icon(Icons.add_circle),
-                    color: AppTheme.dorado,
+                  PopupMenuButton<int>(
+                    icon: const Icon(Icons.add_circle, color: AppTheme.dorado),
                     tooltip: 'Crear Tour Virtual',
+                    onSelected: (int option) => _showCreateTourDialog(option: option),
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 1,
+                        child: Row(
+                          children: [
+                            Icon(Icons.panorama_photosphere, color: AppTheme.dorado),
+                            SizedBox(width: 8),
+                            Text('Crear Tour Opción 1'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 2,
+                        child: Row(
+                          children: [
+                            Icon(Icons.view_in_ar, color: AppTheme.dorado),
+                            SizedBox(width: 8),
+                            Text('Crear Tour Opción 2'),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -1162,6 +1245,42 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
           ),
           SizedBox(height: AppTheme.spacingMD),
           
+          // Botones de acción siempre visibles
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _navigateTo360CaptureScreen(),
+                  icon: const Icon(Icons.add_photo_alternate),
+                  label: const Text('Agregar Fotografías'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.dorado,
+                    foregroundColor: AppTheme.negro,
+                    padding: EdgeInsets.symmetric(vertical: AppTheme.paddingMD),
+                  ),
+                ),
+              ),
+              SizedBox(width: AppTheme.spacingSM),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _virtualTours.isEmpty ? null : _showAllTourPhotos,
+                  icon: const Icon(Icons.photo_library),
+                  label: const Text('Ver Fotografías'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _virtualTours.isEmpty 
+                      ? AppTheme.grisClaro.withValues(alpha: 0.3)
+                      : AppTheme.grisOscuro,
+                    foregroundColor: _virtualTours.isEmpty 
+                      ? AppTheme.grisClaro
+                      : AppTheme.dorado,
+                    padding: EdgeInsets.symmetric(vertical: AppTheme.paddingMD),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppTheme.spacingMD),
+
           // Si no hay tours, mostrar mensaje
           if (_virtualTours.isEmpty)
             Container(
@@ -1197,18 +1316,57 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: AppTheme.spacingMD),
-                  ElevatedButton.icon(
-                    onPressed: _showCreateTourDialog,
-                    icon: const Icon(Icons.add),
-                    label: const Text('CREAR TOUR VIRTUAL'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.dorado,
-                      foregroundColor: AppTheme.negro,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppTheme.paddingLG,
-                        vertical: AppTheme.paddingMD,
+                  // Dos opciones para crear tour virtual
+                  Row(
+                    children: [
+                      // Botón Opción 1
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () => _openTourBuilder(),
+                          icon: const Icon(Icons.panorama_photosphere, size: 20),
+                          label: const Text(
+                            'CREAR TOUR\nOP 1',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.dorado,
+                            foregroundColor: AppTheme.negro,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: AppTheme.paddingMD,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                      SizedBox(width: AppTheme.spacingSM),
+                      // Botón Opción 2
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _openTourBuilderOp2,
+                          icon: const Icon(Icons.view_in_ar, size: 20),
+                          label: const Text(
+                            'CREAR TOUR\nOP 2',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.dorado,
+                            foregroundColor: AppTheme.negro,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: AppTheme.paddingMD,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -1309,7 +1467,8 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   }
 
   /// Mostrar diálogo para crear tour virtual
-  Future<void> _showCreateTourDialog() async {
+  /// [option] puede ser 1 (Opción 1) o 2 (Opción 2)
+  Future<void> _showCreateTourDialog({int option = 1}) async {
     // Obtener fotos 360° de todos los rooms
     final List<String> all360Photos = [];
     for (final room in _rooms) {
@@ -1332,14 +1491,39 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     final descriptionController = TextEditingController();
     final selectedPhotos = <String>[...all360Photos]; // Por defecto, todas seleccionadas
 
+    // Título según la opción seleccionada
+    final String dialogTitle = option == 1 
+        ? 'Crear Tour Virtual 360° - Opción 1'
+        : 'Crear Tour Virtual 360° - Opción 2';
+    
+    final String tourPrefix = option == 1 
+        ? '[OP1]'
+        : '[OP2]';
+
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           backgroundColor: AppTheme.grisOscuro,
-          title: const Text(
-            'Crear Tour Virtual 360°',
-            style: TextStyle(color: AppTheme.dorado, fontWeight: FontWeight.bold),
+          title: Row(
+            children: [
+              Icon(
+                option == 1 ? Icons.panorama_photosphere : Icons.view_in_ar,
+                color: AppTheme.dorado,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  dialogTitle,
+                  style: const TextStyle(
+                    color: AppTheme.dorado,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ],
           ),
           content: SingleChildScrollView(
             child: Column(
@@ -1369,6 +1553,45 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                       borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                       borderSide: const BorderSide(color: AppTheme.dorado),
                     ),
+                  ),
+                ),
+                SizedBox(height: AppTheme.spacingMD),
+
+                // Información sobre la opción seleccionada
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: option == 1 
+                        ? Colors.blue.withValues(alpha: 0.2)
+                        : Colors.purple.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                    border: Border.all(
+                      color: option == 1 
+                          ? Colors.blue.withValues(alpha: 0.5)
+                          : Colors.purple.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        option == 1 ? Icons.info : Icons.lightbulb,
+                        color: option == 1 ? Colors.blue : Colors.purple,
+                        size: 20,
+                      ),
+                      SizedBox(width: AppTheme.spacingSM),
+                      Expanded(
+                        child: Text(
+                          option == 1 
+                              ? 'Opción 1: Tour estándar con visualización panorámica'
+                              : 'Opción 2: Tour avanzado con efectos inmersivos',
+                          style: TextStyle(
+                            color: AppTheme.blanco,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 SizedBox(height: AppTheme.spacingMD),
@@ -1440,21 +1663,25 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
           ),
         );
 
+        // Crear descripción con prefijo de opción
+        final String finalDescription = descriptionController.text.trim().isNotEmpty
+            ? '$tourPrefix ${descriptionController.text.trim()}'
+            : '$tourPrefix Tour Virtual de ${widget.property.direccion}';
+
         final tour = await _virtualTourService.createTour(
           propertyId: widget.property.id,
           propertyName: widget.property.tipo.displayName,
           propertyAddress: widget.property.direccion,
           photo360Urls: selectedPhotos,
-          description: descriptionController.text.trim().isNotEmpty
-              ? descriptionController.text.trim()
-              : 'Tour Virtual de ${widget.property.direccion}',
+          description: finalDescription,
+          tourOption: option, // 1 = Pannellum, 2 = PanoramaViewer
         );
 
         if (mounted) {
           Navigator.pop(context); // Cerrar loading
 
-          // Recargar tours
-          _loadRooms();
+          // Recargar tours virtuales
+          await _reloadVirtualTours();
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -1484,12 +1711,245 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
 
   /// Abrir tour virtual
   void _openVirtualTour(VirtualTourModel tour) {
+    // Determinar qué visor usar según tourOption
+    Widget viewerScreen;
+    
+    if (tour.tourOption == 1) {
+      // Opción 1: Tour Avanzado con Pannellum
+      viewerScreen = VirtualTourOp1ViewerScreen(tour: tour);
+    } else {
+      // Opción 2: Tour Simple con PanoramaViewer
+      viewerScreen = VirtualTourViewerScreen(tour: tour);
+    }
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => viewerScreen),
+    );
+  }
+
+  /// Navegar a la pantalla de captura 360°
+  Future<void> _navigateTo360CaptureScreen() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => Camera360CaptureScreen(property: widget.property),
+      ),
+    );
+
+    // Recargar la pantalla si se capturaron fotos
+    if (result == true && mounted) {
+      setState(() {
+        // Trigger rebuild para recargar datos
+      });
+    }
+  }
+
+  /// Abrir constructor de tour virtual (Opción 1)
+  /// Constructor completo con WebApp - Opción 1
+  Future<void> _openTourBuilder() async {
+    // ✅ SOLUCIÓN SIMPLE: Sin WebView
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SimpleTourBuilderScreen(
+          property: widget.property,
+          tourOption: 1,
+        ),
+      ),
+    );
+
+    // Recargar tours después de volver del constructor
+    if (mounted && result == true) {
+      await _reloadVirtualTours();
+    }
+  }
+
+  /// Abrir constructor de tour 360° - Opción 2 (WebApp completo)
+  Future<void> _openTourBuilderOp2() async {
+    // ✅ SOLUCIÓN SIMPLE: Sin WebView
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SimpleTourBuilderScreen(
+          property: widget.property,
+          tourOption: 2,
+        ),
+      ),
+    );
+
+    // Recargar tours después de volver del constructor
+    if (mounted && result == true) {
+      await _reloadVirtualTours();
+    }
+  }
+
+  /// Abrir formulario de Acta de Entrega
+  Future<void> _openActaEntrega() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ActaEntregaFormScreen(property: widget.property),
+      ),
+    );
+  }
+
+  /// Abrir formulario de Acta de Recibido
+  Future<void> _openActaRecibido() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ActaRecibidoFormScreen(property: widget.property),
+      ),
+    );
+  }
+
+  /// Mostrar todas las fotos de todos los tours en una galería
+  void _showAllTourPhotos() {
+    if (_virtualTours.isEmpty) return;
+
+    // Recopilar todas las fotos de todos los tours
+    final List<String> allPhotos = [];
+    for (final tour in _virtualTours) {
+      allPhotos.addAll(tour.photo360Urls);
+    }
+
+    if (allPhotos.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No hay fotografías en los tours virtuales'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => VirtualTourViewerScreen(tour: tour),
+        builder: (_) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            title: Text('Fotografías 360° (${allPhotos.length})'),
+            leading: IconButton(
+              icon: const Icon(Icons.close, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+          body: GridView.builder(
+            padding: const EdgeInsets.all(8),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+            ),
+            itemCount: allPhotos.length,
+            itemBuilder: (context, index) {
+              final photoUrl = allPhotos[index];
+              return GestureDetector(
+                onTap: () {
+                  // Mostrar foto en pantalla completa
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => Scaffold(
+                        backgroundColor: Colors.black,
+                        appBar: AppBar(
+                          backgroundColor: Colors.black,
+                          title: Text('Foto ${index + 1} de ${allPhotos.length}'),
+                          leading: IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ),
+                        body: Center(
+                          child: InteractiveViewer(
+                            minScale: 0.5,
+                            maxScale: 4.0,
+                            child: _buildPhotoWidget(photoUrl),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      _buildPhotoWidget(photoUrl),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.7),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Icon(
+                            Icons.panorama_photosphere,
+                            color: AppTheme.dorado,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
       ),
     );
+  }
+
+  /// Construir widget de foto (compatible con Data URLs y URLs normales)
+  Widget _buildPhotoWidget(String photoUrl) {
+    // Data URL (base64) - usado en web
+    if (photoUrl.startsWith('data:image')) {
+      try {
+        final base64String = photoUrl.split(',')[1];
+        final bytes = base64Decode(base64String);
+        return Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return const Icon(Icons.broken_image, size: 64, color: Colors.grey);
+          },
+        );
+      } catch (e) {
+        return const Icon(Icons.broken_image, size: 64, color: Colors.grey);
+      }
+    }
+
+    // URL (http/https) - network image
+    if (photoUrl.startsWith('http')) {
+      return Image.network(
+        photoUrl,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                  : null,
+              color: AppTheme.dorado,
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return const Icon(Icons.broken_image, size: 64, color: Colors.grey);
+        },
+      );
+    }
+
+    // Fallback
+    return const Icon(Icons.broken_image, size: 64, color: Colors.grey);
   }
 
   /// Formatear fecha

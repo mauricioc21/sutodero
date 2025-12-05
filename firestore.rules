@@ -125,6 +125,22 @@ service cloud.firestore {
                       (isAuthenticated() && resource.data.userId == request.auth.uid);
     }
     
+    // Reglas para fotos 360° guardadas temporalmente
+    match /saved_photos_360/{photoId} {
+      // Permitir lectura si es admin o propietario de la foto
+      allow read: if isAdmin() || 
+                     (isAuthenticated() && resource.data.user_id == request.auth.uid);
+      
+      // Permitir crear fotos guardadas si está autenticado y es el propietario
+      allow create: if isAuthenticated() && request.resource.data.user_id == request.auth.uid;
+      
+      // Permitir actualizar y eliminar si es admin o propietario de la foto
+      allow update: if isAdmin() || 
+                      (isAuthenticated() && resource.data.user_id == request.auth.uid);
+      allow delete: if isAdmin() || 
+                      (isAuthenticated() && resource.data.user_id == request.auth.uid);
+    }
+    
     // Reglas para chat de tickets
     match /ticket_messages/{messageId} {
       // Permitir lectura si es admin, propietario del ticket o técnico asignado

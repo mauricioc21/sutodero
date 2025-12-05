@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Constructor Tour 360° - SU TODERO</title>
+    
+    <!-- Pannellum CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1A1A1A 0%, #2C2C2C 100%);
+            color: #FFFFFF;
+            overflow-x: hidden;
+        }
+
+        /* Header con colores SU TODERO */
+        .app-header {
+            background: linear-gradient(135deg, #FAB334 0%, #F39C12 100%);
+            color: #1A1A1A;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(250, 179, 52, 0.3);
+        }
+
+        .app-header h1 {
+            font-size: 26px;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+
+        .app-header p {
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
+        /* Container */
+        .container {
+            display: flex;
+            gap: 15px;
+            padding: 15px;
+            max-width: 1600px;
+            margin: 0 auto;
+            height: calc(100vh - 100px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            background: #2C2C2C;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            overflow-y: auto;
+            border: 2px solid #FAB334;
+        }
+
+        .sidebar h3 {
+            color: #FAB334;
+            margin-bottom: 15px;
+            font-size: 18px;
+            border-bottom: 2px solid #FAB334;
+            padding-bottom: 8px;
+        }
+
+        .sidebar h4 {
+            color: #E0E0E0;
+            margin: 15px 0 10px 0;
+            font-size: 14px;
+        }
+
+        /* Upload Panel */
+        .upload-panel input[type="text"],
+        .upload-panel input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 2px solid #FAB334;
+            border-radius: 6px;
+            font-size: 14px;
+            background: #1A1A1A;
+            color: #FFFFFF;
+        }
+
+        .upload-panel input[type="file"]::-webkit-file-upload-button {
+            background: #FAB334;
+            color: #1A1A1A;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .upload-panel button,
+        .save-panel button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #FAB334 0%, #F39C12 100%);
+            color: #1A1A1A;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(250, 179, 52, 0.3);
+        }
+
+        .upload-panel button:hover,
+        .save-panel button:hover {
+            background: linear-gradient(135deg, #F39C12 0%, #E67E22 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(250, 179, 52, 0.5);
+        }
+
+        .upload-panel button:disabled,
+        .save-panel button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Scenes List */
+        .scenes-list {
+            list-style: none;
+            margin-top: 10px;
+        }
+
+        .scenes-list li {
+            margin-bottom: 8px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .scenes-list button {
+            flex: 1;
+            padding: 12px;
+            background: #1A1A1A;
+            border: 2px solid #E0E0E0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            text-align: left;
+            transition: all 0.3s;
+            color: #FFFFFF;
+        }
+
+        .scenes-list li.active button {
+            background: linear-gradient(135deg, #FAB334 0%, #F39C12 100%);
+            color: #1A1A1A;
+            border-color: #FAB334;
+            font-weight: bold;
+        }
+
+        .scenes-list button:hover {
+            background: #2C2C2C;
+            border-color: #FAB334;
+        }
+
+        .scenes-list li.active button:hover {
+            background: linear-gradient(135deg, #F39C12 0%, #E67E22 100%);
+        }
+
+        .delete-btn {
+            width: 40px !important;
+            padding: 12px !important;
+            background: #e74c3c !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 6px !important;
+            cursor: pointer !important;
+            font-size: 18px !important;
+            font-weight: bold !important;
+            flex: 0 !important;
+        }
+
+        .delete-btn:hover {
+            background: #c0392b !important;
+            transform: scale(1.05);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            background: #2C2C2C;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            overflow-y: auto;
+            border: 2px solid #FAB334;
+        }
+
+        .main-content h2 {
+            color: #FAB334;
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+
+        /* Editor */
+        #editor {
+            margin-bottom: 20px;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            min-height: 450px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid #FAB334;
+            box-shadow: 0 0 30px rgba(250, 179, 52, 0.3);
+        }
+
+        #editor .placeholder {
+            color: #E0E0E0;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        #panorama {
+            border-radius: 12px;
+        }
+
+        /* Hotspots List */
+        #hotspots-list {
+            background: #1A1A1A;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #FAB334;
+        }
+
+        #hotspots-list h4 {
+            color: #FAB334;
+            margin-bottom: 15px;
+        }
+
+        #hotspots-list ul {
+            list-style: none;
+            margin: 10px 0;
+        }
+
+        #hotspots-list li {
+            padding: 12px;
+            background: #2C2C2C;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: #E0E0E0;
+            border: 1px solid #FAB334;
+        }
+
+        #hotspots-list button {
+            margin-top: 15px;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        #hotspots-list button:hover {
+            background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+            transform: translateY(-2px);
+        }
+
+        /* Save Panel */
+        .save-panel {
+            margin-top: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(250, 179, 52, 0.1) 0%, rgba(243, 156, 18, 0.1) 100%);
+            border-radius: 12px;
+            border: 2px solid #FAB334;
+        }
+
+        .save-panel h3 {
+            color: #FAB334;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .save-panel input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 2px solid #FAB334;
+            border-radius: 6px;
+            font-size: 14px;
+            background: #1A1A1A;
+            color: #FFFFFF;
+        }
+
+        /* Export Panel */
+        .export-panel {
+            margin-top: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(243, 156, 18, 0.1) 0%, rgba(230, 126, 34, 0.1) 100%);
+            border-radius: 12px;
+            border: 2px solid #F39C12;
+        }
+
+        .export-panel h3 {
+            color: #F39C12;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .export-info {
+            font-size: 12px;
+            color: #E0E0E0;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .export-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #F39C12 0%, #E67E22 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .export-btn:hover {
+            background: linear-gradient(135deg, #E67E22 0%, #D35400 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(243, 156, 18, 0.5);
+        }
+
+        .export-btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .export-btn span {
+            font-size: 18px;
+        }
+
+        /* Flutter Communication Button */
+        .flutter-save-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #1ABC9C 0%, #16A085 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin-top: 15px;
+        }
+
+        .flutter-save-btn:hover {
+            background: linear-gradient(135deg, #16A085 0%, #138D75 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(26, 188, 156, 0.5);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .sidebar {
+                width: 100%;
+            }
+
+            .main-content {
+                width: 100%;
+            }
+        }
+
+        /* Custom Hotspot Buttons in Pannellum */
+        .custom-hotspot {
+            padding: 6px 12px;
+            background: rgba(250, 179, 52, 0.95);
+            color: #1A1A1A;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 10px rgba(250, 179, 52, 0.5);
+        }
+
+        .custom-hotspot:hover {
+            background: rgba(243, 156, 18, 1);
+            transform: scale(1.15);
+            box-shadow: 0 4px 15px rgba(250, 179, 52, 0.7);
+        }
+
+        /* Pannellum customization */
+        .pnlm-container {
+            border-radius: 12px;
+        }
+
+        .pnlm-load-box {
+            background-color: rgba(26, 26, 26, 0.9) !important;
+        }
+
+        /* Scrollbar personalizado */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1A1A1A;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #FAB334;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #F39C12;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="app-header">
+        <h1>🏗️ Constructor de Tour Virtual 360° - OPCIÓN 2</h1>
+        <p>Crea tours inmersivos con navegación por hotspots</p>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <!-- Upload Panel -->
+            <div class="upload-panel">
+                <h3>📤 Subir Imagen 360°</h3>
+                <input type="text" id="title-input" placeholder="Título de la escena (opcional)">
+                <input type="file" id="file-input" accept="image/*">
+                <button id="upload-btn">Subir</button>
+            </div>
+
+            <!-- Scenes List -->
+            <div class="scenes-panel">
+                <h3>🎬 Escenas del Tour</h3>
+                <ul class="scenes-list" id="scenes-list"></ul>
+            </div>
+
+            <!-- Save Panel -->
+            <div class="save-panel">
+                <h3>💾 Guardar Tour</h3>
+                <input type="text" id="tour-id-input" placeholder="ID del tour">
+                <button id="save-tour-btn">Guardar Tour</button>
+                <button id="flutter-save-btn" class="flutter-save-btn">✅ Guardar y Volver</button>
+            </div>
+
+            <!-- Export Panel -->
+            <div class="export-panel">
+                <h3>📦 Exportar HTML</h3>
+                <p class="export-info">
+                    Descarga el tour como archivo HTML independiente con todas las imágenes embebidas.
+                </p>
+                <button id="export-tour-btn" class="export-btn">
+                    <span>📥</span>
+                    Exportar HTML Standalone
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <h2>🎨 Editor de Tour 360°</h2>
+            
+            <!-- Panorama Editor -->
+            <div id="editor">
+                <p class="placeholder">📷 Sube una imagen 360° para comenzar a crear tu tour virtual</p>
+            </div>
+
+            <!-- Hotspots Management -->
+            <div id="hotspots-list">
+                <h4>🎯 Puntos de Navegación (Hotspots)</h4>
+                <p style="color: #E0E0E0; font-size: 12px; margin-bottom: 10px;">
+                    Los hotspots son puntos interactivos que permiten navegar entre escenas
+                </p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Pannellum JS -->
+    <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+    
+    <!-- App Logic -->
+    <script>
+        // ============================================
+        // VIRTUAL TOUR BUILDER - Frontend
+        // ============================================
+
+        // State management
+        const state = {
+            scenes: [],
+            current: null,
+            tourId: 'tour-' + Date.now(),
+            hotspots: {},
+            viewer: null,
+            propertyId: null,
+            propertyAddress: null
+        };
+
+        // Storage in memory (no backend for mobile)
+        const imageStorage = {};
+
+        // ============================================
+        // UTILITY FUNCTIONS
+        // ============================================
+
+        function generateSceneId() {
+            return 'scene-' + Date.now();
+        }
+
+        // ============================================
+        // FLUTTER COMMUNICATION
+        // ============================================
+
+        // Receive property info from Flutter
+        window.addEventListener('message', function(event) {
+            const data = event.data;
+            if (data.type === 'propertyInfo') {
+                state.propertyId = data.propertyId;
+                state.propertyAddress = data.propertyAddress;
+                console.log('✅ Property info received:', data);
+            }
+        });
+
+        // Send tour data back to Flutter
+        function sendTourToFlutter() {
+            if (state.scenes.length === 0) {
+                alert('⚠️ Agrega al menos una escena antes de guardar');
+                return;
+            }
+
+            const tourData = {
+                type: 'tourSaved',
+                tourId: state.tourId,
+                propertyId: state.propertyId,
+                propertyAddress: state.propertyAddress,
+                scenes: state.scenes,
+                hotspots: state.hotspots,
+                sceneCount: state.scenes.length,
+                hotspotCount: Object.values(state.hotspots).flat().length
+            };
+
+            // Send to Flutter via postMessage
+            if (window.FlutterChannel) {
+                window.FlutterChannel.postMessage(JSON.stringify(tourData));
+            }
+
+            // Also try parent window (for WebView)
+            if (window.parent) {
+                window.parent.postMessage(tourData, '*');
+            }
+
+            console.log('✅ Tour data sent to Flutter:', tourData);
+            alert('✅ Tour guardado exitosamente!\\n\\n' + 
+                  `Escenas: ${state.scenes.length}\\n` +
+                  `Hotspots: ${Object.values(state.hotspots).flat().length}`);
+        }
+
+        // ============================================
+        // UPLOAD PANEL
+        // ============================================
+
+        function initUploadPanel() {
+            const uploadBtn = document.getElementById('upload-btn');
+            const fileInput = document.getElementById('file-input');
+            const titleInput = document.getElementById('title-input');
+
+            uploadBtn.addEventListener('click', async () => {
+                const file = fileInput.files[0];
+                const title = titleInput.value;
+
+                if (!file) {
+                    alert('⚠️ Selecciona un archivo primero');
+                    return;
+                }
+
+                uploadBtn.disabled = true;
+                uploadBtn.textContent = '⏳ Subiendo...';
+
+                try {
+                    // Convert image to base64 for mobile storage
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const imageUrl = e.target.result;
+                        
+                        const sceneId = generateSceneId();
+                        const scene = {
+                            id: sceneId,
+                            title: title || file.name,
+                            image: imageUrl
+                        };
+
+                        state.scenes.push(scene);
+                        state.hotspots[sceneId] = [];
+
+                        if (!state.current) {
+                            state.current = sceneId;
+                        }
+
+                        renderScenes();
+                        renderEditor();
+
+                        fileInput.value = '';
+                        titleInput.value = '';
+                        
+                        alert('✅ Imagen subida exitosamente');
+                    };
+                    reader.readAsDataURL(file);
+
+                } catch (error) {
+                    console.error(error);
+                    alert('❌ Error al subir imagen');
+                } finally {
+                    uploadBtn.disabled = false;
+                    uploadBtn.textContent = 'Subir';
+                }
+            });
+        }
+
+        // ============================================
+        // SCENES LIST
+        // ============================================
+
+        function renderScenes() {
+            const scenesList = document.getElementById('scenes-list');
+            scenesList.innerHTML = '';
+
+            if (state.scenes.length === 0) {
+                scenesList.innerHTML = '<li style="color: #E0E0E0; padding: 10px; text-align: center;">Sin escenas aún</li>';
+                return;
+            }
+
+            state.scenes.forEach(scene => {
+                const li = document.createElement('li');
+                li.className = state.current === scene.id ? 'active' : '';
+                
+                const btn = document.createElement('button');
+                btn.textContent = scene.title || scene.id;
+                btn.onclick = () => {
+                    state.current = scene.id;
+                    renderScenes();
+                    renderEditor();
+                };
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = '×';
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (confirm('¿Eliminar esta escena?')) {
+                        state.scenes = state.scenes.filter(s => s.id !== scene.id);
+                        delete state.hotspots[scene.id];
+                        if (state.current === scene.id) {
+                            state.current = state.scenes[0]?.id || null;
+                        }
+                        renderScenes();
+                        renderEditor();
+                    }
+                };
+                
+                li.appendChild(btn);
+                li.appendChild(deleteBtn);
+                scenesList.appendChild(li);
+            });
+        }
+
+        // ============================================
+        // EDITOR (Pannellum Viewer)
+        // ============================================
+
+        function renderEditor() {
+            const editorDiv = document.getElementById('editor');
+            const hotspotsDiv = document.getElementById('hotspots-list');
+            
+            if (!state.current) {
+                editorDiv.innerHTML = '<p class="placeholder">📷 Sube una imagen 360° para comenzar a crear tu tour virtual</p>';
+                renderHotspotsList();
+                return;
+            }
+
+            const scene = state.scenes.find(s => s.id === state.current);
+            
+            if (!scene) return;
+
+            // Destroy previous viewer
+            if (state.viewer && state.viewer.destroy) {
+                try {
+                    state.viewer.destroy();
+                } catch (e) {
+                    console.error('Error destroying viewer:', e);
+                }
+            }
+
+            // Clear editor
+            editorDiv.innerHTML = '';
+
+            // Create panorama container
+            const panoramaDiv = document.createElement('div');
+            panoramaDiv.id = 'panorama';
+            panoramaDiv.style.width = '100%';
+            panoramaDiv.style.height = '450px';
+            panoramaDiv.style.background = '#000';
+            editorDiv.appendChild(panoramaDiv);
+
+            // Initialize Pannellum
+            const hotspots = (state.hotspots[state.current] || []).map(h => ({
+                pitch: h.pitch,
+                yaw: h.yaw,
+                type: 'scene',
+                text: h.text || 'Ir a ' + h.target,
+                sceneId: h.target,
+                clickHandlerFunc: () => {
+                    const targetScene = state.scenes.find(s => s.id === h.target);
+                    if (targetScene) {
+                        state.current = h.target;
+                        renderScenes();
+                        renderEditor();
+                    }
+                }
+            }));
+
+            state.viewer = window.pannellum.viewer('panorama', {
+                type: 'equirectangular',
+                panorama: scene.image,
+                autoLoad: true,
+                hotSpots: hotspots,
+                showControls: true
+            });
+
+            // Render hotspots list
+            renderHotspotsList();
+        }
+
+        // ============================================
+        // HOTSPOTS MANAGEMENT
+        // ============================================
+
+        function renderHotspotsList() {
+            const hotspotsDiv = document.getElementById('hotspots-list');
+            const currentHotspots = state.hotspots[state.current] || [];
+            
+            hotspotsDiv.innerHTML = '<h4>🎯 Puntos de Navegación (Hotspots)</h4>' +
+                '<p style="color: #E0E0E0; font-size: 12px; margin-bottom: 10px;">' +
+                'Los hotspots son puntos interactivos que permiten navegar entre escenas' +
+                '</p>';
+            
+            if (!state.current) {
+                hotspotsDiv.innerHTML += '<p style="color: #E0E0E0; text-align: center; padding: 20px;">Selecciona una escena primero</p>';
+                return;
+            }
+
+            const ul = document.createElement('ul');
+            currentHotspots.forEach((h, idx) => {
+                const li = document.createElement('li');
+                li.textContent = `${h.text || 'Ir a ' + h.target} (yaw: ${h.yaw.toFixed(1)}, pitch: ${h.pitch.toFixed(1)})`;
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = '×';
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.onclick = () => {
+                    state.hotspots[state.current].splice(idx, 1);
+                    renderEditor();
+                };
+                
+                li.appendChild(deleteBtn);
+                ul.appendChild(li);
+            });
+            hotspotsDiv.appendChild(ul);
+
+            const addBtn = document.createElement('button');
+            addBtn.textContent = '➕ Agregar Hotspot (en vista actual)';
+            addBtn.onclick = addHotspot;
+            hotspotsDiv.appendChild(addBtn);
+        }
+
+        function addHotspot() {
+            if (!state.viewer) {
+                alert('⏳ Cargando visor...');
+                return;
+            }
+
+            const yaw = state.viewer.getYaw();
+            const pitch = state.viewer.getPitch();
+            
+            // Get available scenes
+            const availableScenes = state.scenes.filter(s => s.id !== state.current);
+            
+            if (availableScenes.length === 0) {
+                alert('⚠️ Necesitas al menos 2 escenas para crear hotspots');
+                return;
+            }
+
+            const target = prompt('ID de la escena destino (ej: ' + availableScenes[0].id + '):\\n\\nEscenas disponibles:\\n' + 
+                availableScenes.map(s => `- ${s.id}: ${s.title}`).join('\\n')) || '';
+
+            if (!target) return;
+
+            const targetScene = state.scenes.find(s => s.id === target);
+            
+            if (!targetScene) {
+                alert('❌ Escena no encontrada');
+                return;
+            }
+
+            const text = prompt('Texto del hotspot (opcional):') || `Ir a ${targetScene.title}`;
+
+            const hotspot = { yaw, pitch, target, text };
+            
+            if (!state.hotspots[state.current]) {
+                state.hotspots[state.current] = [];
+            }
+            
+            state.hotspots[state.current].push(hotspot);
+            renderEditor();
+        }
+
+        // ============================================
+        // SAVE TOUR
+        // ============================================
+
+        function initSaveTour() {
+            const saveBtn = document.getElementById('save-tour-btn');
+            const flutterSaveBtn = document.getElementById('flutter-save-btn');
+            const tourIdInput = document.getElementById('tour-id-input');
+
+            tourIdInput.value = state.tourId;
+
+            // Regular save
+            saveBtn.addEventListener('click', async () => {
+                const tourId = tourIdInput.value || state.tourId;
+
+                if (state.scenes.length === 0) {
+                    alert('⚠️ Agrega al menos una escena');
+                    return;
+                }
+
+                state.tourId = tourId;
+                alert(`✅ Tour guardado localmente con ID: ${tourId}`);
+            });
+
+            // Save and return to Flutter
+            flutterSaveBtn.addEventListener('click', () => {
+                sendTourToFlutter();
+            });
+        }
+
+        // ============================================
+        // EXPORT TOUR
+        // ============================================
+
+        function initExportTour() {
+            const exportBtn = document.getElementById('export-tour-btn');
+            const tourIdInput = document.getElementById('tour-id-input');
+
+            exportBtn.addEventListener('click', async () => {
+                const tourId = tourIdInput.value || state.tourId;
+
+                if (state.scenes.length === 0) {
+                    alert('⚠️ Debes agregar escenas antes de exportar');
+                    return;
+                }
+
+                exportBtn.disabled = true;
+                const originalText = exportBtn.innerHTML;
+                exportBtn.innerHTML = '<span>⏳</span> Exportando...';
+
+                try {
+                    // Generate standalone HTML
+                    const html = generateStandaloneHTML(tourId, state.scenes, state.hotspots);
+                    
+                    // Create download link
+                    const blob = new Blob([html], { type: 'text/html' });
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `${tourId}.html`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+
+                    setTimeout(() => {
+                        alert(`✅ Tour exportado exitosamente!\\n\\nArchivo: ${tourId}.html\\n\\nPuedes compartir este archivo HTML con tus clientes.`);
+                    }, 500);
+
+                } catch (error) {
+                    console.error(error);
+                    alert('❌ Error al exportar tour');
+                } finally {
+                    exportBtn.disabled = false;
+                    exportBtn.innerHTML = originalText;
+                }
+            });
+        }
+
+        function generateStandaloneHTML(title, scenes, hotspots) {
+            return `<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title} - Tour Virtual 360°</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #000; overflow: hidden; }
+        #panorama { width: 100vw; height: 100vh; }
+        .tour-info {
+            position: absolute; top: 20px; left: 20px;
+            background: rgba(0, 0, 0, 0.7); color: white;
+            padding: 15px 25px; border-radius: 10px; z-index: 1000;
+        }
+        .tour-info h1 { font-size: 24px; margin-bottom: 5px; }
+        .loading {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: white; font-size: 20px; z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <div class="tour-info">
+        <h1>🏠 ${title}</h1>
+        <p>SU TODERO - Tour Virtual 360°</p>
+    </div>
+    <div class="loading" id="loading">Cargando...</div>
+    <div id="panorama"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+    <script>
+        const tourData = ${JSON.stringify({ title, scenes, hotspots })};
+        let viewer = null;
+        let currentSceneId = tourData.scenes[0]?.id;
+
+        function loadScene(sceneId) {
+            const scene = tourData.scenes.find(s => s.id === sceneId);
+            if (!scene) return;
+
+            currentSceneId = sceneId;
+            if (viewer && viewer.destroy) {
+                try { viewer.destroy(); } catch (e) {}
+            }
+
+            document.getElementById('panorama').innerHTML = '';
+            const sceneHotspots = (tourData.hotspots[sceneId] || []).map(h => ({
+                pitch: h.pitch, yaw: h.yaw, type: 'scene',
+                text: h.text || 'Ir a ' + h.target,
+                clickHandlerFunc: () => loadScene(h.target)
+            }));
+
+            viewer = window.pannellum.viewer('panorama', {
+                type: 'equirectangular',
+                panorama: scene.image,
+                autoLoad: true,
+                hotSpots: sceneHotspots,
+                showControls: true
+            });
+
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (tourData.scenes.length > 0) loadScene(currentSceneId);
+        });
+    </script>
+</body>
+</html>`;
+        }
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initUploadPanel();
+            initSaveTour();
+            initExportTour();
+            renderScenes();
+            renderEditor();
+            
+            console.log('✅ Tour Builder OP2 initialized');
+        });
+    </script>
+</body>
+</html>

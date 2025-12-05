@@ -12,8 +12,6 @@ class VideoSplashScreen extends StatefulWidget {
 }
 
 class _VideoSplashScreenState extends State<VideoSplashScreen> {
-  late VideoPlayerController _controller;
-  bool _isVideoReady = false;
   bool _hasNavigated = false;
 
   @override
@@ -23,77 +21,19 @@ class _VideoSplashScreenState extends State<VideoSplashScreen> {
   }
 
   Future<void> _initializeVideo() async {
-    try {
-      // Cargar TU video desde assets
-      _controller = VideoPlayerController.asset('assets/videos/splash_video.mp4');
-      
-      if (kDebugMode) {
-        debugPrint('🎬 Inicializando video splash...');
-      }
-      
-      await _controller.initialize().timeout(
-        const Duration(seconds: 8),
-        onTimeout: () {
-          if (kDebugMode) {
-            debugPrint('⏱️ Timeout inicializando video - navegando a login');
-          }
-          throw TimeoutException('Video initialization timeout');
-        },
-      );
-      
-      if (!mounted) return;
-      
-      if (kDebugMode) {
-        debugPrint('✅ Video inicializado correctamente');
-        debugPrint('📹 Duración: ${_controller.value.duration}');
-      }
-      
-      setState(() {
-        _isVideoReady = true;
-      });
-      
-      // Reproducir el video
-      await _controller.play();
-      
-      if (kDebugMode) {
-        debugPrint('▶️ Video reproduciéndose');
-      }
-      
-      // Escuchar cuando termine el video
-      _controller.addListener(_checkVideoCompletion);
-      
-      // Timeout de seguridad: máximo 10 segundos
-      Future.delayed(const Duration(seconds: 10), () {
-        if (!_hasNavigated) {
-          if (kDebugMode) {
-            debugPrint('⏱️ Timeout de seguridad - navegando a login');
-          }
-          _navigateToLogin();
-        }
-      });
-      
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('⚠️ Error cargando video: $e');
-        debugPrint('🔄 Navegando a login en 2 segundos...');
-      }
-      
-      await Future.delayed(const Duration(seconds: 2));
+    // ✅ SOLUCIÓN RÁPIDA: Navegar directamente al login después de 1 segundo
+    if (kDebugMode) {
+      debugPrint('🚀 Cargando SU TODERO...');
+    }
+    
+    await Future.delayed(const Duration(seconds: 1));
+    
+    if (mounted) {
       _navigateToLogin();
     }
   }
 
-  void _checkVideoCompletion() {
-    if (_hasNavigated) return;
-    
-    // Verificar si el video terminó
-    if (_controller.value.position >= _controller.value.duration) {
-      if (kDebugMode) {
-        debugPrint('🎬 Video completado - navegando a login');
-      }
-      _navigateToLogin();
-    }
-  }
+
 
   void _navigateToLogin() {
     if (_hasNavigated) return;
@@ -112,38 +52,48 @@ class _VideoSplashScreenState extends State<VideoSplashScreen> {
 
   @override
   void dispose() {
-    _controller.removeListener(_checkVideoCompletion);
-    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF1A1A1A), // Color oscuro corporativo
       body: Center(
-        child: _isVideoReady
-            ? AspectRatio(
-                aspectRatio: _controller.value.aspectRatio,
-                child: VideoPlayer(_controller),
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFAB334)),
-                    strokeWidth: 3,
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Cargando Su Todero...',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            // Logo o ícono de SU TODERO
+            Icon(
+              Icons.home_repair_service,
+              size: 80,
+              color: Color(0xFFFAB334), // Dorado
+            ),
+            SizedBox(height: 24),
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFAB334)),
+              strokeWidth: 3,
+            ),
+            SizedBox(height: 24),
+            Text(
+              'SU TODERO',
+              style: TextStyle(
+                color: Color(0xFFFAB334),
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 2,
               ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Cargando...',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

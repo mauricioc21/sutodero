@@ -20,7 +20,7 @@ class Camera360Service {
 
   /// Método 1: Seleccionar foto 360° desde galería
   /// Este es el método más simple y funciona inmediatamente
-  Future<String?> pickFrom360Gallery() async {
+  Future<XFile?> pickFrom360Gallery() async {
     try {
       final XFile? photo = await _imagePicker.pickImage(
         source: ImageSource.gallery,
@@ -31,7 +31,7 @@ class Camera360Service {
         if (kDebugMode) {
           debugPrint('✅ Foto 360° seleccionada desde galería: ${photo.path}');
         }
-        return photo.path;
+        return photo;
       }
       
       return null;
@@ -45,7 +45,7 @@ class Camera360Service {
 
   /// Método 2: Capturar con cámara del teléfono (panorama manual)
   /// Útil si no hay cámara 360° disponible
-  Future<String?> captureWithPhoneCamera() async {
+  Future<XFile?> captureWithPhoneCamera() async {
     try {
       final XFile? photo = await _imagePicker.pickImage(
         source: ImageSource.camera,
@@ -57,7 +57,7 @@ class Camera360Service {
         if (kDebugMode) {
           debugPrint('✅ Foto capturada con cámara del teléfono: ${photo.path}');
         }
-        return photo.path;
+        return photo;
       }
       
       return null;

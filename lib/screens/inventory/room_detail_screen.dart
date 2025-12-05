@@ -331,7 +331,17 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
       );
       
       if (photo != null) {
-        await _inventoryService.setRoom360Photo(_room!.id, photo.path);
+        // ✅ FIX: Convertir a Data URL en web para compatibilidad
+        String photoPath;
+        if (kIsWeb) {
+          final bytes = await photo.readAsBytes();
+          final base64String = base64Encode(bytes);
+          photoPath = 'data:image/png;base64,$base64String';
+        } else {
+          photoPath = photo.path;
+        }
+        
+        await _inventoryService.setRoom360Photo(_room!.id, photoPath);
         await _loadRoom();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -878,9 +888,62 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: AppTheme.spacingSM),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(AppTheme.radiusSM),
-                child: _buildImageWidget(_room!.foto360Url!, BoxFit.cover, height: 200),
+              GestureDetector(
+                onTap: () {
+                  // Mostrar foto 360° en pantalla completa
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => Scaffold(
+                        backgroundColor: Colors.black,
+                        appBar: AppBar(
+                          backgroundColor: Colors.black,
+                          title: const Text('Foto 360°'),
+                          leading: IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ),
+                        body: Center(
+                          child: InteractiveViewer(
+                            minScale: 0.5,
+                            maxScale: 4.0,
+                            child: _buildImageWidget(_room!.foto360Url!, BoxFit.contain),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                      child: _buildImageWidget(_room!.foto360Url!, BoxFit.cover, height: 200),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(AppTheme.radiusSM),
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.panorama_photosphere, color: Colors.white, size: 24),
+                            SizedBox(width: 8),
+                            Text(
+                              'Toca para ver en pantalla completa',
+                              style: TextStyle(color: Colors.white, fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               SizedBox(height: AppTheme.spacingMD),
             ],

@@ -34,8 +34,7 @@ void main() async {
     }
   }
   
-  // ✅ FIX: Inicializar Firebase ANTES de crear la app
-  // Esto asegura que Firebase esté disponible cuando el usuario intente hacer login
+  // ✅ Inicializar Firebase (sin bloquear la app)
   if (kDebugMode) {
     debugPrint('🔥 Inicializando Firebase...');
   }
@@ -43,51 +42,15 @@ void main() async {
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
-    ).timeout(
-      const Duration(seconds: 10),
-      onTimeout: () {
-        if (kDebugMode) {
-          debugPrint('⏱️ Timeout en inicialización de Firebase (10s)');
-          debugPrint('⚠️ La app funcionará en modo local sin Firebase');
-        }
-        throw TimeoutException('Firebase initialization timeout');
-      },
     );
     
     if (kDebugMode) {
       debugPrint('✅ Firebase inicializado correctamente');
     }
-    
-    // Inicializar perfiles de maestros automáticamente
-    if (kDebugMode) {
-      debugPrint('👷 Inicializando perfiles de maestros...');
-    }
-    
-    try {
-      final maestroService = MaestroProfileService();
-      await maestroService.initializeDefaultProfiles().timeout(
-        const Duration(seconds: 5),
-        onTimeout: () {
-          if (kDebugMode) {
-            debugPrint('⏱️ Timeout al crear perfiles de maestros');
-          }
-          return false;
-        },
-      );
-      
-      if (kDebugMode) {
-        debugPrint('✅ Perfiles de maestros inicializados');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('⚠️ Error al inicializar perfiles: $e');
-        debugPrint('💡 Los perfiles se crearán cuando sea necesario');
-      }
-    }
   } catch (e) {
     if (kDebugMode) {
       debugPrint('⚠️ Error al inicializar Firebase: $e');
-      debugPrint('⚠️ La app funcionará en modo local sin Firebase');
+      debugPrint('⚠️ La app continuará sin Firebase');
     }
   }
   

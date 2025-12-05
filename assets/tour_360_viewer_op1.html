@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tour Virtual 360° - Opción 1</title>
+    
+    <!-- Pannellum CSS & JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #1A1A1A;
+            color: #FFFFFF;
+            overflow: hidden;
+        }
+
+        /* Colores corporativos SU TODERO */
+        :root {
+            --dorado: #FAB334;
+            --gris-oscuro: #2C2C2C;
+            --negro: #1A1A1A;
+            --blanco: #FFFFFF;
+            --gris-claro: #E0E0E0;
+        }
+
+        /* Visor panorámico */
+        #panorama {
+            width: 100vw;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Header corporativo */
+        .tour-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, rgba(26, 26, 26, 0.95) 0%, rgba(26, 26, 26, 0.7) 100%);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .tour-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--dorado);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tour-title .icon {
+            font-size: 24px;
+        }
+
+        .close-btn {
+            background: var(--dorado);
+            color: var(--negro);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .close-btn:hover {
+            background: #FFD700;
+            transform: scale(1.05);
+        }
+
+        /* Controles de navegación */
+        .nav-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(44, 44, 44, 0.95);
+            border-radius: 30px;
+            padding: 12px 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-btn {
+            background: var(--dorado);
+            color: var(--negro);
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-btn:hover {
+            background: #FFD700;
+            transform: scale(1.1);
+        }
+
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+
+        .nav-info {
+            color: var(--gris-claro);
+            font-size: 13px;
+            padding: 0 10px;
+            border-left: 2px solid var(--dorado);
+            border-right: 2px solid var(--dorado);
+        }
+
+        .nav-info strong {
+            color: var(--dorado);
+            font-size: 16px;
+        }
+
+        /* Lista de escenas */
+        .scenes-panel {
+            position: fixed;
+            right: 20px;
+            top: 80px;
+            background: rgba(44, 44, 44, 0.95);
+            border-radius: 12px;
+            padding: 15px;
+            z-index: 1000;
+            max-width: 250px;
+            max-height: calc(100vh - 180px);
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .scenes-panel h3 {
+            color: var(--dorado);
+            font-size: 16px;
+            margin-bottom: 12px;
+            border-bottom: 2px solid var(--dorado);
+            padding-bottom: 8px;
+        }
+
+        .scene-item {
+            background: rgba(250, 179, 52, 0.1);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 13px;
+        }
+
+        .scene-item:hover {
+            background: rgba(250, 179, 52, 0.2);
+            border-color: var(--dorado);
+        }
+
+        .scene-item.active {
+            background: var(--dorado);
+            color: var(--negro);
+            font-weight: bold;
+        }
+
+        /* Loading state */
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 2000;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(250, 179, 52, 0.3);
+            border-top-color: var(--dorado);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: var(--dorado);
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        /* Custom Pannellum Hotspots */
+        .custom-hotspot {
+            width: 40px;
+            height: 40px;
+            background: var(--dorado);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--negro);
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 10px rgba(250, 179, 52, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        .custom-hotspot:hover {
+            transform: scale(1.2);
+            background: #FFD700;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 2px 10px rgba(250, 179, 52, 0.5); }
+            50% { box-shadow: 0 4px 20px rgba(250, 179, 52, 0.9); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .scenes-panel {
+                right: 10px;
+                max-width: 200px;
+                font-size: 12px;
+            }
+
+            .nav-controls {
+                bottom: 10px;
+                padding: 10px 15px;
+                gap: 10px;
+            }
+
+            .nav-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+
+            .nav-info {
+                font-size: 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading indicator -->
+    <div class="loading" id="loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Cargando Tour Virtual...</div>
+    </div>
+
+    <!-- Header -->
+    <div class="tour-header">
+        <div class="tour-title">
+            <span class="icon">🏠</span>
+            <span id="tour-name">Tour Virtual 360°</span>
+        </div>
+        <button class="close-btn" onclick="closeTour()">✕ Cerrar</button>
+    </div>
+
+    <!-- Panorama viewer -->
+    <div id="panorama"></div>
+
+    <!-- Navigation controls -->
+    <div class="nav-controls">
+        <button class="nav-btn" onclick="previousScene()" title="Escena anterior">‹</button>
+        <div class="nav-info">
+            <span id="current-scene">1</span> / <strong id="total-scenes">1</strong>
+        </div>
+        <button class="nav-btn" onclick="nextScene()" title="Siguiente escena">›</button>
+    </div>
+
+    <!-- Scenes list -->
+    <div class="scenes-panel">
+        <h3>📸 Escenas</h3>
+        <div id="scenes-list"></div>
+    </div>
+
+    <script>
+        // Estado global
+        let viewer = null;
+        let currentSceneIndex = 0;
+        let scenes = [];
+
+        // Inicializar tour virtual
+        function initTour(tourData) {
+            try {
+                console.log('Inicializando tour:', tourData);
+                
+                // Parsear datos del tour
+                if (typeof tourData === 'string') {
+                    tourData = JSON.parse(tourData);
+                }
+
+                scenes = tourData.scenes || [];
+                
+                if (scenes.length === 0) {
+                    showError('No hay escenas en el tour');
+                    return;
+                }
+
+                // Actualizar título
+                document.getElementById('tour-name').textContent = tourData.title || 'Tour Virtual 360°';
+                document.getElementById('total-scenes').textContent = scenes.length;
+
+                // Renderizar lista de escenas
+                renderScenesList();
+
+                // Cargar primera escena
+                loadScene(0);
+
+            } catch (error) {
+                console.error('Error al inicializar tour:', error);
+                showError('Error al cargar el tour');
+            }
+        }
+
+        // Cargar escena
+        function loadScene(index) {
+            if (index < 0 || index >= scenes.length) return;
+
+            currentSceneIndex = index;
+            const scene = scenes[index];
+
+            console.log('Cargando escena:', scene);
+
+            // Actualizar contador
+            document.getElementById('current-scene').textContent = index + 1;
+
+            // Actualizar lista de escenas
+            updateScenesList();
+
+            // Destruir viewer anterior si existe
+            if (viewer) {
+                viewer.destroy();
+            }
+
+            // Ocultar loading después de la primera carga
+            document.getElementById('loading').style.display = 'none';
+
+            // Crear nuevo viewer
+            viewer = pannellum.viewer('panorama', {
+                type: 'equirectangular',
+                panorama: scene.image,
+                autoLoad: true,
+                showControls: false,
+                showFullscreenCtrl: false,
+                showZoomCtrl: false,
+                mouseZoom: true,
+                draggable: true,
+                hfov: 100,
+                minHfov: 50,
+                maxHfov: 120,
+                hotSpots: generateHotspots(scene.hotspots || [])
+            });
+        }
+
+        // Generar hotspots
+        function generateHotspots(hotspots) {
+            return hotspots.map((hotspot, index) => ({
+                pitch: hotspot.pitch || 0,
+                yaw: hotspot.yaw || 0,
+                type: 'info',
+                text: hotspot.text || `Punto ${index + 1}`,
+                createTooltipFunc: createCustomHotspot
+            }));
+        }
+
+        // Crear hotspot personalizado
+        function createCustomHotspot(hotSpotDiv, args) {
+            hotSpotDiv.classList.add('custom-hotspot');
+            hotSpotDiv.innerHTML = '➤';
+            hotSpotDiv.onclick = function() {
+                alert(args);
+            };
+        }
+
+        // Renderizar lista de escenas
+        function renderScenesList() {
+            const list = document.getElementById('scenes-list');
+            list.innerHTML = '';
+
+            scenes.forEach((scene, index) => {
+                const item = document.createElement('div');
+                item.className = 'scene-item';
+                item.textContent = scene.title || `Escena ${index + 1}`;
+                item.onclick = () => loadScene(index);
+                list.appendChild(item);
+            });
+        }
+
+        // Actualizar lista de escenas (marcar activa)
+        function updateScenesList() {
+            const items = document.querySelectorAll('.scene-item');
+            items.forEach((item, index) => {
+                item.classList.toggle('active', index === currentSceneIndex);
+            });
+        }
+
+        // Navegación
+        function previousScene() {
+            if (currentSceneIndex > 0) {
+                loadScene(currentSceneIndex - 1);
+            }
+        }
+
+        function nextScene() {
+            if (currentSceneIndex < scenes.length - 1) {
+                loadScene(currentSceneIndex + 1);
+            }
+        }
+
+        // Cerrar tour
+        function closeTour() {
+            if (window.FlutterChannel) {
+                window.FlutterChannel.postMessage('close');
+            } else {
+                window.history.back();
+            }
+        }
+
+        // Mostrar error
+        function showError(message) {
+            document.getElementById('loading').innerHTML = `
+                <div style="color: #FF6B6B; text-align: center;">
+                    <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+                    <div style="font-size: 18px; font-weight: bold;">${message}</div>
+                    <button onclick="closeTour()" style="margin-top: 20px; padding: 10px 20px; background: var(--dorado); color: var(--negro); border: none; border-radius: 20px; cursor: pointer; font-weight: bold;">
+                        Cerrar
+                    </button>
+                </div>
+            `;
+        }
+
+        // Comunicación con Flutter
+        window.addEventListener('message', function(event) {
+            if (event.data.type === 'loadTour') {
+                initTour(event.data.data);
+            }
+        });
+
+        // Inicializar tour de prueba (temporal)
+        window.addEventListener('load', function() {
+            // Este código se ejecutará si no hay datos de Flutter
+            setTimeout(() => {
+                if (scenes.length === 0) {
+                    console.log('No se recibieron datos del tour, esperando...');
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

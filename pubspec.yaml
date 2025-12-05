@@ -88,6 +88,7 @@ dependencies:
   
   # 360° Panorama Viewer
   panorama_viewer: ^2.0.4
+  webview_flutter: 4.13.0  # WebView para Tour Opción 1
   
   # Photo Viewer with Zoom
   photo_view: 0.15.0
@@ -144,6 +145,10 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/videos/
+    - assets/tour_360_viewer_op1.html
+    - assets/tour_360_builder_op1.html
+    - assets/tour_360_builder_op2.html
+    - assets/tour_360_builder_test.html  # 🧪 Test
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

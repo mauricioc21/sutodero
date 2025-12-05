@@ -1,7 +1,13 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode, debugPrint;
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/camera_360_service.dart';
 import '../../services/storage_service.dart';
 import '../../services/virtual_tour_service.dart';
+import '../../services/saved_photos_360_service.dart';
+import '../../services/auth_service.dart';
 import '../../models/inventory_property.dart';
 import '../../config/app_theme.dart';
 import '../../widgets/camera_360_live_preview.dart';
@@ -24,6 +30,8 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
   final Camera360Service _camera360Service = Camera360Service();
   final StorageService _storageService = StorageService();
   final VirtualTourService _virtualTourService = VirtualTourService();
+  final SavedPhotos360Service _savedPhotosService = SavedPhotos360Service();
+  final AuthService _authService = AuthService();
 
   List<Camera360Device> _detectedCameras = [];
   bool _isScanning = false;
@@ -87,8 +95,14 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
               
               SizedBox(height: AppTheme.spacingXL),
               
-              // Botón para crear tour virtual
-              if (_capturedPhotos.isNotEmpty) _buildCreateTourButton(),
+              // Botones de acción cuando hay fotos capturadas
+              if (_capturedPhotos.isNotEmpty) ...[
+                _buildSavePhotosButton(),
+                SizedBox(height: AppTheme.spacingMD),
+                _buildCreateTourOption1Button(),
+                SizedBox(height: AppTheme.spacingMD),
+                _buildCreateTourOption2Button(),
+              ],
             ],
           ),
         ),
@@ -467,9 +481,43 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
   }
 
   /// Botón para crear tour virtual
-  Widget _buildCreateTourButton() {
+  /// Botón para guardar fotografías sin crear tour
+  Widget _buildSavePhotosButton() {
+    return OutlinedButton.icon(
+      onPressed: _isUploading ? null : _savePhotosOnly,
+      style: OutlinedButton.styleFrom(
+        side: const BorderSide(color: AppTheme.dorado, width: 2),
+        foregroundColor: AppTheme.dorado,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        ),
+      ),
+      icon: _isUploading
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.dorado),
+              ),
+            )
+          : const Icon(Icons.save_alt, size: 28),
+      label: Text(
+        _isUploading ? 'Guardando...' : 'GUARDAR FOTOGRAFÍAS (${_capturedPhotos.length})',
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1,
+        ),
+      ),
+    );
+  }
+
+  /// Botón para crear tour virtual - Opción 1
+  Widget _buildCreateTourOption1Button() {
     return ElevatedButton.icon(
-      onPressed: _isUploading ? null : _createVirtualTour,
+      onPressed: _isUploading ? null : () => _createVirtualTour(option: 1),
       style: ElevatedButton.styleFrom(
         backgroundColor: AppTheme.dorado,
         foregroundColor: AppTheme.negro,
@@ -489,7 +537,40 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
             )
           : const Icon(Icons.panorama_photosphere, size: 28),
       label: Text(
-        _isUploading ? 'Creando Tour...' : 'CREAR TOUR VIRTUAL (${_capturedPhotos.length} fotos)',
+        _isUploading ? 'Creando Tour...' : 'CREAR TOUR OP 1 (${_capturedPhotos.length} fotos)',
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1,
+        ),
+      ),
+    );
+  }
+
+  /// Botón para crear tour virtual - Opción 2
+  Widget _buildCreateTourOption2Button() {
+    return ElevatedButton.icon(
+      onPressed: _isUploading ? null : () => _createVirtualTour(option: 2),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF9C27B0), // Color púrpura para diferenciarlo
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        ),
+      ),
+      icon: _isUploading
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            )
+          : const Icon(Icons.view_in_ar, size: 28),
+      label: Text(
+        _isUploading ? 'Creando Tour...' : 'CREAR TOUR OP 2 (${_capturedPhotos.length} fotos)',
         style: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,
@@ -501,17 +582,17 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
 
   /// Seleccionar desde galería
   Future<void> _pickFromGallery() async {
-    final photoPath = await _camera360Service.pickFrom360Gallery();
-    if (photoPath != null) {
-      await _uploadAndAddPhoto(photoPath);
+    final photo = await _camera360Service.pickFrom360Gallery();
+    if (photo != null) {
+      await _uploadAndAddPhotoFromXFile(photo);
     }
   }
 
   /// Capturar con cámara del teléfono
   Future<void> _captureWithPhone() async {
-    final photoPath = await _camera360Service.captureWithPhoneCamera();
-    if (photoPath != null) {
-      await _uploadAndAddPhoto(photoPath);
+    final photo = await _camera360Service.captureWithPhoneCamera();
+    if (photo != null) {
+      await _uploadAndAddPhotoFromXFile(photo);
     }
   }
 
@@ -537,6 +618,67 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
             backgroundColor: Colors.green,
           ),
         );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error al subir foto: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploading = false);
+      }
+    }
+  }
+
+  /// Subir foto desde XFile (compatible con web)
+  Future<void> _uploadAndAddPhotoFromXFile(XFile photo) async {
+    try {
+      setState(() => _isUploading = true);
+
+      // ✅ FIX: Convertir a Data URL en web para compatibilidad
+      String photoPath;
+      if (kIsWeb) {
+        final bytes = await photo.readAsBytes();
+        final base64String = base64Encode(bytes);
+        photoPath = 'data:image/jpeg;base64,$base64String';
+        
+        // En web, agregar directamente como Data URL
+        if (mounted) {
+          setState(() {
+            _capturedPhotos.add(photoPath);
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Foto agregada exitosamente'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        // En móvil, subir a Firebase Storage
+        final photoUrl = await _storageService.uploadInventoryActPhoto(
+          actId: widget.property.id,
+          filePath: photo.path,
+        );
+
+        if (photoUrl != null && mounted) {
+          setState(() {
+            _capturedPhotos.add(photoUrl);
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Foto agregada exitosamente'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -654,12 +796,17 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
     );
   }
 
-  /// Crear tour virtual
-  Future<void> _createVirtualTour() async {
+  /// Crear tour virtual con diferentes opciones
+  Future<void> _createVirtualTour({required int option}) async {
     if (_capturedPhotos.isEmpty) return;
 
     try {
       setState(() => _isUploading = true);
+
+      // Descripción según la opción seleccionada
+      final String description = option == 1
+          ? 'Tour Virtual Opción 1 - ${widget.property.direccion}'
+          : 'Tour Virtual Opción 2 - ${widget.property.direccion}';
 
       // Crear tour virtual
       await _virtualTourService.createTour(
@@ -667,13 +814,13 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
         propertyName: widget.property.direccion,
         propertyAddress: widget.property.direccion,
         photo360Urls: _capturedPhotos,
-        description: 'Tour virtual de ${widget.property.direccion}',
+        description: description,
       );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Tour virtual creado exitosamente'),
+          SnackBar(
+            content: Text('✅ Tour virtual creado exitosamente (Opción $option)'),
             backgroundColor: Colors.green,
             duration: Duration(seconds: 2),
           ),
@@ -691,6 +838,94 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
           SnackBar(
             content: Text('❌ Error al crear tour: $e'),
             backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploading = false);
+      }
+    }
+  }
+
+  /// Guardar fotografías sin crear tour virtual
+  Future<void> _savePhotosOnly() async {
+    if (_capturedPhotos.isEmpty) return;
+
+    try {
+      setState(() => _isUploading = true);
+
+      // Obtener el usuario actual - intentar primero AuthService, luego Firebase Auth directo
+      String? userId;
+      
+      // Intento 1: Usar AuthService
+      if (_authService.currentUser != null) {
+        userId = _authService.currentUser!.uid;
+        if (kDebugMode) {
+          debugPrint('✅ Usuario obtenido de AuthService: $userId');
+        }
+      } else {
+        // Intento 2: Usar Firebase Auth directo como respaldo
+        final firebaseUser = FirebaseAuth.instance.currentUser;
+        if (firebaseUser != null) {
+          userId = firebaseUser.uid;
+          if (kDebugMode) {
+            debugPrint('✅ Usuario obtenido de FirebaseAuth directo: $userId');
+          }
+        }
+      }
+
+      if (userId == null) {
+        if (kDebugMode) {
+          debugPrint('❌ No se pudo obtener el usuario autenticado');
+        }
+        throw Exception('Debes iniciar sesión para guardar fotografías');
+      }
+
+      // Guardar todas las fotos en Firebase
+      await _savedPhotosService.saveMultiplePhotos(
+        userId: userId,
+        propertyId: widget.property.id,
+        photoUrls: _capturedPhotos,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    '✅ ${_capturedPhotos.length} fotografías guardadas exitosamente',
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+
+        // NO limpiar las fotos para que puedan usarse después en "Crear Tour"
+        // Las fotos permanecen disponibles para crear el tour cuando el usuario quiera
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text('❌ Error al guardar fotografías: $e'),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       }

@@ -15,6 +15,7 @@ class VirtualTourService {
     required String propertyAddress,
     required List<String> photo360Urls,
     String description = '',
+    int tourOption = 1, // 1 = Pannellum, 2 = PanoramaViewer
   }) async {
     try {
       final tour = VirtualTourModel(
@@ -25,6 +26,7 @@ class VirtualTourService {
         photo360Urls: photo360Urls,
         description: description,
         createdAt: DateTime.now(),
+        tourOption: tourOption,
       );
 
       final docRef = await _firestore.collection(_collection).add(tour.toMap());
