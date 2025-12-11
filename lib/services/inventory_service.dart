@@ -1,329 +1,339 @@
-import 'package:hive/hive.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import '../services/auth_service.dart';
 import 'package:uuid/uuid.dart';
+import '../models/inventory_model.dart';
+import '../models/ticket_model.dart';
 import '../models/inventory_property.dart';
 import '../models/property_room.dart';
+import 'ticket_service.dart';
 
-/// Servicio para gestionar inventarios de propiedades
 class InventoryService {
-  static const String _propertiesBoxName = 'properties';
-  static const String _roomsBoxName = 'rooms';
-  
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final TicketService _ticketService = TicketService();
+  final Uuid _uuid = const Uuid();
+
   static final InventoryService _instance = InventoryService._internal();
   factory InventoryService() => _instance;
   InventoryService._internal();
 
-  final Uuid _uuid = const Uuid();
+  /// GET /inventario/maestro/:id
+  /// Obtiene el inventario actual asignado al maestro
+  Future<List<MaestroInventoryItem>> getMaestroInventory(String maestroId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('maestro_inventory')
+          .doc(maestroId)
+          .collection('items')
+          .orderBy('nombre')
+          .get();
+
+      return snapshot.docs
+          .map((doc) => MaestroInventoryItem.fromMap(doc.data()))
+          .toList();
+    } catch (e) {
+      if (kDebugMode) debugPrint('⚠️ Error obteniendo inventario: $e');
+      return [];
+    }
+  }
+
+  /// POST /inventario/solicitud
+  /// Crea una solicitud de material
+  Future<bool> createMaterialRequest(MaterialRequest request) async {
+    try {
+      await _firestore.collection('material_requests').doc(request.id).set(request.toMap());
+      
+      // Simular notificación al equipo de inventario
+      _notifyInventoryTeam(request);
+      
+      return true;
+    } catch (e) {
+      if (kDebugMode) debugPrint('⚠️ Error creando solicitud: $e');
+      return false;
+    }
+  }
+
+  /// POST /inventario/reporte-uso
+  /// Reporta uso, daño o pérdida de material
+  /// Si es uso en ticket, actualiza también el ticket.
+  Future<Map<String, dynamic>> reportMaterialUsage({
+    required String maestroId,
+    required String itemId,
+    required double cantidadUsada,
+    required InventoryTransactionType tipo,
+    String? ticketId,
+    String? evidenciaFoto,
+    String? comentario,
+  }) async {
+    try {
+      // 1. Obtener item actual para validación
+      final itemRef = _firestore
+          .collection('maestro_inventory')
+          .doc(maestroId)
+          .collection('items')
+          .doc(itemId);
+
+      final itemDoc = await itemRef.get();
+      if (!itemDoc.exists) {
+        return {'success': false, 'message': 'Item no encontrado en inventario'};
+      }
+
+      final item = MaestroInventoryItem.fromMap(itemDoc.data()!);
+
+      // 2. Validación de Stock
+      if (item.cantidadActual < cantidadUsada) {
+        return {
+          'success': false, 
+          'message': 'Stock insuficiente. Tienes ${item.cantidadActual} ${item.unidad}.'
+        };
+      }
+
+      // 3. Crear Transacción (Historial)
+      final transaction = InventoryTransaction(
+        id: _uuid.v4(),
+        maestroId: maestroId,
+        itemId: itemId,
+        nombreItem: item.nombre,
+        cantidad: -cantidadUsada, // Negativo porque sale
+        tipo: tipo,
+        ticketId: ticketId,
+        evidenciaFoto: evidenciaFoto,
+        comentario: comentario,
+        fecha: DateTime.now(),
+      );
+
+      // 4. Batch Write (Transacción atómica)
+      final batch = _firestore.batch();
+
+      // 4a. Registrar en historial global
+      final transRef = _firestore.collection('inventory_transactions').doc(transaction.id);
+      batch.set(transRef, transaction.toMap());
+
+      // 4b. Actualizar stock del maestro
+      batch.update(itemRef, {
+        'cantidadActual': FieldValue.increment(-cantidadUsada),
+        'ultimaActualizacion': Timestamp.now(),
+      });
+
+      // 4c. Si es ticket, actualizar ticket
+      if (ticketId != null && tipo == InventoryTransactionType.uso_ticket) {
+        // Usamos el TicketService existente o actualizamos directamente
+        // Aquí simulamos la llamada interna para agregar material al ticket
+        // Nota: Esto es asíncrono fuera del batch de Firestore, o debería ser parte de la lógica
+        // Para consistencia estricta, idealmente se hace update aquí, pero usaremos el servicio helper después.
+      }
+
+      await batch.commit();
+
+      // Paso extra: Actualizar Ticket (fuera del batch de inventario por separación de servicios)
+      if (ticketId != null && tipo == InventoryTransactionType.uso_ticket) {
+        final ticketMaterial = TicketMaterial(
+          id: transaction.id,
+          nombre: item.nombre,
+          cantidad: cantidadUsada,
+          unidad: item.unidad,
+          notas: comentario ?? 'Reportado desde inventario',
+        );
+        await _ticketService.addMaterial(ticketId, ticketMaterial);
+      }
+      
+      // Notificar si es daño o pérdida
+      if (tipo == InventoryTransactionType.danado || tipo == InventoryTransactionType.perdido) {
+        _notifyInventoryTeamLoss(transaction);
+      }
+
+      return {'success': true, 'message': 'Reporte registrado correctamente'};
+
+    } catch (e) {
+      if (kDebugMode) debugPrint('⚠️ Error reportando uso: $e');
+      return {'success': false, 'message': 'Error interno: $e'};
+    }
+  }
+
+  /// GET /inventario/historial/:id
+  Future<List<InventoryTransaction>> getHistory(String maestroId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('inventory_transactions')
+          .where('maestroId', isEqualTo: maestroId)
+          .orderBy('fecha', descending: true)
+          .limit(50)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => InventoryTransaction.fromMap(doc.data()))
+          .toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // --- Helpers de Notificación (Simulados) ---
   
-  Box<Map>? _propertiesBox;
-  Box<Map>? _roomsBox;
-
-  /// Inicializa Hive y abre las cajas
-  Future<void> init() async {
-    await Hive.initFlutter();
-    _propertiesBox = await Hive.openBox<Map>(_propertiesBoxName);
-    _roomsBox = await Hive.openBox<Map>(_roomsBoxName);
+  void _notifyInventoryTeam(MaterialRequest request) {
+    if (kDebugMode) {
+      print('🔔 NOTIFICACIÓN A BODEGA: Nueva solicitud de ${request.cantidadSolicitada} ${request.nombreMaterial} por maestro ${request.maestroId}');
+    }
+    // Aquí iría la lógica de FCM o Email
   }
 
-  /// Obtiene todas las propiedades
+  void _notifyInventoryTeamLoss(InventoryTransaction trans) {
+    if (kDebugMode) {
+      print('🔔 ALERTA A BODEGA: Material ${trans.nombreItem} reportado como ${trans.tipo} por maestro ${trans.maestroId}');
+    }
+  }
+
+  // --- Property Management Methods ---
+
   Future<List<InventoryProperty>> getAllProperties() async {
-    if (_propertiesBox == null) await init();
-    
-    return _propertiesBox!.values
-        .map((map) => InventoryProperty.fromMap(Map<String, dynamic>.from(map)))
-        .toList()
-      ..sort((a, b) => b.fechaCreacion.compareTo(a.fechaCreacion));
-  }
-
-  /// Obtiene una propiedad por ID
-  Future<InventoryProperty?> getProperty(String id) async {
-    if (_propertiesBox == null) await init();
-    
-    final map = _propertiesBox!.get(id);
-    if (map == null) return null;
-    return InventoryProperty.fromMap(Map<String, dynamic>.from(map));
-  }
-
-  /// Guarda una propiedad
-  Future<void> saveProperty(InventoryProperty property) async {
-    if (_propertiesBox == null) await init();
-    
-    property.fechaActualizacion = DateTime.now();
-    await _propertiesBox!.put(property.id, property.toMap());
-  }
-
-  /// Crea una nueva propiedad
-  Future<InventoryProperty> createProperty({
-    required String userId,
-    required String direccion,
-    String? clienteNombre,
-    String? clienteTelefono,
-    String? clienteEmail,
-    PropertyType tipo = PropertyType.casa,
-    String? descripcion,
-    double? area,
-    int? numeroHabitaciones,
-    int? numeroBanos,
-    String? pais,
-    String? ciudad,
-    String? municipio,
-    String? barrio,
-    int? numeroNiveles,
-    String? numeroInterior,
-    double? areaLote,
-    String? codigoInterno,
-    double? precioAlquilerDeseado,
-    String? nombreAgente,
-    String? tipoDocumento,
-    String? numeroDocumento,
-  }) async {
-    final property = InventoryProperty(
-      id: _uuid.v4(),
-      userId: userId,
-      direccion: direccion,
-      clienteNombre: clienteNombre,
-      clienteTelefono: clienteTelefono,
-      clienteEmail: clienteEmail,
-      tipo: tipo,
-      descripcion: descripcion,
-      area: area,
-      numeroHabitaciones: numeroHabitaciones,
-      numeroBanos: numeroBanos,
-      pais: pais,
-      ciudad: ciudad,
-      municipio: municipio,
-      barrio: barrio,
-      numeroNiveles: numeroNiveles,
-      numeroInterior: numeroInterior,
-      areaLote: areaLote,
-      codigoInterno: codigoInterno,
-      precioAlquilerDeseado: precioAlquilerDeseado,
-      nombreAgente: nombreAgente,
-      tipoDocumento: tipoDocumento,
-      numeroDocumento: numeroDocumento,
-    );
-
-    await saveProperty(property);
-    return property;
-  }
-
-  /// Actualiza una propiedad
-  Future<void> updateProperty(InventoryProperty property) async {
-    property.fechaActualizacion = DateTime.now();
-    await saveProperty(property);
-  }
-
-  /// Elimina una propiedad y todos sus espacios
-  Future<void> deleteProperty(String propertyId) async {
-    if (_propertiesBox == null) await init();
-    
-    // Eliminar todos los espacios de la propiedad
-    final rooms = await getRoomsByProperty(propertyId);
-    for (final room in rooms) {
-      await deleteRoom(room.id);
-    }
-    
-    // Eliminar la propiedad
-    await _propertiesBox!.delete(propertyId);
-  }
-
-  /// Obtiene todos los espacios de una propiedad
-  Future<List<PropertyRoom>> getRoomsByProperty(String propertyId) async {
-    if (_roomsBox == null) await init();
-    
-    if (kDebugMode) {
-      debugPrint('🔍 [InventoryService] Buscando espacios para propiedad: $propertyId');
-      debugPrint('   Total de espacios en box: ${_roomsBox!.length}');
-    }
-    
-    final allRooms = _roomsBox!.values
-        .map((map) {
-          try {
-            return PropertyRoom.fromMap(Map<String, dynamic>.from(map));
-          } catch (e) {
-            if (kDebugMode) {
-              debugPrint('❌ Error deserializando espacio: $e');
-              debugPrint('   Datos del map: $map');
-            }
-            return null;
-          }
-        })
-        .whereType<PropertyRoom>()
-        .where((room) => room.propertyId == propertyId)
-        .toList()
-      ..sort((a, b) => a.fechaCreacion.compareTo(b.fechaCreacion));
-    
-    if (kDebugMode) {
-      debugPrint('✅ Espacios encontrados: ${allRooms.length}');
-      for (var room in allRooms) {
-        debugPrint('   - ${room.nombre}: ${room.items.length} elementos');
-      }
-    }
-    
-    return allRooms;
-  }
-
-  /// Obtiene un espacio por ID
-  Future<PropertyRoom?> getRoom(String id) async {
-    if (_roomsBox == null) await init();
-    
-    final map = _roomsBox!.get(id);
-    if (map == null) return null;
-    return PropertyRoom.fromMap(Map<String, dynamic>.from(map));
-  }
-
-  /// Guarda un espacio
-  Future<void> saveRoom(PropertyRoom room) async {
-    if (_roomsBox == null) await init();
-    
-    room.fechaActualizacion = DateTime.now();
-    final roomMap = room.toMap();
-    
-    if (kDebugMode) {
-      debugPrint('💾 Guardando espacio: ${room.nombre}');
-      debugPrint('   ID: ${room.id}');
-      debugPrint('   Propiedad ID: ${room.propertyId}');
-      debugPrint('   Elementos: ${room.items.length}');
-      debugPrint('   Map serializado: ${roomMap.keys}');
-    }
-    
-    await _roomsBox!.put(room.id, roomMap);
-    
-    if (kDebugMode) {
-      debugPrint('✅ Espacio guardado exitosamente');
-      // Verificar que se guardó
-      final saved = _roomsBox!.get(room.id);
-      if (saved != null) {
-        debugPrint('✅ Verificación: Espacio encontrado en box');
-      } else {
-        debugPrint('❌ ERROR: Espacio NO encontrado en box después de guardar');
-      }
+    try {
+      final snapshot = await _firestore.collection('properties').orderBy('name').get();
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return InventoryProperty.fromMap(data);
+      }).toList();
+    } catch (e) {
+      if (kDebugMode) debugPrint('Error getting properties: $e');
+      return [];
     }
   }
 
-  /// Crea un nuevo espacio
-  Future<PropertyRoom> createRoom({
-    required String propertyId,
-    required String nombre,
-    RoomType tipo = RoomType.otro,
-    SpaceCondition estado = SpaceCondition.bueno,
-    String? descripcion,
-    double? ancho,
-    double? largo,
-    double? altura,
-  }) async {
-    final room = PropertyRoom(
-      id: _uuid.v4(),
-      propertyId: propertyId,
-      nombre: nombre,
-      tipo: tipo,
-      estado: estado,
-      descripcion: descripcion,
-      ancho: ancho,
-      largo: largo,
-      altura: altura,
-    );
-
-    await saveRoom(room);
-    return room;
-  }
-
-  /// Actualiza un espacio
-  Future<void> updateRoom(PropertyRoom room) async {
-    room.fechaActualizacion = DateTime.now();
-    await saveRoom(room);
-  }
-
-  /// Elimina un espacio
-  Future<void> deleteRoom(String roomId) async {
-    if (_roomsBox == null) await init();
-    await _roomsBox!.delete(roomId);
-  }
-
-  /// Agrega una foto a un espacio
-  Future<void> addRoomPhoto(String roomId, String photoUrl) async {
-    final room = await getRoom(roomId);
-    if (room == null) return;
-
-    room.fotos.add(photoUrl);
-    await updateRoom(room);
-  }
-
-  /// Establece la foto 360° de un espacio
-  Future<void> setRoom360Photo(String roomId, String photo360Url) async {
-    final room = await getRoom(roomId);
-    if (room == null) return;
-
-    room.foto360Url = photo360Url;
-    await updateRoom(room);
-  }
-
-  /// Agrega un problema a un espacio
-  Future<void> addRoomProblem(String roomId, String problema) async {
-    final room = await getRoom(roomId);
-    if (room == null) return;
-
-    if (!room.problemas.contains(problema)) {
-      room.problemas.add(problema);
-      await updateRoom(room);
-    }
-  }
-
-  /// Busca propiedades por dirección o cliente
   Future<List<InventoryProperty>> searchProperties(String query) async {
-    final allProperties = await getAllProperties();
-    final queryLower = query.toLowerCase();
-
-    return allProperties.where((property) {
-      return property.direccion.toLowerCase().contains(queryLower) ||
-          (property.clienteNombre?.toLowerCase().contains(queryLower) ?? false) ||
-          (property.descripcion?.toLowerCase().contains(queryLower) ?? false);
-    }).toList();
-  }
-
-  /// Obtiene estadísticas de inventario
-  Future<Map<String, dynamic>> getStatistics() async {
-    final properties = await getAllProperties();
-    final allRooms = <PropertyRoom>[];
-    
-    for (final property in properties) {
-      final rooms = await getRoomsByProperty(property.id);
-      allRooms.addAll(rooms);
+    try {
+      // Basic client-side filtering for search query simulation
+      final allProps = await getAllProperties();
+      final lowerQuery = query.toLowerCase();
+      return allProps.where((p) => 
+        (p.clienteNombre ?? '').toLowerCase().contains(lowerQuery) || 
+        p.direccion.toLowerCase().contains(lowerQuery)
+      ).toList();
+    } catch (e) {
+      return [];
     }
-
-    return {
-      'totalProperties': properties.length,
-      'activeProperties': properties.where((p) => p.activa).length,
-      'totalRooms': allRooms.length,
-      'roomsWith360': allRooms.where((r) => r.tiene360).length,
-      'propertiesByType': _countByType(properties),
-      'roomsByCondition': _countByCondition(allRooms),
-    };
   }
 
-  Map<String, int> _countByType(List<InventoryProperty> properties) {
-    final counts = <String, int>{};
-    for (final property in properties) {
-      final typeName = property.tipo.displayName;
-      counts[typeName] = (counts[typeName] ?? 0) + 1;
+  Future<InventoryProperty?> getProperty(String id) async {
+    try {
+      final doc = await _firestore.collection('properties').doc(id).get();
+      if (doc.exists) {
+        final data = doc.data()!;
+        data['id'] = doc.id;
+        return InventoryProperty.fromMap(data);
+      }
+      return null;
+    } catch (e) {
+      return null;
     }
-    return counts;
   }
 
-  Map<String, int> _countByCondition(List<PropertyRoom> rooms) {
-    final counts = <String, int>{};
-    for (final room in rooms) {
-      final conditionName = room.estado.displayName;
-      counts[conditionName] = (counts[conditionName] ?? 0) + 1;
+  Future<void> createProperty(InventoryProperty property) async {
+    await _firestore.collection('properties').doc(property.id).set(property.toMap());
+  }
+
+  Future<void> updateProperty(InventoryProperty property) async {
+    await _firestore.collection('properties').doc(property.id).update(property.toMap());
+  }
+
+  Future<void> deleteProperty(String id) async {
+    await _firestore.collection('properties').doc(id).delete();
+  }
+
+  // --- Room Management Methods ---
+
+  Future<List<PropertyRoom>> getRoomsByProperty(String propertyId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('properties')
+          .doc(propertyId)
+          .collection('rooms')
+          .orderBy('name')
+          .get();
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return PropertyRoom.fromMap(data);
+      }).toList();
+    } catch (e) {
+      return [];
     }
-    return counts;
   }
 
-  /// Cierra las cajas de Hive
-  Future<void> dispose() async {
-    await _propertiesBox?.close();
-    await _roomsBox?.close();
+  Future<PropertyRoom?> getRoom(String propertyId, String roomId) async {
+    try {
+      final doc = await _firestore
+          .collection('properties')
+          .doc(propertyId)
+          .collection('rooms')
+          .doc(roomId)
+          .get();
+      if (doc.exists) {
+        final data = doc.data()!;
+        data['id'] = doc.id;
+        return PropertyRoom.fromMap(data);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<void> createRoom(String propertyId, PropertyRoom room) async {
+    await _firestore
+        .collection('properties')
+        .doc(propertyId)
+        .collection('rooms')
+        .doc(room.id)
+        .set(room.toMap());
+  }
+
+  Future<void> updateRoom(String propertyId, PropertyRoom room) async {
+    await _firestore
+        .collection('properties')
+        .doc(propertyId)
+        .collection('rooms')
+        .doc(room.id)
+        .update(room.toMap());
+  }
+
+  Future<void> deleteRoom(String propertyId, String roomId) async {
+    await _firestore
+        .collection('properties')
+        .doc(propertyId)
+        .collection('rooms')
+        .doc(roomId)
+        .delete();
+  }
+
+  Future<void> addRoomPhoto(String propertyId, String roomId, String photoUrl) async {
+    try {
+      await _firestore
+          .collection('properties')
+          .doc(propertyId)
+          .collection('rooms')
+          .doc(roomId)
+          .update({
+        'photos': FieldValue.arrayUnion([photoUrl]),
+        'lastUpdated': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint('Error adding photo: $e');
+    }
+  }
+
+  Future<void> setRoom360Photo(String propertyId, String roomId, String photo360Url) async {
+    try {
+      await _firestore
+          .collection('properties')
+          .doc(propertyId)
+          .collection('rooms')
+          .doc(roomId)
+          .update({
+        'photo360Url': photo360Url,
+        'has360View': true,
+        'lastUpdated': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      debugPrint('Error setting 360 photo: $e');
+    }
   }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/ticket_model.dart';
+import 'package:provider/provider.dart';
+import '../../services/auth_service.dart';
 import '../../models/user_model.dart';
 import '../../models/maestro_profile_model.dart';
 import '../../services/ticket_service.dart';
@@ -36,7 +38,14 @@ class _TicketsScreenState extends State<TicketsScreen> {
     if (widget.initialFilter != null) {
       _filterStatus = widget.initialFilter!;
     }
-    _loadTickets();
+    
+    // Escuchar cambios en la autenticación para recargar tickets automáticamente
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      authService.addListener(_onAuthChanged);
+      _loadTickets(); // Carga inicial
+    });
+    
     _loadMaestros();
     _searchController.addListener(() {
       setState(() {
@@ -47,17 +56,64 @@ class _TicketsScreenState extends State<TicketsScreen> {
 
   @override
   void dispose() {
+    // Limpiar listener
+    final authService = Provider.of<AuthService>(context, listen: false);
+    authService.removeListener(_onAuthChanged);
+    
     _searchController.dispose();
     super.dispose();
   }
 
+  void _onAuthChanged() {
+    // Si el usuario cambia (login/logout), recargar tickets
+    if (mounted) {
+      _loadTickets();
+    }
+  }
+
   Future<void> _loadTickets() async {
+    // Evitar recargas innecesarias si no está montado
+    if (!mounted) return;
+
     setState(() => _isLoading = true);
-    final tickets = await _ticketService.getAllTickets();
-    setState(() {
-      _tickets = tickets;
-      _isLoading = false;
-    });
+    
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final user = authService.currentUser;
+    
+    // Si no hay usuario cargado aún, esperar un momento o mostrar estado de carga
+    if (user == null && authService.isLoading) {
+      // El listener _onAuthChanged volverá a llamar esto cuando termine de cargar
+      return; 
+    }
+    
+    debugPrint('🔄 Cargando tickets para usuario: ${user?.uid} (${user?.rol})');
+
+    final tickets = await _ticketService.getAllTickets(
+      userId: user?.uid,
+      userRole: user?.rol,
+    );
+    
+    if (mounted) {
+      setState(() {
+        _tickets = tickets;
+        _isLoading = false;
+      });
+      
+      if (tickets.isEmpty && _ticketService.lastError != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error cargando tickets: ${_ticketService.lastError}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Reintentar',
+              textColor: Colors.white,
+              onPressed: _loadTickets,
+            ),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _loadMaestros() async {
@@ -208,9 +264,14 @@ class _TicketsScreenState extends State<TicketsScreen> {
         return AppTheme.dorado;
       case TicketStatus.pendiente:
         return const Color(0xFFFF9800);
-      case TicketStatus.enProgreso:
+      case TicketStatus.asignado:
+      case TicketStatus.en_camino:
+      case TicketStatus.en_lugar:
         return const Color(0xFF2196F3);
-      case TicketStatus.completado:
+      case TicketStatus.en_ejecucion:
+      case TicketStatus.pendiente_repuestos:
+        return const Color(0xFF2196F3);
+      case TicketStatus.finalizado:
         return const Color(0xFF4CAF50);
       case TicketStatus.cancelado:
         return const Color(0xFF757575);
@@ -242,6 +303,141 @@ class _TicketsScreenState extends State<TicketsScreen> {
       default:
         return Icons.build;
     }
+  }
+
+  void _showQuickCreateDialog() {
+    final _quickFormKey = GlobalKey<FormState>();
+    final _nameController = TextEditingController();
+    ServiceType _selectedService = ServiceType.plomeria;
+    bool _isCreating = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            backgroundColor: AppTheme.grisOscuro,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusLG)),
+            title: Row(
+              children: [
+                const Icon(Icons.flash_on, color: AppTheme.dorado),
+                const SizedBox(width: 8),
+                const Text('Ticket Rápido', style: TextStyle(color: AppTheme.blanco)),
+              ],
+            ),
+            content: Form(
+              key: _quickFormKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: _nameController,
+                    style: const TextStyle(color: AppTheme.blanco),
+                    decoration: InputDecoration(
+                      labelText: 'Nombre del Cliente',
+                      labelStyle: const TextStyle(color: Color(0xFFFAB334)),
+                      hintText: 'Ej: Juan Pérez',
+                      hintStyle: TextStyle(color: Colors.grey[600]),
+                      enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+                      focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFFAB334))),
+                    ),
+                    validator: (value) => value?.isEmpty ?? true ? 'El nombre es obligatorio' : null,
+                  ),
+                  const SizedBox(height: 20),
+                  DropdownButtonFormField<ServiceType>(
+                    value: _selectedService,
+                    dropdownColor: AppTheme.grisOscuro,
+                    style: const TextStyle(color: AppTheme.blanco),
+                    decoration: const InputDecoration(
+                      labelText: 'Servicio Solicitado',
+                      labelStyle: TextStyle(color: Color(0xFFFAB334)),
+                      enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+                      focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFFFAB334))),
+                    ),
+                    items: ServiceType.values.map((type) => DropdownMenuItem(
+                      value: type,
+                      child: Text(type.displayName),
+                    )).toList(),
+                    onChanged: (value) => setStateDialog(() => _selectedService = value!),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.dorado,
+                  foregroundColor: AppTheme.negro,
+                ),
+                onPressed: _isCreating ? null : () async {
+                  if (_quickFormKey.currentState!.validate()) {
+                    setStateDialog(() => _isCreating = true);
+                    
+                    final authService = Provider.of<AuthService>(context, listen: false);
+                    final user = authService.currentUser;
+                    
+                    if (user == null) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Error: No hay sesión activa'), backgroundColor: Colors.red),
+                      );
+                      return;
+                    }
+
+                    try {
+                      final result = await _ticketService.createTicket(
+                        userId: user.uid,
+                        titulo: 'Servicio Rápido: ${_selectedService.displayName}',
+                        descripcion: 'Ticket creado rápidamente por ${user.nombre}.',
+                        tipoServicio: _selectedService,
+                        clienteId: user.uid, // Asignamos al creador para permisos
+                        clienteNombre: _nameController.text.trim(), // Nombre manual del cliente
+                        prioridad: TicketPriority.media,
+                        propiedadDireccion: 'Sin dirección registrada', // Placeholder
+                      );
+
+                      if (mounted) {
+                        Navigator.pop(context); // Close dialog
+                        if (result['success'] == true) {
+                          _loadTickets(); // Refresh list
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('⚡ Ticket rápido creado exitosamente'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('❌ Error: ${result['message']}'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                        );
+                      }
+                    }
+                  }
+                },
+                child: _isCreating 
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.negro))
+                  : const Text('Crear Ticket'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -445,12 +641,12 @@ class _TicketsScreenState extends State<TicketsScreen> {
                       _buildFilterMenuItem(
                         'En Progreso',
                         'en_progreso',
-                        _tickets.where((t) => t.estado == TicketStatus.enProgreso).length,
+                        _tickets.where((t) => t.estado == TicketStatus.en_ejecucion).length,
                       ),
                       _buildFilterMenuItem(
                         'Completado',
                         'completado',
-                        _tickets.where((t) => t.estado == TicketStatus.completado).length,
+                        _tickets.where((t) => t.estado == TicketStatus.finalizado).length,
                       ),
                     ],
                   ),
@@ -551,6 +747,16 @@ class _TicketsScreenState extends State<TicketsScreen> {
                               style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                             ),
                             SizedBox(height: AppTheme.spacingSM),
+                            // DIAGNÓSTICO VISIBLE
+                            if (_ticketService.lastError != null)
+                              Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Text(
+                                  'Error técnico: ${_ticketService.lastError}',
+                                  style: const TextStyle(color: Colors.red, fontSize: 12),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
                             Text(
                               'Crea tu primer ticket de trabajo',
                               style: TextStyle(fontSize: 14, color: Colors.grey[700]),
@@ -573,18 +779,34 @@ class _TicketsScreenState extends State<TicketsScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AddEditTicketScreen()),
-          );
-          _loadTickets();
-        },
-        backgroundColor: AppTheme.dorado,
-        foregroundColor: AppTheme.grisOscuro,
-        icon: const Icon(Icons.add),
-        label: const Text('Nuevo Ticket'),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton.extended(
+            heroTag: 'btn_rapido',
+            onPressed: _showQuickCreateDialog,
+            backgroundColor: const Color(0xFFE65100),
+            foregroundColor: Colors.white,
+            icon: const Icon(Icons.flash_on),
+            label: const Text('Rápido'),
+          ),
+          const SizedBox(height: 16),
+          FloatingActionButton.extended(
+            heroTag: 'btn_nuevo',
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AddEditTicketScreen()),
+              );
+              _loadTickets();
+            },
+            backgroundColor: AppTheme.dorado,
+            foregroundColor: AppTheme.grisOscuro,
+            icon: const Icon(Icons.add),
+            label: const Text('Nuevo Ticket'),
+          ),
+        ],
       ),
     );
   }
@@ -616,9 +838,9 @@ class _TicketsScreenState extends State<TicketsScreen> {
       case 'pendiente':
         return _tickets.where((t) => t.estado == TicketStatus.pendiente).length;
       case 'en_progreso':
-        return _tickets.where((t) => t.estado == TicketStatus.enProgreso).length;
+        return _tickets.where((t) => t.estado == TicketStatus.en_ejecucion).length;
       case 'completado':
-        return _tickets.where((t) => t.estado == TicketStatus.completado).length;
+        return _tickets.where((t) => t.estado == TicketStatus.finalizado).length;
       default:
         return _tickets.length;
     }

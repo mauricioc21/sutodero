@@ -27,7 +27,10 @@ class SavedPhotos360Service {
       description: description,
     );
 
+    // Guardar en subcolección del usuario para evitar problemas de permisos
     await _firestore
+        .collection('users')
+        .doc(userId)
         .collection(_collectionName)
         .doc(id)
         .set(photo.toMap());
@@ -55,9 +58,11 @@ class SavedPhotos360Service {
     return savedPhotos;
   }
 
-  /// Obtener fotos guardadas de una propiedad
-  Future<List<SavedPhoto360>> getSavedPhotosByProperty(String propertyId) async {
+  /// Obtener fotos guardadas de una propiedad (requiere userId)
+  Future<List<SavedPhoto360>> getSavedPhotosByProperty(String userId, String propertyId) async {
     final snapshot = await _firestore
+        .collection('users')
+        .doc(userId)
         .collection(_collectionName)
         .where('property_id', isEqualTo: propertyId)
         .orderBy('saved_at', descending: true)
@@ -69,20 +74,26 @@ class SavedPhotos360Service {
   }
 
   /// Eliminar una foto guardada
-  Future<void> deletePhoto(String photoId) async {
+  Future<void> deletePhoto(String userId, String photoId) async {
     await _firestore
+        .collection('users')
+        .doc(userId)
         .collection(_collectionName)
         .doc(photoId)
         .delete();
   }
 
   /// Eliminar múltiples fotos guardadas
-  Future<void> deleteMultiplePhotos(List<String> photoIds) async {
+  Future<void> deleteMultiplePhotos(String userId, List<String> photoIds) async {
     final batch = _firestore.batch();
 
     for (final photoId in photoIds) {
       batch.delete(
-        _firestore.collection(_collectionName).doc(photoId)
+        _firestore
+            .collection('users')
+            .doc(userId)
+            .collection(_collectionName)
+            .doc(photoId)
       );
     }
 
@@ -90,8 +101,10 @@ class SavedPhotos360Service {
   }
 
   /// Eliminar todas las fotos de una propiedad
-  Future<void> deletePhotosByProperty(String propertyId) async {
+  Future<void> deletePhotosByProperty(String userId, String propertyId) async {
     final snapshot = await _firestore
+        .collection('users')
+        .doc(userId)
         .collection(_collectionName)
         .where('property_id', isEqualTo: propertyId)
         .get();
@@ -106,8 +119,10 @@ class SavedPhotos360Service {
   }
 
   /// Verificar si una propiedad tiene fotos guardadas
-  Future<bool> hasPhotos(String propertyId) async {
+  Future<bool> hasPhotos(String userId, String propertyId) async {
     final snapshot = await _firestore
+        .collection('users')
+        .doc(userId)
         .collection(_collectionName)
         .where('property_id', isEqualTo: propertyId)
         .limit(1)
@@ -117,8 +132,10 @@ class SavedPhotos360Service {
   }
 
   /// Contar fotos guardadas de una propiedad
-  Future<int> countPhotosByProperty(String propertyId) async {
+  Future<int> countPhotosByProperty(String userId, String propertyId) async {
     final snapshot = await _firestore
+        .collection('users')
+        .doc(userId)
         .collection(_collectionName)
         .where('property_id', isEqualTo: propertyId)
         .get();
@@ -127,8 +144,10 @@ class SavedPhotos360Service {
   }
 
   /// Stream de fotos guardadas por propiedad
-  Stream<List<SavedPhoto360>> watchSavedPhotosByProperty(String propertyId) {
+  Stream<List<SavedPhoto360>> watchSavedPhotosByProperty(String userId, String propertyId) {
     return _firestore
+        .collection('users')
+        .doc(userId)
         .collection(_collectionName)
         .where('property_id', isEqualTo: propertyId)
         .orderBy('saved_at', descending: true)

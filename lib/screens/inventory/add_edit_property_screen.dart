@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 import '../../models/inventory_property.dart';
 import '../../services/inventory_service.dart';
 import '../../services/auth_service.dart';
@@ -617,7 +618,8 @@ class _AddEditPropertyScreenState extends State<AddEditPropertyScreen> {
           throw Exception('Por favor, inicia sesión nuevamente para crear inventarios');
         }
         
-        await _inventoryService.createProperty(
+        final newProperty = InventoryProperty(
+          id: const Uuid().v4(),
           userId: user.uid,
           pais: _paisController.text.trim(),
           ciudad: _ciudadController.text.trim(),
@@ -625,11 +627,11 @@ class _AddEditPropertyScreenState extends State<AddEditPropertyScreen> {
               ? _municipioController.text.trim() : null,
           barrio: _barrioController.text.trim(),
           direccion: _direccionController.text.trim(),
-          numeroNiveles: _numeroNiveles,
+          numeroNiveles: _numeroNiveles!,
           numeroInterior: _numeroInteriorController.text.trim().isNotEmpty 
               ? _numeroInteriorController.text.trim() : null,
           tipo: _selectedType,
-          area: double.tryParse(_areaController.text),
+          area: double.tryParse(_areaController.text) ?? 0,
           areaLote: double.tryParse(_areaLoteController.text),
           codigoInterno: _codigoInternoController.text.trim().isNotEmpty 
               ? _codigoInternoController.text.trim() : null,
@@ -643,7 +645,11 @@ class _AddEditPropertyScreenState extends State<AddEditPropertyScreen> {
           tipoDocumento: _tipoDocumento,
           numeroDocumento: _numeroDocumentoController.text.trim().isNotEmpty 
               ? _numeroDocumentoController.text.trim() : null,
+          fechaCreacion: DateTime.now(),
+          fechaActualizacion: DateTime.now(),
         );
+        
+        await _inventoryService.createProperty(newProperty);
       }
       
       if (mounted) {

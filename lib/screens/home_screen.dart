@@ -13,6 +13,7 @@ import 'property_listing/property_listings_screen.dart';
 import 'profile/user_profile_screen.dart';
 import 'admin/role_requests_screen.dart';
 import 'admin/manage_maestro_profiles_screen.dart';
+import 'camera_360/camera_360_capture_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -248,8 +249,8 @@ class _HomeScreenState extends State<HomeScreen> {
         // Grid de opciones
         final List<Widget> gridItems = [];
         
-        // Tickets - DISPONIBLE PARA MAESTROS
-        if (user?.canManageTickets == true || isMaestro) {
+        // Tickets - DISPONIBLE PARA ADMINS Y COORDINADORES (NO MAESTROS)
+        if (user?.canManageTickets == true && !isMaestro) {
           gridItems.add(_buildFeatureCard(
             context,
             icon: Icons.build_circle,
@@ -263,8 +264,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ));
         }
         
-        // Inventarios - NO para maestros, SÍ para Duppla
-        if (!isMaestro && (user?.canManageInventories == true || user?.isDuppla == true)) {
+        // Inventarios - NO para maestros
+        if (!isMaestro && user?.canManageInventories == true) {
           gridItems.add(_buildFeatureCard(
             context,
             icon: Icons.inventory_2,
@@ -287,10 +288,10 @@ class _HomeScreenState extends State<HomeScreen> {
             description: 'Toma fotos panorámicas',
             iconColor: const Color(0xFF2196F3),
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Selecciona una propiedad primero desde Inventarios'),
-                  backgroundColor: AppTheme.warning,
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => Camera360CaptureScreen(),
                 ),
               );
             },
@@ -316,21 +317,23 @@ class _HomeScreenState extends State<HomeScreen> {
         
         // Mis Tickets Asignados - SOLO PARA MAESTROS
         if (isMaestro) {
-          gridItems.add(_buildFeatureCard(
+          // Añadir como tarjeta ancha para mayor relevancia
+          features.add(_buildWideFeatureCard(
             context,
             icon: Icons.assignment_ind,
             title: 'Mis Tickets',
-            description: 'Tickets asignados a mí',
+            description: 'Gestiona tus tickets asignados',
             iconColor: const Color(0xFF4CAF50),
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const MyAssignedTicketsScreen()),
             ),
           ));
+          features.add(const SizedBox(height: AppTheme.spacingMedium));
         }
         
-        // Escanear QR - NO para maestros
-        if (!isMaestro && user != null) {
+        // Escanear QR - NO para maestros, NO para coordinadores y NO para inventarios
+        if (!isMaestro && user?.isCoordinador != true && user?.isInventarios != true && user != null) {
           gridItems.add(_buildFeatureCard(
             context,
             icon: Icons.qr_code_scanner,

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../models/ticket_model.dart';
 import '../../services/ticket_service.dart';
+import '../../services/auth_service.dart';
 import 'ticket_detail_screen.dart';
 import 'tickets_screen.dart';
 import '../../config/app_theme.dart';
@@ -45,9 +47,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return AppTheme.dorado;
       case TicketStatus.pendiente:
         return const Color(0xFFFF9800);
-      case TicketStatus.enProgreso:
+      case TicketStatus.asignado:
+      case TicketStatus.en_camino:
+      case TicketStatus.en_lugar:
         return const Color(0xFF2196F3);
-      case TicketStatus.completado:
+      case TicketStatus.en_ejecucion:
+      case TicketStatus.pendiente_repuestos:
+        return const Color(0xFF2196F3);
+      case TicketStatus.finalizado:
         return const Color(0xFF4CAF50);
       case TicketStatus.cancelado:
         return const Color(0xFF757575);
@@ -696,7 +703,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   /// Sección de Roles Su Todero
   Widget _buildRolesSuTodero() {
-    final roles = [
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final user = authService.currentUser;
+    final isCoordinadorOnly = (user?.isCoordinador ?? false) && !(user?.isAdministrador ?? false);
+
+    var roles = [
       {
         'nombre': 'Administrador',
         'cargo': 'administrador',
@@ -721,13 +732,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'icon': Icons.inventory_2,
         'color': const Color(0xFF4CAF50),
       },
-      {
-        'nombre': 'Duppla',
-        'cargo': 'duppla',
-        'icon': Icons.domain,
-        'color': const Color(0xFFFF9800),
-      },
     ];
+
+    // Si es coordinador (y no admin), filtrar roles
+    if (isCoordinadorOnly) {
+      roles = roles.where((r) => r['cargo'] == 'coordinador' || r['cargo'] == 'maestro').toList();
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -531,9 +531,7 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
     final user = authService.currentUser;
 
     if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error: Usuario no autenticado')),
-      );
+      _showError('Error de sesión: Usuario no autenticado. Vuelva a ingresar.');
       setState(() => _isLoading = false);
       return;
     }
@@ -543,16 +541,14 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
       
       // Combinar fecha y hora si ambas están seleccionadas
       DateTime? fechaProgramada;
-      if (_fechaVisitaPreferida != null && _horaVisitaPreferida != null) {
+      if (_fechaVisitaPreferida != null) {
         fechaProgramada = DateTime(
           _fechaVisitaPreferida!.year,
           _fechaVisitaPreferida!.month,
           _fechaVisitaPreferida!.day,
-          _horaVisitaPreferida!.hour,
-          _horaVisitaPreferida!.minute,
+          _horaVisitaPreferida?.hour ?? 9,
+          _horaVisitaPreferida?.minute ?? 0,
         );
-      } else if (_fechaVisitaPreferida != null) {
-        fechaProgramada = _fechaVisitaPreferida;
       }
       
       // Construir título completo con código de inmueble si existe
@@ -602,18 +598,23 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
           );
         }
         
-        fotosUrls = await _storageService.uploadTicketPhotos(
-          ticketId: tempTicketId,
-          filePaths: _fotos,
-          isResultPhotos: false,
-        );
+        try {
+          fotosUrls = await _storageService.uploadTicketPhotos(
+            ticketId: tempTicketId,
+            filePaths: _fotos,
+            isResultPhotos: false,
+          );
+        } catch (e) {
+          debugPrint('Error subiendo fotos: $e');
+          // Continuamos aunque fallen las fotos, pero lo registramos
+        }
         
-        if (mounted) {
+        if (mounted && Navigator.canPop(context)) {
           Navigator.pop(context); // Cerrar diálogo de progreso
         }
       }
       
-      await _ticketService.createTicket(
+      final result = await _ticketService.createTicket(
         userId: user.uid,
         titulo: tituloCompleto,
         descripcion: _descripcionController.text.trim(),
@@ -630,34 +631,41 @@ class _AddEditTicketScreenState extends State<AddEditTicketScreen> {
         propiedadDireccion: direccionFinal,
         fechaProgramada: fechaProgramada,
         notasCliente: 'Barrio: ${_barrioController.text.trim()}',
-        fotosProblema: fotosUrls,
-        toderoId: _maestroSeleccionado?.uid,
-        toderoNombre: _maestroSeleccionado?.nombre,
+        fotosAntes: fotosUrls,
+        maestroId: _maestroSeleccionado?.uid,
+        maestroNombre: _maestroSeleccionado?.nombre,
       );
 
-      if (mounted) {
-        Navigator.pop(context, true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _fotos.isEmpty 
-                ? '✅ Ticket creado exitosamente'
-                : fotosUrls.length == _fotos.length
-                  ? '✅ Ticket creado con ${fotosUrls.length} foto(s)'
-                  : '⚠️ Ticket creado, pero solo ${fotosUrls.length}/${_fotos.length} foto(s) se subieron'
+      if (result['success'] == true) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Ticket creado y guardado exitosamente'),
+              backgroundColor: Colors.green,
             ),
-            backgroundColor: fotosUrls.length == _fotos.length || _fotos.isEmpty 
-              ? Colors.green 
-              : Colors.orange,
-          ),
-        );
+          );
+          Navigator.pop(context, true);
+        }
+      } else {
+        _showError(result['message'] ?? 'Error desconocido al guardar');
       }
+
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      _showError('Excepción crítica: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showError(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ $message'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
     }
   }
 

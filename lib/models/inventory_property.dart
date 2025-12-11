@@ -107,6 +107,7 @@ class InventoryProperty {
   double? area; // en m²
   int? numeroHabitaciones;
   int? numeroBanos;
+  bool garaje;
   bool activa;
   
   // Nuevos campos - alineados con PropertyListing
@@ -143,6 +144,7 @@ class InventoryProperty {
     this.area,
     this.numeroHabitaciones,
     this.numeroBanos,
+    this.garaje = false,
     this.activa = true,
     this.pais,
     this.ciudad,
@@ -177,6 +179,7 @@ class InventoryProperty {
       'area': area,
       'numeroHabitaciones': numeroHabitaciones,
       'numeroBanos': numeroBanos,
+      'garaje': garaje,
       'activa': activa,
       'pais': pais,
       'ciudad': ciudad,
@@ -216,6 +219,7 @@ class InventoryProperty {
       area: map['area']?.toDouble(),
       numeroHabitaciones: map['numeroHabitaciones'],
       numeroBanos: map['numeroBanos'],
+      garaje: map['garaje'] ?? false,
       activa: map['activa'] ?? true,
       pais: map['pais'],
       ciudad: map['ciudad'],
@@ -249,6 +253,7 @@ class InventoryProperty {
     double? area,
     int? numeroHabitaciones,
     int? numeroBanos,
+    bool? garaje,
     bool? activa,
     String? pais,
     String? ciudad,
@@ -279,6 +284,7 @@ class InventoryProperty {
       area: area ?? this.area,
       numeroHabitaciones: numeroHabitaciones ?? this.numeroHabitaciones,
       numeroBanos: numeroBanos ?? this.numeroBanos,
+      garaje: garaje ?? this.garaje,
       activa: activa ?? this.activa,
       pais: pais ?? this.pais,
       ciudad: ciudad ?? this.ciudad,

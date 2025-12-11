@@ -1,0 +1,560 @@
+[  +68 ms] executing: uname -m
+[   +8 ms] Exit code 0 from: uname -m
+[        ] x86_64
+[  +19 ms] Artifact Instance of 'MaterialFonts' is not required, skipping update.
+[        ] Artifact Instance of 'GradleWrapper' is not required, skipping update.
+[        ] Artifact Instance of 'AndroidGenSnapshotArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterWebSdk' is not required, skipping update.
+[   +1 ms] Artifact Instance of 'LegacyCanvasKitRemover' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterSdk' is not required, skipping update.
+[        ] Artifact Instance of 'WindowsEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FontSubsetArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'PubDependencies' is not required, skipping update.
+[  +19 ms] Artifact Instance of 'AndroidGenSnapshotArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterWebSdk' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterEngineStamp' is not required, skipping update.
+[        ] Artifact Instance of 'LegacyCanvasKitRemover' is not required, skipping update.
+[   +3 ms] Artifact Instance of 'WindowsEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[  +52 ms] Artifact Instance of 'MaterialFonts' is not required, skipping update.
+[        ] Artifact Instance of 'GradleWrapper' is not required, skipping update.
+[        ] Artifact Instance of 'AndroidGenSnapshotArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterEngineStamp' is not required, skipping update.
+[   +1 ms] Artifact Instance of 'FlutterSdk' is not required, skipping update.
+[        ] Artifact Instance of 'WindowsEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'FontSubsetArtifacts' is not required, skipping update.
+[        ] Artifact Instance of 'PubDependencies' is not required, skipping update.
+[  +36 ms] executing: [/home/user/flutter_app/] /opt/flutter/bin/cache/dart-sdk/bin/dart pub --suppress-analytics --directory . get --example
+Resolving dependencies...
+Downloading packages...
+  _fe_analyzer_shared 67.0.0 (92.0.0 available)
+  _flutterfire_internals 1.3.44 (1.3.64 available)
+  analyzer 6.4.1 (9.0.0 available)
+  archive 3.6.1 (4.0.7 available)
+  build 2.4.1 (4.0.3 available)
+  build_config 1.1.2 (1.2.0 available)
+  build_resolvers 2.4.2 (3.0.4 available)
+  build_runner 2.4.13 (2.10.4 available)
+  build_runner_core 7.3.2 (9.3.2 available)
+  built_value 8.12.0 (8.12.1 available)
+  camera 0.11.0+2 (0.11.3 available)
+  camera_android_camerax 0.6.24+1 (0.6.25+1 available)
+  camera_avfoundation 0.9.22+4 (0.9.22+6 available)
+  camera_web 0.3.5 (0.3.5+2 available)
+  characters 1.4.0 (1.4.1 available)
+  cloud_firestore 5.4.3 (6.1.0 available)
+  cloud_firestore_platform_interface 6.4.3 (7.0.4 available)
+  cloud_firestore_web 4.3.2 (5.1.0 available)
+  cross_file 0.3.5 (0.3.5+1 available)
+  dart_style 2.3.6 (3.1.3 available)
+  file_picker 8.1.4 (10.3.7 available)
+  file_selector_linux 0.9.3+2 (0.9.4 available)
+  file_selector_macos 0.9.4+5 (0.9.5 available)
+  file_selector_windows 0.9.3+4 (0.9.3+5 available)
+  firebase_auth 5.3.1 (6.1.2 available)
+  firebase_auth_platform_interface 7.4.7 (8.1.4 available)
+  firebase_auth_web 5.13.2 (6.1.0 available)
+  firebase_core 3.6.0 (4.2.1 available)
+  firebase_core_platform_interface 5.4.2 (6.0.2 available)
+  firebase_core_web 2.24.0 (3.3.0 available)
+  firebase_storage 12.3.2 (13.0.4 available)
+  firebase_storage_platform_interface 5.1.31 (5.2.15 available)
+  firebase_storage_web 3.10.3 (3.11.0 available)
+  fl_chart 0.69.0 (1.1.1 available)
+  flutter_blue_plus 1.33.3 (2.0.2 available)
+  flutter_lints 5.0.0 (6.0.0 available)
+  flutter_plugin_android_lifecycle 2.0.32 (2.0.33 available)
+  flutter_svg 2.0.10+1 (2.2.3 available)
+  go_router 14.6.2 (17.0.0 available)
+  google_mlkit_commons 0.9.0 (0.11.0 available)
+  google_mlkit_face_detection 0.12.0 (0.13.1 available)
+  http 1.5.0 (1.6.0 available)
+  image 4.3.0 (4.5.4 available)
+  image_picker 1.1.2 (1.2.1 available)
+  image_picker_android 0.8.13+7 (0.8.13+10 available)
+  image_picker_for_web 3.1.0 (3.1.1 available)
+  image_picker_ios 0.8.13+1 (0.8.13+3 available)
+  js 0.6.7 (0.7.2 available)
+  lints 5.1.1 (6.0.0 available)
+  matcher 0.12.17 (0.12.18 available)
+  material_color_utilities 0.11.1 (0.13.0 available)
+  meta 1.16.0 (1.17.0 available)
+  mobile_scanner 5.2.3 (7.1.3 available)
+  path_provider_android 2.2.20 (2.2.22 available)
+  path_provider_foundation 2.4.3 (2.5.1 available)
+  pdf 3.11.1 (3.11.3 available)
+  permission_handler 11.3.1 (12.0.1 available)
+  permission_handler_android 12.1.0 (13.0.1 available)
+  printing 5.13.3 (5.14.2 available)
+  shared_preferences_android 2.4.15 (2.4.18 available)
+  shared_preferences_foundation 2.5.5 (2.5.6 available)
+  shelf_web_socket 2.0.1 (3.0.0 available)
+  signature 5.5.0 (6.3.0 available)
+  source_gen 1.5.0 (4.1.1 available)
+  source_helper 1.3.5 (1.3.9 available)
+  test_api 0.7.6 (0.7.8 available)
+  url_launcher 6.3.1 (6.3.2 available)
+  url_launcher_android 6.3.24 (6.3.28 available)
+  url_launcher_ios 6.3.5 (6.3.6 available)
+  url_launcher_linux 3.2.1 (3.2.2 available)
+  url_launcher_macos 3.2.4 (3.2.5 available)
+  url_launcher_windows 3.1.4 (3.1.5 available)
+  uuid 4.5.1 (4.5.2 available)
+  video_player 2.9.2 (2.10.1 available)
+  video_player_android 2.8.21 (2.8.22 available)
+Got dependencies!
+75 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+[+2009 ms] Found plugin webview_flutter at /home/user/.pub-cache/hosted/pub.dev/webview_flutter-4.13.0/
+[   +9 ms] Found plugin webview_flutter_wkwebview at /home/user/.pub-cache/hosted/pub.dev/webview_flutter_wkwebview-3.23.5/
+[   +7 ms] Found plugin webview_flutter_android at /home/user/.pub-cache/hosted/pub.dev/webview_flutter_android-4.10.11/
+[   +3 ms] Found plugin video_player at /home/user/.pub-cache/hosted/pub.dev/video_player-2.9.2/
+[   +1 ms] Found plugin video_player_web at /home/user/.pub-cache/hosted/pub.dev/video_player_web-2.4.0/
+[   +4 ms] Found plugin video_player_avfoundation at /home/user/.pub-cache/hosted/pub.dev/video_player_avfoundation-2.8.8/
+[   +1 ms] Found plugin video_player_android at /home/user/.pub-cache/hosted/pub.dev/video_player_android-2.8.21/
+[   +6 ms] Found plugin url_launcher at /home/user/.pub-cache/hosted/pub.dev/url_launcher-6.3.1/
+[   +1 ms] Found plugin url_launcher_windows at /home/user/.pub-cache/hosted/pub.dev/url_launcher_windows-3.1.4/
+[   +6 ms] Found plugin url_launcher_web at /home/user/.pub-cache/hosted/pub.dev/url_launcher_web-2.4.1/
+[   +1 ms] Found plugin url_launcher_macos at /home/user/.pub-cache/hosted/pub.dev/url_launcher_macos-3.2.4/
+[   +1 ms] Found plugin url_launcher_linux at /home/user/.pub-cache/hosted/pub.dev/url_launcher_linux-3.2.1/
+[   +8 ms] Found plugin url_launcher_ios at /home/user/.pub-cache/hosted/pub.dev/url_launcher_ios-6.3.5/
+[   +1 ms] Found plugin url_launcher_android at /home/user/.pub-cache/hosted/pub.dev/url_launcher_android-6.3.24/
+[  +17 ms] Found plugin shared_preferences at /home/user/.pub-cache/hosted/pub.dev/shared_preferences-2.5.3/
+[   +1 ms] Found plugin shared_preferences_windows at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_windows-2.4.1/
+[   +2 ms] Found plugin path_provider_windows at /home/user/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0/
+[   +4 ms] Found plugin shared_preferences_web at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_web-2.4.3/
+[   +1 ms] Found plugin shared_preferences_linux at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_linux-2.4.1/
+[   +1 ms] Found plugin path_provider_linux at /home/user/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1/
+[   +2 ms] Found plugin shared_preferences_foundation at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_foundation-2.5.5/
+[   +1 ms] Found plugin shared_preferences_android at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_android-2.4.15/
+[   +7 ms] Found plugin printing at /home/user/.pub-cache/hosted/pub.dev/printing-5.13.3/
+[   +6 ms] Found plugin permission_handler at /home/user/.pub-cache/hosted/pub.dev/permission_handler-11.3.1/
+[   +1 ms] Found plugin permission_handler_windows at /home/user/.pub-cache/hosted/pub.dev/permission_handler_windows-0.2.1/
+[   +2 ms] Found plugin permission_handler_html at /home/user/.pub-cache/hosted/pub.dev/permission_handler_html-0.1.3+5/
+[   +4 ms] Found plugin permission_handler_apple at /home/user/.pub-cache/hosted/pub.dev/permission_handler_apple-9.4.7/
+[   +2 ms] Found plugin permission_handler_android at /home/user/.pub-cache/hosted/pub.dev/permission_handler_android-12.1.0/
+[   +1 ms] Found plugin path_provider at /home/user/.pub-cache/hosted/pub.dev/path_provider-2.1.5/
+[   +1 ms] Found plugin path_provider_foundation at /home/user/.pub-cache/hosted/pub.dev/path_provider_foundation-2.4.3/
+[   +1 ms] Found plugin path_provider_android at /home/user/.pub-cache/hosted/pub.dev/path_provider_android-2.2.20/
+[   +6 ms] Found plugin dchs_motion_sensors at /home/user/.pub-cache/hosted/pub.dev/dchs_motion_sensors-2.0.1/
+[   +3 ms] Found plugin mobile_scanner at /home/user/.pub-cache/hosted/pub.dev/mobile_scanner-5.2.3/
+[   +5 ms] Found plugin image_picker at /home/user/.pub-cache/hosted/pub.dev/image_picker-1.1.2/
+[   +3 ms] Found plugin image_picker_windows at /home/user/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.2/
+[   +6 ms] Found plugin file_selector_windows at /home/user/.pub-cache/hosted/pub.dev/file_selector_windows-0.9.3+4/
+[   +4 ms] Found plugin image_picker_macos at /home/user/.pub-cache/hosted/pub.dev/image_picker_macos-0.2.2+1/
+[   +2 ms] Found plugin file_selector_macos at /home/user/.pub-cache/hosted/pub.dev/file_selector_macos-0.9.4+5/
+[   +2 ms] Found plugin image_picker_linux at /home/user/.pub-cache/hosted/pub.dev/image_picker_linux-0.2.2/
+[   +2 ms] Found plugin file_selector_linux at /home/user/.pub-cache/hosted/pub.dev/file_selector_linux-0.9.3+2/
+[   +2 ms] Found plugin image_picker_ios at /home/user/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.13+1/
+[   +5 ms] Found plugin image_picker_for_web at /home/user/.pub-cache/hosted/pub.dev/image_picker_for_web-3.1.0/
+[   +2 ms] Found plugin image_picker_android at /home/user/.pub-cache/hosted/pub.dev/image_picker_android-0.8.13+7/
+[   +3 ms] Found plugin flutter_plugin_android_lifecycle at /home/user/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.32/
+[   +5 ms] Found plugin google_mlkit_face_detection at /home/user/.pub-cache/hosted/pub.dev/google_mlkit_face_detection-0.12.0/
+[   +2 ms] Found plugin google_mlkit_commons at /home/user/.pub-cache/hosted/pub.dev/google_mlkit_commons-0.9.0/
+[   +9 ms] Found plugin flutter_image_compress at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress-2.4.0/
+[   +3 ms] Found plugin flutter_image_compress_web at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress_web-0.1.5/
+[   +4 ms] Found plugin flutter_image_compress_ohos at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress_ohos-0.0.3/
+[   +2 ms] Found plugin flutter_image_compress_macos at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress_macos-1.0.3/
+[   +3 ms] Found plugin flutter_image_compress_common at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress_common-1.0.6/
+[   +4 ms] Found plugin sqflite at /home/user/.pub-cache/hosted/pub.dev/sqflite-2.4.2/
+[   +9 ms] Found plugin sqflite_darwin at /home/user/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.2/
+[   +4 ms] Found plugin sqflite_android at /home/user/.pub-cache/hosted/pub.dev/sqflite_android-2.4.2+2/
+[   +4 ms] Found plugin flutter_blue_plus at /home/user/.pub-cache/hosted/pub.dev/flutter_blue_plus-1.33.3/
+[   +9 ms] Found plugin firebase_storage at /home/user/.pub-cache/hosted/pub.dev/firebase_storage-12.3.2/
+[   +3 ms] Found plugin firebase_storage_web at /home/user/.pub-cache/hosted/pub.dev/firebase_storage_web-3.10.3/
+[   +4 ms] Found plugin firebase_core at /home/user/.pub-cache/hosted/pub.dev/firebase_core-3.6.0/
+[   +2 ms] Found plugin firebase_core_web at /home/user/.pub-cache/hosted/pub.dev/firebase_core_web-2.24.0/
+[   +5 ms] Found plugin firebase_auth at /home/user/.pub-cache/hosted/pub.dev/firebase_auth-5.3.1/
+[   +2 ms] Found plugin firebase_auth_web at /home/user/.pub-cache/hosted/pub.dev/firebase_auth_web-5.13.2/
+[   +3 ms] Found plugin file_picker at /home/user/.pub-cache/hosted/pub.dev/file_picker-8.1.4/
+[   +7 ms] Found plugin cloud_firestore at /home/user/.pub-cache/hosted/pub.dev/cloud_firestore-5.4.3/
+[   +2 ms] Found plugin cloud_firestore_web at /home/user/.pub-cache/hosted/pub.dev/cloud_firestore_web-4.3.2/
+[   +4 ms] Found plugin camera at /home/user/.pub-cache/hosted/pub.dev/camera-0.11.0+2/
+[   +2 ms] Found plugin camera_web at /home/user/.pub-cache/hosted/pub.dev/camera_web-0.3.5/
+[   +3 ms] Found plugin camera_avfoundation at /home/user/.pub-cache/hosted/pub.dev/camera_avfoundation-0.9.22+4/
+[   +2 ms] Found plugin camera_android_camerax at /home/user/.pub-cache/hosted/pub.dev/camera_android_camerax-0.6.24+1/
+[ +136 ms] Found plugin webview_flutter at /home/user/.pub-cache/hosted/pub.dev/webview_flutter-4.13.0/
+[   +1 ms] Found plugin webview_flutter_wkwebview at /home/user/.pub-cache/hosted/pub.dev/webview_flutter_wkwebview-3.23.5/
+[   +3 ms] Found plugin webview_flutter_android at /home/user/.pub-cache/hosted/pub.dev/webview_flutter_android-4.10.11/
+[   +1 ms] Found plugin video_player at /home/user/.pub-cache/hosted/pub.dev/video_player-2.9.2/
+[   +1 ms] Found plugin video_player_web at /home/user/.pub-cache/hosted/pub.dev/video_player_web-2.4.0/
+[   +2 ms] Found plugin video_player_avfoundation at /home/user/.pub-cache/hosted/pub.dev/video_player_avfoundation-2.8.8/
+[   +1 ms] Found plugin video_player_android at /home/user/.pub-cache/hosted/pub.dev/video_player_android-2.8.21/
+[   +5 ms] Found plugin url_launcher at /home/user/.pub-cache/hosted/pub.dev/url_launcher-6.3.1/
+[   +1 ms] Found plugin url_launcher_windows at /home/user/.pub-cache/hosted/pub.dev/url_launcher_windows-3.1.4/
+[   +1 ms] Found plugin url_launcher_web at /home/user/.pub-cache/hosted/pub.dev/url_launcher_web-2.4.1/
+[        ] Found plugin url_launcher_macos at /home/user/.pub-cache/hosted/pub.dev/url_launcher_macos-3.2.4/
+[   +1 ms] Found plugin url_launcher_linux at /home/user/.pub-cache/hosted/pub.dev/url_launcher_linux-3.2.1/
+[   +1 ms] Found plugin url_launcher_ios at /home/user/.pub-cache/hosted/pub.dev/url_launcher_ios-6.3.5/
+[   +1 ms] Found plugin url_launcher_android at /home/user/.pub-cache/hosted/pub.dev/url_launcher_android-6.3.24/
+[   +8 ms] Found plugin shared_preferences at /home/user/.pub-cache/hosted/pub.dev/shared_preferences-2.5.3/
+[        ] Found plugin shared_preferences_windows at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_windows-2.4.1/
+[   +3 ms] Found plugin path_provider_windows at /home/user/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0/
+[   +2 ms] Found plugin shared_preferences_web at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_web-2.4.3/
+[        ] Found plugin shared_preferences_linux at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_linux-2.4.1/
+[        ] Found plugin path_provider_linux at /home/user/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1/
+[   +2 ms] Found plugin shared_preferences_foundation at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_foundation-2.5.5/
+[        ] Found plugin shared_preferences_android at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_android-2.4.15/
+[   +3 ms] Found plugin printing at /home/user/.pub-cache/hosted/pub.dev/printing-5.13.3/
+[   +3 ms] Found plugin permission_handler at /home/user/.pub-cache/hosted/pub.dev/permission_handler-11.3.1/
+[        ] Found plugin permission_handler_windows at /home/user/.pub-cache/hosted/pub.dev/permission_handler_windows-0.2.1/
+[   +1 ms] Found plugin permission_handler_html at /home/user/.pub-cache/hosted/pub.dev/permission_handler_html-0.1.3+5/
+[        ] Found plugin permission_handler_apple at /home/user/.pub-cache/hosted/pub.dev/permission_handler_apple-9.4.7/
+[        ] Found plugin permission_handler_android at /home/user/.pub-cache/hosted/pub.dev/permission_handler_android-12.1.0/
+[        ] Found plugin path_provider at /home/user/.pub-cache/hosted/pub.dev/path_provider-2.1.5/
+[        ] Found plugin path_provider_foundation at /home/user/.pub-cache/hosted/pub.dev/path_provider_foundation-2.4.3/
+[        ] Found plugin path_provider_android at /home/user/.pub-cache/hosted/pub.dev/path_provider_android-2.2.20/
+[   +1 ms] Found plugin dchs_motion_sensors at /home/user/.pub-cache/hosted/pub.dev/dchs_motion_sensors-2.0.1/
+[        ] Found plugin mobile_scanner at /home/user/.pub-cache/hosted/pub.dev/mobile_scanner-5.2.3/
+[   +1 ms] Found plugin image_picker at /home/user/.pub-cache/hosted/pub.dev/image_picker-1.1.2/
+[   +1 ms] Found plugin image_picker_windows at /home/user/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.2/
+[   +1 ms] Found plugin file_selector_windows at /home/user/.pub-cache/hosted/pub.dev/file_selector_windows-0.9.3+4/
+[   +1 ms] Found plugin image_picker_macos at /home/user/.pub-cache/hosted/pub.dev/image_picker_macos-0.2.2+1/
+[   +1 ms] Found plugin file_selector_macos at /home/user/.pub-cache/hosted/pub.dev/file_selector_macos-0.9.4+5/
+[        ] Found plugin image_picker_linux at /home/user/.pub-cache/hosted/pub.dev/image_picker_linux-0.2.2/
+[        ] Found plugin file_selector_linux at /home/user/.pub-cache/hosted/pub.dev/file_selector_linux-0.9.3+2/
+[        ] Found plugin image_picker_ios at /home/user/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.13+1/
+[        ] Found plugin image_picker_for_web at /home/user/.pub-cache/hosted/pub.dev/image_picker_for_web-3.1.0/
+[        ] Found plugin image_picker_android at /home/user/.pub-cache/hosted/pub.dev/image_picker_android-0.8.13+7/
+[        ] Found plugin flutter_plugin_android_lifecycle at /home/user/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.32/
+[   +1 ms] Found plugin google_mlkit_face_detection at /home/user/.pub-cache/hosted/pub.dev/google_mlkit_face_detection-0.12.0/
+[        ] Found plugin google_mlkit_commons at /home/user/.pub-cache/hosted/pub.dev/google_mlkit_commons-0.9.0/
+[   +1 ms] Found plugin flutter_image_compress at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress-2.4.0/
+[        ] Found plugin flutter_image_compress_web at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress_web-0.1.5/
+[   +1 ms] Found plugin flutter_image_compress_ohos at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress_ohos-0.0.3/
+[        ] Found plugin flutter_image_compress_macos at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress_macos-1.0.3/
+[        ] Found plugin flutter_image_compress_common at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress_common-1.0.6/
+[   +1 ms] Found plugin sqflite at /home/user/.pub-cache/hosted/pub.dev/sqflite-2.4.2/
+[   +2 ms] Found plugin sqflite_darwin at /home/user/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.2/
+[        ] Found plugin sqflite_android at /home/user/.pub-cache/hosted/pub.dev/sqflite_android-2.4.2+2/
+[   +1 ms] Found plugin flutter_blue_plus at /home/user/.pub-cache/hosted/pub.dev/flutter_blue_plus-1.33.3/
+[   +2 ms] Found plugin firebase_storage at /home/user/.pub-cache/hosted/pub.dev/firebase_storage-12.3.2/
+[        ] Found plugin firebase_storage_web at /home/user/.pub-cache/hosted/pub.dev/firebase_storage_web-3.10.3/
+[   +1 ms] Found plugin firebase_core at /home/user/.pub-cache/hosted/pub.dev/firebase_core-3.6.0/
+[        ] Found plugin firebase_core_web at /home/user/.pub-cache/hosted/pub.dev/firebase_core_web-2.24.0/
+[   +1 ms] Found plugin firebase_auth at /home/user/.pub-cache/hosted/pub.dev/firebase_auth-5.3.1/
+[        ] Found plugin firebase_auth_web at /home/user/.pub-cache/hosted/pub.dev/firebase_auth_web-5.13.2/
+[   +1 ms] Found plugin file_picker at /home/user/.pub-cache/hosted/pub.dev/file_picker-8.1.4/
+[   +2 ms] Found plugin cloud_firestore at /home/user/.pub-cache/hosted/pub.dev/cloud_firestore-5.4.3/
+[        ] Found plugin cloud_firestore_web at /home/user/.pub-cache/hosted/pub.dev/cloud_firestore_web-4.3.2/
+[   +1 ms] Found plugin camera at /home/user/.pub-cache/hosted/pub.dev/camera-0.11.0+2/
+[        ] Found plugin camera_web at /home/user/.pub-cache/hosted/pub.dev/camera_web-0.3.5/
+[   +1 ms] Found plugin camera_avfoundation at /home/user/.pub-cache/hosted/pub.dev/camera_avfoundation-0.9.22+4/
+[        ] Found plugin camera_android_camerax at /home/user/.pub-cache/hosted/pub.dev/camera_android_camerax-0.6.24+1/
+[  +14 ms] Skipping generating web_plugin_registrant.dart because it is up-to-date.
+[  +74 ms] Found plugin webview_flutter at /home/user/.pub-cache/hosted/pub.dev/webview_flutter-4.13.0/
+[   +2 ms] Found plugin webview_flutter_wkwebview at /home/user/.pub-cache/hosted/pub.dev/webview_flutter_wkwebview-3.23.5/
+[   +4 ms] Found plugin webview_flutter_android at /home/user/.pub-cache/hosted/pub.dev/webview_flutter_android-4.10.11/
+[   +1 ms] Found plugin video_player at /home/user/.pub-cache/hosted/pub.dev/video_player-2.9.2/
+[   +1 ms] Found plugin video_player_web at /home/user/.pub-cache/hosted/pub.dev/video_player_web-2.4.0/
+[   +3 ms] Found plugin video_player_avfoundation at /home/user/.pub-cache/hosted/pub.dev/video_player_avfoundation-2.8.8/
+[   +1 ms] Found plugin video_player_android at /home/user/.pub-cache/hosted/pub.dev/video_player_android-2.8.21/
+[   +5 ms] Found plugin url_launcher at /home/user/.pub-cache/hosted/pub.dev/url_launcher-6.3.1/
+[   +1 ms] Found plugin url_launcher_windows at /home/user/.pub-cache/hosted/pub.dev/url_launcher_windows-3.1.4/
+[   +2 ms] Found plugin url_launcher_web at /home/user/.pub-cache/hosted/pub.dev/url_launcher_web-2.4.1/
+[   +1 ms] Found plugin url_launcher_macos at /home/user/.pub-cache/hosted/pub.dev/url_launcher_macos-3.2.4/
+[   +1 ms] Found plugin url_launcher_linux at /home/user/.pub-cache/hosted/pub.dev/url_launcher_linux-3.2.1/
+[   +1 ms] Found plugin url_launcher_ios at /home/user/.pub-cache/hosted/pub.dev/url_launcher_ios-6.3.5/
+[   +1 ms] Found plugin url_launcher_android at /home/user/.pub-cache/hosted/pub.dev/url_launcher_android-6.3.24/
+[  +13 ms] Found plugin shared_preferences at /home/user/.pub-cache/hosted/pub.dev/shared_preferences-2.5.3/
+[   +1 ms] Found plugin shared_preferences_windows at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_windows-2.4.1/
+[   +2 ms] Found plugin path_provider_windows at /home/user/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0/
+[   +4 ms] Found plugin shared_preferences_web at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_web-2.4.3/
+[   +1 ms] Found plugin shared_preferences_linux at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_linux-2.4.1/
+[   +1 ms] Found plugin path_provider_linux at /home/user/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1/
+[   +2 ms] Found plugin shared_preferences_foundation at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_foundation-2.5.5/
+[   +1 ms] Found plugin shared_preferences_android at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_android-2.4.15/
+[   +4 ms] Found plugin printing at /home/user/.pub-cache/hosted/pub.dev/printing-5.13.3/
+[   +5 ms] Found plugin permission_handler at /home/user/.pub-cache/hosted/pub.dev/permission_handler-11.3.1/
+[   +1 ms] Found plugin permission_handler_windows at /home/user/.pub-cache/hosted/pub.dev/permission_handler_windows-0.2.1/
+[   +2 ms] Found plugin permission_handler_html at /home/user/.pub-cache/hosted/pub.dev/permission_handler_html-0.1.3+5/
+[   +1 ms] Found plugin permission_handler_apple at /home/user/.pub-cache/hosted/pub.dev/permission_handler_apple-9.4.7/
+[   +1 ms] Found plugin permission_handler_android at /home/user/.pub-cache/hosted/pub.dev/permission_handler_android-12.1.0/
+[   +1 ms] Found plugin path_provider at /home/user/.pub-cache/hosted/pub.dev/path_provider-2.1.5/
+[   +1 ms] Found plugin path_provider_foundation at /home/user/.pub-cache/hosted/pub.dev/path_provider_foundation-2.4.3/
+[   +1 ms] Found plugin path_provider_android at /home/user/.pub-cache/hosted/pub.dev/path_provider_android-2.2.20/
+[   +2 ms] Found plugin dchs_motion_sensors at /home/user/.pub-cache/hosted/pub.dev/dchs_motion_sensors-2.0.1/
+[   +1 ms] Found plugin mobile_scanner at /home/user/.pub-cache/hosted/pub.dev/mobile_scanner-5.2.3/
+[   +1 ms] Found plugin image_picker at /home/user/.pub-cache/hosted/pub.dev/image_picker-1.1.2/
+[   +1 ms] Found plugin image_picker_windows at /home/user/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.2/
+[   +2 ms] Found plugin file_selector_windows at /home/user/.pub-cache/hosted/pub.dev/file_selector_windows-0.9.3+4/
+[   +1 ms] Found plugin image_picker_macos at /home/user/.pub-cache/hosted/pub.dev/image_picker_macos-0.2.2+1/
+[   +1 ms] Found plugin file_selector_macos at /home/user/.pub-cache/hosted/pub.dev/file_selector_macos-0.9.4+5/
+[   +1 ms] Found plugin image_picker_linux at /home/user/.pub-cache/hosted/pub.dev/image_picker_linux-0.2.2/
+[   +1 ms] Found plugin file_selector_linux at /home/user/.pub-cache/hosted/pub.dev/file_selector_linux-0.9.3+2/
+[   +1 ms] Found plugin image_picker_ios at /home/user/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.13+1/
+[   +1 ms] Found plugin image_picker_for_web at /home/user/.pub-cache/hosted/pub.dev/image_picker_for_web-3.1.0/
+[   +1 ms] Found plugin image_picker_android at /home/user/.pub-cache/hosted/pub.dev/image_picker_android-0.8.13+7/
+[   +1 ms] Found plugin flutter_plugin_android_lifecycle at /home/user/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.32/
+[   +1 ms] Found plugin google_mlkit_face_detection at /home/user/.pub-cache/hosted/pub.dev/google_mlkit_face_detection-0.12.0/
+[   +1 ms] Found plugin google_mlkit_commons at /home/user/.pub-cache/hosted/pub.dev/google_mlkit_commons-0.9.0/
+[   +2 ms] Found plugin flutter_image_compress at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress-2.4.0/
+[   +1 ms] Found plugin flutter_image_compress_web at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress_web-0.1.5/
+[   +1 ms] Found plugin flutter_image_compress_ohos at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress_ohos-0.0.3/
+[        ] Found plugin flutter_image_compress_macos at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress_macos-1.0.3/
+[        ] Found plugin flutter_image_compress_common at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress_common-1.0.6/
+[   +1 ms] Found plugin sqflite at /home/user/.pub-cache/hosted/pub.dev/sqflite-2.4.2/
+[   +3 ms] Found plugin sqflite_darwin at /home/user/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.2/
+[   +1 ms] Found plugin sqflite_android at /home/user/.pub-cache/hosted/pub.dev/sqflite_android-2.4.2+2/
+[   +1 ms] Found plugin flutter_blue_plus at /home/user/.pub-cache/hosted/pub.dev/flutter_blue_plus-1.33.3/
+[   +2 ms] Found plugin firebase_storage at /home/user/.pub-cache/hosted/pub.dev/firebase_storage-12.3.2/
+[   +1 ms] Found plugin firebase_storage_web at /home/user/.pub-cache/hosted/pub.dev/firebase_storage_web-3.10.3/
+[   +2 ms] Found plugin firebase_core at /home/user/.pub-cache/hosted/pub.dev/firebase_core-3.6.0/
+[   +1 ms] Found plugin firebase_core_web at /home/user/.pub-cache/hosted/pub.dev/firebase_core_web-2.24.0/
+[   +5 ms] Found plugin firebase_auth at /home/user/.pub-cache/hosted/pub.dev/firebase_auth-5.3.1/
+[   +1 ms] Found plugin firebase_auth_web at /home/user/.pub-cache/hosted/pub.dev/firebase_auth_web-5.13.2/
+[   +2 ms] Found plugin file_picker at /home/user/.pub-cache/hosted/pub.dev/file_picker-8.1.4/
+[   +2 ms] Found plugin cloud_firestore at /home/user/.pub-cache/hosted/pub.dev/cloud_firestore-5.4.3/
+[   +1 ms] Found plugin cloud_firestore_web at /home/user/.pub-cache/hosted/pub.dev/cloud_firestore_web-4.3.2/
+[   +1 ms] Found plugin camera at /home/user/.pub-cache/hosted/pub.dev/camera-0.11.0+2/
+[   +1 ms] Found plugin camera_web at /home/user/.pub-cache/hosted/pub.dev/camera_web-0.3.5/
+[   +1 ms] Found plugin camera_avfoundation at /home/user/.pub-cache/hosted/pub.dev/camera_avfoundation-0.9.22+4/
+[   +1 ms] Found plugin camera_android_camerax at /home/user/.pub-cache/hosted/pub.dev/camera_android_camerax-0.6.24+1/
+[  +28 ms] Generating /home/user/flutter_app/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+[   +4 ms] Skipping generating GeneratedPluginRegistrant.java because it is up-to-date.
+[   +9 ms] Skipping generating generated_plugin_registrant.h because it is up-to-date.
+[   +2 ms] Skipping generating generated_plugin_registrant.cc because it is up-to-date.
+[   +3 ms] Skipping generating generated_plugins.cmake because it is up-to-date.
+[   +4 ms] Skipping generating generated_plugin_registrant.h because it is up-to-date.
+[   +2 ms] Skipping generating generated_plugin_registrant.cc because it is up-to-date.
+[   +2 ms] Skipping generating generated_plugins.cmake because it is up-to-date.
+[   +7 ms] Skipping generating GeneratedPluginRegistrant.h because it is up-to-date.
+[   +3 ms] Skipping generating GeneratedPluginRegistrant.m because it is up-to-date.
+[   +3 ms] Skipping generating GeneratedPluginRegistrant.swift because it is up-to-date.
+[ +138 ms] Found plugin webview_flutter at /home/user/.pub-cache/hosted/pub.dev/webview_flutter-4.13.0/
+[   +1 ms] Found plugin webview_flutter_wkwebview at /home/user/.pub-cache/hosted/pub.dev/webview_flutter_wkwebview-3.23.5/
+[   +2 ms] Found plugin webview_flutter_android at /home/user/.pub-cache/hosted/pub.dev/webview_flutter_android-4.10.11/
+[   +1 ms] Found plugin video_player at /home/user/.pub-cache/hosted/pub.dev/video_player-2.9.2/
+[        ] Found plugin video_player_web at /home/user/.pub-cache/hosted/pub.dev/video_player_web-2.4.0/
+[   +2 ms] Found plugin video_player_avfoundation at /home/user/.pub-cache/hosted/pub.dev/video_player_avfoundation-2.8.8/
+[        ] Found plugin video_player_android at /home/user/.pub-cache/hosted/pub.dev/video_player_android-2.8.21/
+[   +3 ms] Found plugin url_launcher at /home/user/.pub-cache/hosted/pub.dev/url_launcher-6.3.1/
+[        ] Found plugin url_launcher_windows at /home/user/.pub-cache/hosted/pub.dev/url_launcher_windows-3.1.4/
+[   +1 ms] Found plugin url_launcher_web at /home/user/.pub-cache/hosted/pub.dev/url_launcher_web-2.4.1/
+[        ] Found plugin url_launcher_macos at /home/user/.pub-cache/hosted/pub.dev/url_launcher_macos-3.2.4/
+[        ] Found plugin url_launcher_linux at /home/user/.pub-cache/hosted/pub.dev/url_launcher_linux-3.2.1/
+[        ] Found plugin url_launcher_ios at /home/user/.pub-cache/hosted/pub.dev/url_launcher_ios-6.3.5/
+[        ] Found plugin url_launcher_android at /home/user/.pub-cache/hosted/pub.dev/url_launcher_android-6.3.24/
+[   +8 ms] Found plugin shared_preferences at /home/user/.pub-cache/hosted/pub.dev/shared_preferences-2.5.3/
+[        ] Found plugin shared_preferences_windows at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_windows-2.4.1/
+[   +1 ms] Found plugin path_provider_windows at /home/user/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0/
+[   +2 ms] Found plugin shared_preferences_web at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_web-2.4.3/
+[        ] Found plugin shared_preferences_linux at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_linux-2.4.1/
+[        ] Found plugin path_provider_linux at /home/user/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1/
+[   +1 ms] Found plugin shared_preferences_foundation at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_foundation-2.5.5/
+[        ] Found plugin shared_preferences_android at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_android-2.4.15/
+[   +3 ms] Found plugin printing at /home/user/.pub-cache/hosted/pub.dev/printing-5.13.3/
+[   +3 ms] Found plugin permission_handler at /home/user/.pub-cache/hosted/pub.dev/permission_handler-11.3.1/
+[        ] Found plugin permission_handler_windows at /home/user/.pub-cache/hosted/pub.dev/permission_handler_windows-0.2.1/
+[   +1 ms] Found plugin permission_handler_html at /home/user/.pub-cache/hosted/pub.dev/permission_handler_html-0.1.3+5/
+[        ] Found plugin permission_handler_apple at /home/user/.pub-cache/hosted/pub.dev/permission_handler_apple-9.4.7/
+[   +2 ms] Found plugin permission_handler_android at /home/user/.pub-cache/hosted/pub.dev/permission_handler_android-12.1.0/
+[   +1 ms] Found plugin path_provider at /home/user/.pub-cache/hosted/pub.dev/path_provider-2.1.5/
+[   +1 ms] Found plugin path_provider_foundation at /home/user/.pub-cache/hosted/pub.dev/path_provider_foundation-2.4.3/
+[   +1 ms] Found plugin path_provider_android at /home/user/.pub-cache/hosted/pub.dev/path_provider_android-2.2.20/
+[   +4 ms] Found plugin dchs_motion_sensors at /home/user/.pub-cache/hosted/pub.dev/dchs_motion_sensors-2.0.1/
+[   +1 ms] Found plugin mobile_scanner at /home/user/.pub-cache/hosted/pub.dev/mobile_scanner-5.2.3/
+[   +2 ms] Found plugin image_picker at /home/user/.pub-cache/hosted/pub.dev/image_picker-1.1.2/
+[   +1 ms] Found plugin image_picker_windows at /home/user/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.2/
+[   +3 ms] Found plugin file_selector_windows at /home/user/.pub-cache/hosted/pub.dev/file_selector_windows-0.9.3+4/
+[   +2 ms] Found plugin image_picker_macos at /home/user/.pub-cache/hosted/pub.dev/image_picker_macos-0.2.2+1/
+[        ] Found plugin file_selector_macos at /home/user/.pub-cache/hosted/pub.dev/file_selector_macos-0.9.4+5/
+[        ] Found plugin image_picker_linux at /home/user/.pub-cache/hosted/pub.dev/image_picker_linux-0.2.2/
+[   +1 ms] Found plugin file_selector_linux at /home/user/.pub-cache/hosted/pub.dev/file_selector_linux-0.9.3+2/
+[        ] Found plugin image_picker_ios at /home/user/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.13+1/
+[   +1 ms] Found plugin image_picker_for_web at /home/user/.pub-cache/hosted/pub.dev/image_picker_for_web-3.1.0/
+[        ] Found plugin image_picker_android at /home/user/.pub-cache/hosted/pub.dev/image_picker_android-0.8.13+7/
+[        ] Found plugin flutter_plugin_android_lifecycle at /home/user/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.32/
+[   +1 ms] Found plugin google_mlkit_face_detection at /home/user/.pub-cache/hosted/pub.dev/google_mlkit_face_detection-0.12.0/
+[   +1 ms] Found plugin google_mlkit_commons at /home/user/.pub-cache/hosted/pub.dev/google_mlkit_commons-0.9.0/
+[   +2 ms] Found plugin flutter_image_compress at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress-2.4.0/
+[   +1 ms] Found plugin flutter_image_compress_web at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress_web-0.1.5/
+[   +1 ms] Found plugin flutter_image_compress_ohos at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress_ohos-0.0.3/
+[        ] Found plugin flutter_image_compress_macos at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress_macos-1.0.3/
+[        ] Found plugin flutter_image_compress_common at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress_common-1.0.6/
+[   +2 ms] Found plugin sqflite at /home/user/.pub-cache/hosted/pub.dev/sqflite-2.4.2/
+[   +3 ms] Found plugin sqflite_darwin at /home/user/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.2/
+[   +1 ms] Found plugin sqflite_android at /home/user/.pub-cache/hosted/pub.dev/sqflite_android-2.4.2+2/
+[   +1 ms] Found plugin flutter_blue_plus at /home/user/.pub-cache/hosted/pub.dev/flutter_blue_plus-1.33.3/
+[   +3 ms] Found plugin firebase_storage at /home/user/.pub-cache/hosted/pub.dev/firebase_storage-12.3.2/
+[   +1 ms] Found plugin firebase_storage_web at /home/user/.pub-cache/hosted/pub.dev/firebase_storage_web-3.10.3/
+[   +1 ms] Found plugin firebase_core at /home/user/.pub-cache/hosted/pub.dev/firebase_core-3.6.0/
+[   +1 ms] Found plugin firebase_core_web at /home/user/.pub-cache/hosted/pub.dev/firebase_core_web-2.24.0/
+[   +2 ms] Found plugin firebase_auth at /home/user/.pub-cache/hosted/pub.dev/firebase_auth-5.3.1/
+[   +1 ms] Found plugin firebase_auth_web at /home/user/.pub-cache/hosted/pub.dev/firebase_auth_web-5.13.2/
+[   +2 ms] Found plugin file_picker at /home/user/.pub-cache/hosted/pub.dev/file_picker-8.1.4/
+[   +2 ms] Found plugin cloud_firestore at /home/user/.pub-cache/hosted/pub.dev/cloud_firestore-5.4.3/
+[        ] Found plugin cloud_firestore_web at /home/user/.pub-cache/hosted/pub.dev/cloud_firestore_web-4.3.2/
+[   +2 ms] Found plugin camera at /home/user/.pub-cache/hosted/pub.dev/camera-0.11.0+2/
+[   +1 ms] Found plugin camera_web at /home/user/.pub-cache/hosted/pub.dev/camera_web-0.3.5/
+[   +2 ms] Found plugin camera_avfoundation at /home/user/.pub-cache/hosted/pub.dev/camera_avfoundation-0.9.22+4/
+[   +1 ms] Found plugin camera_android_camerax at /home/user/.pub-cache/hosted/pub.dev/camera_android_camerax-0.6.24+1/
+[   +5 ms] generated_plugin_registrant.dart not found. Skipping.
+[   +1 ms] Compiling lib/main.dart for the Web...
+[   +7 ms] Initializing file store
+[  +29 ms] invalidated build due to missing files: /home/user/flutter_app/web/*/index.html, /home/user/flutter_app/web/flutter_bootstrap.js
+[   +1 ms] web_entrypoint: Starting due to {InvalidatedReasonKind.outputSetAddition: The following outputs were added to the output set: /home/user/flutter_app/.dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/main.dart, InvalidatedReasonKind.inputChanged: The following inputs have updated contents: /opt/flutter/packages/flutter_tools/lib/src/build_system/targets/web.dart}
+[        ] Skipping target: gen_localizations
+[   +1 ms] web_templated_files: Starting due to {InvalidatedReasonKind.buildKeyChanged: The target build key changed., InvalidatedReasonKind.outputSetAddition: The following outputs were added to the output set: /home/user/flutter_app/build/web/*/index.html,/home/user/flutter_app/build/web/flutter_bootstrap.js, InvalidatedReasonKind.inputMissing: The following inputs were missing: /home/user/flutter_app/web/*/index.html,/home/user/flutter_app/web/flutter_bootstrap.js, InvalidatedReasonKind.inputChanged: The following inputs have updated contents: /opt/flutter/bin/cache/engine.stamp}
+[   +1 ms] web_static_assets: Starting due to {InvalidatedReasonKind.inputChanged: The following inputs have updated contents: /opt/flutter/bin/cache/engine.stamp, InvalidatedReasonKind.outputSetAddition: The following outputs were added to the output set: /home/user/flutter_app/.dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/flutter.js,/home/user/flutter_app/.dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/canvaskit/chromium/canvaskit.js,/home/user/flutter_app/.dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/canvaskit/chromium/canvaskit.js.symbols,/home/user/flutter_app/.dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/canvaskit/chromium/canvaskit.wasm,/home/user/flutter_app/.dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/canvaskit/canvaskit.js,/home/user/flutter_app/.dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/canvaskit/canvaskit.js.symbols,/home/user/flutter_app/.dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/canvaskit/canvaskit.wasm,/home/user/flutter_app/.dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/canvaskit/skwasm.js,/home/user/flutter_app/.dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/canvaskit/skwasm.js.symbols,/home/user/flutter_app/.dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/canvaskit/skwasm.wasm,/home/user/flutter_app/.dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/canvaskit/skwasm_heavy.js,/home/user/flutter_app/.dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/canvaskit/skwasm_heavy.js.symbols,/home/user/flutter_app/.dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/canvaskit/skwasm_heavy.wasm}
+[ +167 ms] web_static_assets: Complete
+[  +35 ms] web_templated_files: Complete
+[  +51 ms] Found plugin webview_flutter at /home/user/.pub-cache/hosted/pub.dev/webview_flutter-4.13.0/
+[   +1 ms] Found plugin webview_flutter_wkwebview at /home/user/.pub-cache/hosted/pub.dev/webview_flutter_wkwebview-3.23.5/
+[   +2 ms] Found plugin webview_flutter_android at /home/user/.pub-cache/hosted/pub.dev/webview_flutter_android-4.10.11/
+[   +1 ms] Found plugin video_player at /home/user/.pub-cache/hosted/pub.dev/video_player-2.9.2/
+[        ] Found plugin video_player_web at /home/user/.pub-cache/hosted/pub.dev/video_player_web-2.4.0/
+[   +1 ms] Found plugin video_player_avfoundation at /home/user/.pub-cache/hosted/pub.dev/video_player_avfoundation-2.8.8/
+[        ] Found plugin video_player_android at /home/user/.pub-cache/hosted/pub.dev/video_player_android-2.8.21/
+[   +3 ms] Found plugin url_launcher at /home/user/.pub-cache/hosted/pub.dev/url_launcher-6.3.1/
+[        ] Found plugin url_launcher_windows at /home/user/.pub-cache/hosted/pub.dev/url_launcher_windows-3.1.4/
+[   +1 ms] Found plugin url_launcher_web at /home/user/.pub-cache/hosted/pub.dev/url_launcher_web-2.4.1/
+[        ] Found plugin url_launcher_macos at /home/user/.pub-cache/hosted/pub.dev/url_launcher_macos-3.2.4/
+[        ] Found plugin url_launcher_linux at /home/user/.pub-cache/hosted/pub.dev/url_launcher_linux-3.2.1/
+[        ] Found plugin url_launcher_ios at /home/user/.pub-cache/hosted/pub.dev/url_launcher_ios-6.3.5/
+[   +1 ms] Found plugin url_launcher_android at /home/user/.pub-cache/hosted/pub.dev/url_launcher_android-6.3.24/
+[   +9 ms] Found plugin shared_preferences at /home/user/.pub-cache/hosted/pub.dev/shared_preferences-2.5.3/
+[        ] Found plugin shared_preferences_windows at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_windows-2.4.1/
+[   +1 ms] Found plugin path_provider_windows at /home/user/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0/
+[   +3 ms] Found plugin shared_preferences_web at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_web-2.4.3/
+[   +1 ms] Found plugin shared_preferences_linux at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_linux-2.4.1/
+[   +1 ms] Found plugin path_provider_linux at /home/user/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1/
+[   +2 ms] Found plugin shared_preferences_foundation at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_foundation-2.5.5/
+[   +2 ms] Found plugin shared_preferences_android at /home/user/.pub-cache/hosted/pub.dev/shared_preferences_android-2.4.15/
+[   +7 ms] Found plugin printing at /home/user/.pub-cache/hosted/pub.dev/printing-5.13.3/
+[   +6 ms] Found plugin permission_handler at /home/user/.pub-cache/hosted/pub.dev/permission_handler-11.3.1/
+[   +1 ms] Found plugin permission_handler_windows at /home/user/.pub-cache/hosted/pub.dev/permission_handler_windows-0.2.1/
+[   +2 ms] Found plugin permission_handler_html at /home/user/.pub-cache/hosted/pub.dev/permission_handler_html-0.1.3+5/
+[   +1 ms] Found plugin permission_handler_apple at /home/user/.pub-cache/hosted/pub.dev/permission_handler_apple-9.4.7/
+[   +1 ms] Found plugin permission_handler_android at /home/user/.pub-cache/hosted/pub.dev/permission_handler_android-12.1.0/
+[   +1 ms] Found plugin path_provider at /home/user/.pub-cache/hosted/pub.dev/path_provider-2.1.5/
+[   +1 ms] Found plugin path_provider_foundation at /home/user/.pub-cache/hosted/pub.dev/path_provider_foundation-2.4.3/
+[   +1 ms] Found plugin path_provider_android at /home/user/.pub-cache/hosted/pub.dev/path_provider_android-2.2.20/
+[   +3 ms] Found plugin dchs_motion_sensors at /home/user/.pub-cache/hosted/pub.dev/dchs_motion_sensors-2.0.1/
+[   +2 ms] Found plugin mobile_scanner at /home/user/.pub-cache/hosted/pub.dev/mobile_scanner-5.2.3/
+[   +3 ms] Found plugin image_picker at /home/user/.pub-cache/hosted/pub.dev/image_picker-1.1.2/
+[   +2 ms] Found plugin image_picker_windows at /home/user/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.2/
+[   +4 ms] Found plugin file_selector_windows at /home/user/.pub-cache/hosted/pub.dev/file_selector_windows-0.9.3+4/
+[   +3 ms] Found plugin image_picker_macos at /home/user/.pub-cache/hosted/pub.dev/image_picker_macos-0.2.2+1/
+[   +1 ms] Found plugin file_selector_macos at /home/user/.pub-cache/hosted/pub.dev/file_selector_macos-0.9.4+5/
+[   +2 ms] Found plugin image_picker_linux at /home/user/.pub-cache/hosted/pub.dev/image_picker_linux-0.2.2/
+[   +1 ms] Found plugin file_selector_linux at /home/user/.pub-cache/hosted/pub.dev/file_selector_linux-0.9.3+2/
+[   +1 ms] Found plugin image_picker_ios at /home/user/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.13+1/
+[   +1 ms] Found plugin image_picker_for_web at /home/user/.pub-cache/hosted/pub.dev/image_picker_for_web-3.1.0/
+[   +1 ms] Found plugin image_picker_android at /home/user/.pub-cache/hosted/pub.dev/image_picker_android-0.8.13+7/
+[   +1 ms] Found plugin flutter_plugin_android_lifecycle at /home/user/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.32/
+[   +3 ms] Found plugin google_mlkit_face_detection at /home/user/.pub-cache/hosted/pub.dev/google_mlkit_face_detection-0.12.0/
+[   +1 ms] Found plugin google_mlkit_commons at /home/user/.pub-cache/hosted/pub.dev/google_mlkit_commons-0.9.0/
+[   +4 ms] Found plugin flutter_image_compress at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress-2.4.0/
+[   +1 ms] Found plugin flutter_image_compress_web at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress_web-0.1.5/
+[   +2 ms] Found plugin flutter_image_compress_ohos at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress_ohos-0.0.3/
+[   +1 ms] Found plugin flutter_image_compress_macos at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress_macos-1.0.3/
+[   +1 ms] Found plugin flutter_image_compress_common at /home/user/.pub-cache/hosted/pub.dev/flutter_image_compress_common-1.0.6/
+[   +2 ms] Found plugin sqflite at /home/user/.pub-cache/hosted/pub.dev/sqflite-2.4.2/
+[   +3 ms] Found plugin sqflite_darwin at /home/user/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.2/
+[   +1 ms] Found plugin sqflite_android at /home/user/.pub-cache/hosted/pub.dev/sqflite_android-2.4.2+2/
+[   +1 ms] Found plugin flutter_blue_plus at /home/user/.pub-cache/hosted/pub.dev/flutter_blue_plus-1.33.3/
+[   +3 ms] Found plugin firebase_storage at /home/user/.pub-cache/hosted/pub.dev/firebase_storage-12.3.2/
+[   +1 ms] Found plugin firebase_storage_web at /home/user/.pub-cache/hosted/pub.dev/firebase_storage_web-3.10.3/
+[   +1 ms] Found plugin firebase_core at /home/user/.pub-cache/hosted/pub.dev/firebase_core-3.6.0/
+[   +1 ms] Found plugin firebase_core_web at /home/user/.pub-cache/hosted/pub.dev/firebase_core_web-2.24.0/
+[   +2 ms] Found plugin firebase_auth at /home/user/.pub-cache/hosted/pub.dev/firebase_auth-5.3.1/
+[   +1 ms] Found plugin firebase_auth_web at /home/user/.pub-cache/hosted/pub.dev/firebase_auth_web-5.13.2/
+[   +1 ms] Found plugin file_picker at /home/user/.pub-cache/hosted/pub.dev/file_picker-8.1.4/
+[   +3 ms] Found plugin cloud_firestore at /home/user/.pub-cache/hosted/pub.dev/cloud_firestore-5.4.3/
+[   +1 ms] Found plugin cloud_firestore_web at /home/user/.pub-cache/hosted/pub.dev/cloud_firestore_web-4.3.2/
+[   +1 ms] Found plugin camera at /home/user/.pub-cache/hosted/pub.dev/camera-0.11.0+2/
+[   +1 ms] Found plugin camera_web at /home/user/.pub-cache/hosted/pub.dev/camera_web-0.3.5/
+[   +1 ms] Found plugin camera_avfoundation at /home/user/.pub-cache/hosted/pub.dev/camera_avfoundation-0.9.22+4/
+[   +1 ms] Found plugin camera_android_camerax at /home/user/.pub-cache/hosted/pub.dev/camera_android_camerax-0.6.24+1/
+[   +8 ms] web_entrypoint: Complete
+[   +1 ms] dart2js: Starting due to {}
+[  +16 ms] executing: /opt/flutter/bin/cache/dart-sdk/bin/dart compile js --platform-binaries=/opt/flutter/bin/cache/flutter_web_sdk/kernel --invoker=flutter_tool -Ddart.vm.product=true -DFLUTTER_VERSION=3.35.4 -DFLUTTER_CHANNEL=stable -DFLUTTER_GIT_URL=https://github.com/flutter/flutter.git -DFLUTTER_FRAMEWORK_REVISION=d693b4b9db -DFLUTTER_ENGINE_REVISION=c298091351 -DFLUTTER_DART_VERSION=3.9.2 -DFLUTTER_WEB_USE_SKIA=true -DFLUTTER_WEB_USE_SKWASM=false -DFLUTTER_WEB_CANVASKIT_URL=https://www.gstatic.com/flutter-canvaskit/c29809135135e262a912cf583b2c90deb9ded610/ --native-null-assertions --no-source-maps -O4 --minify -o /home/user/flutter_app/.dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/app.dill --packages=/home/user/flutter_app/.dart_tool/package_config.json --cfe-only /home/user/flutter_app/.dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/main.dart
+[   +2 ms] dart2wasm: Starting due to {}
+[   +2 ms] executing: /opt/flutter/bin/cache/dart-sdk/bin/dart compile wasm --packages=/home/user/flutter_app/.dart_tool/package_config.json --extra-compiler-option=--platform=/opt/flutter/bin/cache/flutter_web_sdk/kernel/dart2wasm_platform.dill -Ddart.vm.profile=false -Ddart.vm.product=true --extra-compiler-option=--delete-tostring-package-uri=dart:ui --extra-compiler-option=--delete-tostring-package-uri=package:flutter --extra-compiler-option=--import-shared-memory --extra-compiler-option=--shared-memory-max-pages=32768 -DFLUTTER_VERSION=3.35.4 -DFLUTTER_CHANNEL=stable -DFLUTTER_GIT_URL=https://github.com/flutter/flutter.git -DFLUTTER_FRAMEWORK_REVISION=d693b4b9db -DFLUTTER_ENGINE_REVISION=c298091351 -DFLUTTER_DART_VERSION=3.9.2 -DFLUTTER_WEB_USE_SKIA=false -DFLUTTER_WEB_USE_SKWASM=true -DFLUTTER_WEB_CANVASKIT_URL=https://www.gstatic.com/flutter-canvaskit/c29809135135e262a912cf583b2c90deb9ded610/ --extra-compiler-option=--depfile=/home/user/flutter_app/.dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/dart2wasm.d -O2 --strip-wasm --no-source-maps --minify --extra-compiler-option=--dry-run -o /home/user/flutter_app/.dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/main.dart.wasm /home/user/flutter_app/.dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/main.dart
+[+19843 ms] Found incompatibilities with WebAssembly.
+
+            package:printing/src/method_channel_ffi.dart 17:1 - 'dart:ffi' can't be imported when compiling to Wasm. (2)
+            package:ffi/src/allocation.dart 5:1 - 'dart:ffi' can't be imported when compiling to Wasm. (2)
+            package:ffi/src/arena.dart 8:1 - 'dart:ffi' can't be imported when compiling to Wasm. (2)
+            package:ffi/src/utf16.dart 5:1 - 'dart:ffi' can't be imported when compiling to Wasm. (2)
+            package:ffi/src/utf8.dart 6:1 - 'dart:ffi' can't be imported when compiling to Wasm. (2)
+[   +1 ms] Wasm dry run findings:
+[   +2 ms] Found incompatibilities with WebAssembly.
+
+           package:printing/src/method_channel_ffi.dart 17:1 - 'dart:ffi' can't be imported when compiling to Wasm. (2)
+           package:ffi/src/allocation.dart 5:1 - 'dart:ffi' can't be imported when compiling to Wasm. (2)
+           package:ffi/src/arena.dart 8:1 - 'dart:ffi' can't be imported when compiling to Wasm. (2)
+           package:ffi/src/utf16.dart 5:1 - 'dart:ffi' can't be imported when compiling to Wasm. (2)
+           package:ffi/src/utf8.dart 6:1 - 'dart:ffi' can't be imported when compiling to Wasm. (2)
+
+[        ] Consider addressing these issues to enable wasm builds. See docs for more info: https://docs.flutter.dev/platform-integration/web/wasm
+
+[   +1 ms] Use --no-wasm-dry-run to disable these warnings.
+[        ] dart2wasm: Complete
+[+5318 ms] Compiled 58,783,641 input bytes (50,883,906 characters source) to 50,277,672 kernel bytes in 24.8 seconds
+           Dart file .dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/main.dart compiled to dill: .dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/app.dill.
+[   +1 ms] executing: /opt/flutter/bin/cache/dart-sdk/bin/dart compile js --platform-binaries=/opt/flutter/bin/cache/flutter_web_sdk/kernel --invoker=flutter_tool -Ddart.vm.product=true -DFLUTTER_VERSION=3.35.4 -DFLUTTER_CHANNEL=stable -DFLUTTER_GIT_URL=https://github.com/flutter/flutter.git -DFLUTTER_FRAMEWORK_REVISION=d693b4b9db -DFLUTTER_ENGINE_REVISION=c298091351 -DFLUTTER_DART_VERSION=3.9.2 -DFLUTTER_WEB_USE_SKIA=true -DFLUTTER_WEB_USE_SKWASM=false -DFLUTTER_WEB_CANVASKIT_URL=https://www.gstatic.com/flutter-canvaskit/c29809135135e262a912cf583b2c90deb9ded610/ --native-null-assertions --no-source-maps -O4 --minify -o /home/user/flutter_app/.dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/main.dart.js /home/user/flutter_app/.dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/app.dill
+[+41836 ms] /opt/flutter/packages/flutter/lib/src/widgets/widget_state.dart:1045:9:
+            Hint: This 'noSuchMethod' implementation is guaranteed to throw an exception. The generated code will be smaller if it is rewritten.
+            Rewrite to 'noSuchMethod(Invocation i) => super.noSuchMethod(i);'.
+              Never noSuchMethod(Invocation invocation) {
+                    ^
+            Compiled 67,185,960 input bytes (9,068,075 characters source) to 5,510,612 characters JavaScript in 41.4 seconds
+[ +141 ms] dart2js: Complete
+[ +620 ms] web_release_bundle: Starting due to {}
+[ +247 ms] Manifest contained wildcard assets. Inserting missing file into build graph to force rerun. for more information see #56466.
+[  +48 ms] shaderc command: [/opt/flutter/bin/cache/artifacts/engine/linux-x64/impellerc, --sksl, --iplr, --json, --sl=/home/user/flutter_app/build/web/assets/shaders/ink_sparkle.frag, --spirv=/home/user/flutter_app/build/web/assets/shaders/ink_sparkle.frag.spirv, --input=/opt/flutter/packages/flutter/lib/src/material/shaders/ink_sparkle.frag, --input-type=frag, --include=/opt/flutter/packages/flutter/lib/src/material/shaders, --include=/opt/flutter/bin/cache/artifacts/engine/linux-x64/shader_lib]
+[  +37 ms] Running command: /opt/flutter/bin/cache/dart-sdk/bin/dart /opt/flutter/bin/cache/artifacts/engine/linux-x64/const_finder.dart.snapshot --kernel-file /home/user/flutter_app/.dart_tool/flutter_build/539338763276a942bf5153fdcc8ed3ea/app.dill --class-library-uri package:flutter/src/widgets/icon_data.dart --class-name IconData --annotation-class-name _StaticIconProvider --annotation-class-library-uri package:flutter/src/widgets/icon_data.dart
+[+3190 ms] Expected to find fontFamily for constant IconData with codepoint: 128842.0, but found fontFamily: null. This usually means you are relying on the system font. Alternatively, font families in an IconData class can be provided in the assets section of your pubspec.yaml, or you are missing "uses-material-design: true".
+[        ] Expected to find fontFamily for constant IconData with codepoint: 9658.0, but found fontFamily: null. This usually means you are relying on the system font. Alternatively, font families in an IconData class can be provided in the assets section of your pubspec.yaml, or you are missing "uses-material-design: true".
+[   +4 ms] Running font-subset: /opt/flutter/bin/cache/artifacts/engine/linux-x64/font-subset /home/user/flutter_app/build/web/assets/packages/cupertino_icons/assets/CupertinoIcons.ttf /home/user/.pub-cache/hosted/pub.dev/cupertino_icons-1.0.8/assets/CupertinoIcons.ttf, using codepoints 62468 62730 62717 62419 62415 62629 62318 optional:32
+[   +1 ms] Running font-subset: /opt/flutter/bin/cache/artifacts/engine/linux-x64/font-subset /home/user/flutter_app/build/web/assets/fonts/MaterialIcons-Regular.otf /opt/flutter/bin/cache/artifacts/material_fonts/MaterialIcons-Regular.otf, using codepoints 58098 57938 57689 57686 57898 58286 59070 59069 58848 57442 58910 57908 58185 58635 57500 58140 57490 62832 57706 58332 57502 57501 57496 57694 57695 57657 57882 57504 61453 57634 57498 57926 57704 57491 61061 61060 62834 62833 59283 59282 57499 61069 61068 62842 62841 59291 59290 58011 58012 61575 61576 63348 63349 59797 59798 58372 58370 61930 61927 63708 63705 60157 60154 58771 58189 62328 61752 983402 63526 60555 59975 58814 58813 57846 57862 58727 61764 57402 58513 58291 57777 57623 58186 58481 58141 57510 58615 58530 57544 58289 58644 57415 61748 57559 57550 58869 58581 57896 58043 57665 57737 57399 57703 58084 58206 57622 58834 57495 58604 58208 57984 57509 58283 58710 57911 61080 58408 58500 57998 57537 57958 983712 58310 57843 58002 61705 59034 58704 57648 59100 58737 59079 58173 57925 58502 58170 58988 58987 58560 57488 59060 58613 57785 57514 57512 58313 61888 57423 57431 58554 62037 58477 57368 58573 58172 58235 57616 58280 58569 58312 984386 58221 58213 57522 59122 58648 57424 984482 58258 58944 57918 58136 58550 984307 61267 57685 57690 58514 57791 58132 58518 58441 58688 58687 58984 58269 58917 57815 58919 58120 58089 59062 57756 58963 57853 59097 61734 57672 57726 58162 57577 57647 58705 57912 58992 57481 57857 57847 984397 58921 59048 58602 62000 optional:32
+[  +26 ms] Font asset "CupertinoIcons.ttf" was tree-shaken, reducing it from 257628 to 1472 bytes (99.4% reduction). Tree-shaking can be disabled by providing the --no-tree-shake-icons flag when building your app.
+[   +3 ms] Font asset "MaterialIcons-Regular.otf" was tree-shaken, reducing it from 1645184 to 26612 bytes (98.4% reduction). Tree-shaking can be disabled by providing the --no-tree-shake-icons flag when building your app.
+[   +6 ms] web_release_bundle: Complete
+[ +278 ms] web_service_worker: Starting due to {}
+[ +762 ms] web_service_worker: Complete
+[ +322 ms] Persisting file store
+[  +16 ms] Done persisting file store
+[  +61 ms] Compiling lib/main.dart for the Web... (completed in 73.3s)
+[   +1 ms] ✓ Built build/web
+[   +3 ms] "flutter web" took 76,477ms.
+[  +19 ms] Running 1 shutdown hook
+[        ] Shutdown hooks complete
+[        ] exiting with code 0

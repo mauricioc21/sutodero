@@ -3,8 +3,7 @@ enum UserRole {
   administrador('Administrador'),
   coordinador('Coordinador'),
   maestro('Maestro'),
-  inventarios('Inventarios'),
-  duppla('Duppla');
+  inventarios('Inventarios');
 
   final String displayName;
   const UserRole(this.displayName);
@@ -21,8 +20,6 @@ enum UserRole {
         return UserRole.maestro;
       case 'inventarios':
         return UserRole.inventarios;
-      case 'duppla':
-        return UserRole.duppla;
       default:
         return UserRole.maestro; // Por defecto
     }
@@ -37,7 +34,7 @@ class UserModel {
   final String uid;
   final String nombre;
   final String email;
-  final String rol; // 'administrador', 'coordinador', 'maestro', 'inventarios', 'duppla'
+  final String rol; // 'administrador', 'coordinador', 'maestro', 'inventarios'
   final String telefono;
   final String? direccion;
   final String? genero; // 'masculino', 'femenino', 'otro'
@@ -158,9 +155,6 @@ class UserModel {
   /// Verifica si el usuario es de inventarios
   bool get isInventarios => roleEnum == UserRole.inventarios;
   
-  /// Verifica si el usuario es de Duppla
-  bool get isDuppla => roleEnum == UserRole.duppla;
-  
   /// Verifica si el usuario tiene acceso administrativo
   bool get hasAdminAccess => isAdministrador || isCoordinador;
   
@@ -171,7 +165,7 @@ class UserModel {
   bool get canManageInventories => isAdministrador || isInventarios;
   
   /// Verifica si el usuario puede gestionar captaciones
-  bool get canManageCaptaciones => isAdministrador || isCoordinador || isDuppla;
+  bool get canManageCaptaciones => isAdministrador;
   
   /// Genera un saludo personalizado según el género y hora del día
   String obtenerSaludoPersonalizado() {

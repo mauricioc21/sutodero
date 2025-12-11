@@ -1,8 +1,82 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// Modelo de foto capturada
+class CapturedPhoto {
+  final String id;
+  final String uri;
+  final String filename;
+  final int timestamp;
+
+  CapturedPhoto({
+    required this.id,
+    required this.uri,
+    required this.filename,
+    required this.timestamp,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'uri': uri,
+    'filename': filename,
+    'timestamp': timestamp,
+  };
+
+  factory CapturedPhoto.fromJson(Map<String, dynamic> json) => CapturedPhoto(
+    id: json['id'],
+    uri: json['uri'],
+    filename: json['filename'],
+    timestamp: json['timestamp'],
+  );
+}
+
+/// Modelo de cámara 360° detectada
+class Camera360Device {
+  final String id;
+  final String name;
+  final String type;
+  final ConnectionType connectionType;
+  final BluetoothDevice? device;
+  final int? rssi; // Señal Bluetooth
+
+  Camera360Device({
+    required this.id,
+    required this.name,
+    required this.type,
+    required this.connectionType,
+    this.device,
+    this.rssi,
+  });
+}
+
+/// Tipo de conexión
+enum ConnectionType {
+  bluetooth,
+  wifi,
+  usb,
+}
+
+/// Resultado de captura
+class CaptureResult {
+  final bool success;
+  final String message;
+  final String? photoPath;
+  final bool requiresManualCapture;
+  final Map<String, dynamic>? httpCommand; // Comando HTTP para ejecutar
+
+  CaptureResult({
+    required this.success,
+    required this.message,
+    this.photoPath,
+    this.requiresManualCapture = false,
+    this.httpCommand,
+  });
+}
 
 /// Servicio universal para captura de fotos 360°
 /// Soporta múltiples métodos de captura:
@@ -18,8 +92,104 @@ class Camera360Service {
   /// Obtener lista de cámaras 360° detectadas
   List<Camera360Device> get detectedCameras => _detectedCameras;
 
+  // --- Session Management (Persistence via SharedPreferences) ---
+  static const String _draftKeyPrefix = 'draft_360_photos_v2_';
+
+  /// Obtener clave única para almacenamiento según propiedad
+  static String _getStorageKey(bool isQuickCapture, String propertyId) {
+    if (isQuickCapture) {
+      return '${_draftKeyPrefix}quick_capture';
+    }
+    return '${_draftKeyPrefix}$propertyId';
+  }
+  
+  /// Obtener fotos borradores para una sesión (Persistente)
+  Future<List<CapturedPhoto>> getSessionPhotos(bool isQuickCapture, String propertyId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = _getStorageKey(isQuickCapture, propertyId);
+      final photosJsonList = prefs.getStringList(key) ?? [];
+      
+      final photos = photosJsonList.map((jsonStr) {
+        return CapturedPhoto.fromJson(jsonDecode(jsonStr));
+      }).toList();
+      
+      if (kDebugMode) {
+        debugPrint('📂 Cargando sesión ($key): ${photos.length} fotos encontradas.');
+      }
+      return photos;
+    } catch (e) {
+      debugPrint('❌ Error cargando sesión: $e');
+      return [];
+    }
+  }
+  
+  /// Guardar foto en la sesión activa (Persistente)
+  Future<void> addPhotoToSession(CapturedPhoto photo, bool isQuickCapture, String propertyId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = _getStorageKey(isQuickCapture, propertyId);
+      
+      List<String> currentPhotosJson = prefs.getStringList(key) ?? [];
+      
+      // Evitar duplicados por ID
+      bool exists = currentPhotosJson.any((str) {
+        final existing = CapturedPhoto.fromJson(jsonDecode(str));
+        return existing.id == photo.id;
+      });
+
+      if (!exists) {
+        currentPhotosJson.add(jsonEncode(photo.toJson()));
+        await prefs.setStringList(key, currentPhotosJson);
+        if (kDebugMode) {
+          debugPrint('💾 Foto guardada en sesión ($key). Total: ${currentPhotosJson.length}');
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Error guardando foto en sesión: $e');
+    }
+  }
+  
+  /// Remover foto de la sesión activa (Persistente)
+  Future<void> removePhotoFromSession(String photoId, bool isQuickCapture, String propertyId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = _getStorageKey(isQuickCapture, propertyId);
+      
+      List<String> currentPhotosJson = prefs.getStringList(key) ?? [];
+      
+      int initialCount = currentPhotosJson.length;
+      currentPhotosJson.removeWhere((str) {
+        final photo = CapturedPhoto.fromJson(jsonDecode(str));
+        return photo.id == photoId;
+      });
+
+      if (currentPhotosJson.length < initialCount) {
+        await prefs.setStringList(key, currentPhotosJson);
+        if (kDebugMode) {
+          debugPrint('🗑️ Foto eliminada de sesión ($key). Restantes: ${currentPhotosJson.length}');
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Error eliminando foto de sesión: $e');
+    }
+  }
+  
+  /// Limpiar sesión (Persistente)
+  Future<void> clearSession(bool isQuickCapture, String propertyId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = _getStorageKey(isQuickCapture, propertyId);
+      await prefs.remove(key);
+      if (kDebugMode) {
+        debugPrint('🧹 Sesión limpiada ($key)');
+      }
+    } catch (e) {
+      debugPrint('❌ Error limpiando sesión: $e');
+    }
+  }
+
   /// Método 1: Seleccionar foto 360° desde galería
-  /// Este es el método más simple y funciona inmediatamente
   Future<XFile?> pickFrom360Gallery() async {
     try {
       final XFile? photo = await _imagePicker.pickImage(
@@ -44,7 +214,6 @@ class Camera360Service {
   }
 
   /// Método 2: Capturar con cámara del teléfono (panorama manual)
-  /// Útil si no hay cámara 360° disponible
   Future<XFile?> captureWithPhoneCamera() async {
     try {
       final XFile? photo = await _imagePicker.pickImage(
@@ -70,7 +239,6 @@ class Camera360Service {
   }
 
   /// Método 3: Escanear cámaras 360° por Bluetooth
-  /// Detecta automáticamente cámaras como Insta360, Ricoh Theta, etc.
   Future<List<Camera360Device>> scanFor360Cameras({
     Duration timeout = const Duration(seconds: 10),
   }) async {
@@ -298,24 +466,16 @@ class Camera360Service {
   }
 
   /// Obtener live preview URL de la cámara 360°
-  /// Retorna la URL del stream de video en vivo
   Future<String?> getLivePreviewUrl(Camera360Device camera) async {
     try {
-      // Intentar diferentes métodos para obtener el preview
-      
-      // MÉTODO 1: Open Spherical Camera API (WiFi)
-      // Funciona con: Ricoh Theta, algunas Insta360, etc.
       if (camera.type.contains('Theta') || camera.type.contains('Ricoh')) {
-        return 'http://192.168.1.1:8080/osc/commands/execute'; // Ricoh Theta WiFi
+        return 'http://192.168.1.1:8080/osc/commands/execute';
       }
       
-      // MÉTODO 2: Insta360 Stream (WiFi)
       if (camera.type.contains('Insta360')) {
-        return 'http://192.168.42.1:8080/stream'; // Insta360 WiFi hotspot
+        return 'http://192.168.42.1:8080/stream';
       }
       
-      // MÉTODO 3: Stream genérico por IP local
-      // Buscar el stream en la red local
       return await _discoverCameraStreamUrl(camera);
       
     } catch (e) {
@@ -326,41 +486,32 @@ class Camera360Service {
     }
   }
 
-  /// Descubrir URL de stream de la cámara en la red local
   Future<String?> _discoverCameraStreamUrl(Camera360Device camera) async {
-    // Lista de URLs comunes para cámaras 360°
     final commonStreamUrls = [
       'http://192.168.1.1:8080/liveview',
       'http://192.168.1.1:80/liveview',
       'http://192.168.42.1:8080/stream',
       'http://192.168.43.1:8080/stream',
-      'http://10.5.5.9/gp/gpControl/execute?p1=gpStream&a1=proto_v2&c1=restart', // GoPro
+      'http://10.5.5.9/gp/gpControl/execute?p1=gpStream&a1=proto_v2&c1=restart',
     ];
-    
-    // Retornar primera URL encontrada
-    // En producción, se haría un ping a cada URL para verificar
     return commonStreamUrls.first;
   }
 
   /// Capturar foto remota con cámara 360° conectada
-  /// Dispara la captura desde el celular vía comandos remotos
   Future<CaptureResult> captureWith360Camera(Camera360Device camera) async {
     try {
       if (kDebugMode) {
         debugPrint('📸 Disparando captura remota en ${camera.name}...');
       }
 
-      // MÉTODO 1: Comandos BLE (Bluetooth)
       if (camera.connectionType == ConnectionType.bluetooth && camera.device != null) {
         final result = await _sendBluetoothCaptureCommand(camera);
         if (result.success) return result;
       }
 
-      // MÉTODO 2: Comandos HTTP (WiFi) - Más universal
       final result = await _sendHttpCaptureCommand(camera);
       if (result.success) return result;
 
-      // Si no funcionó, dar instrucciones
       return CaptureResult(
         success: false,
         message: '''
@@ -374,8 +525,6 @@ class Camera360Service {
 1. Usa la app oficial de la cámara
 2. Captura la foto
 3. Usa el botón "Seleccionar desde Galería" en SU TODERO
-
-💡 Tip: Asegúrate de que la cámara esté conectada por WiFi para mejor compatibilidad.
         ''',
         requiresManualCapture: true,
       );
@@ -391,30 +540,13 @@ class Camera360Service {
     }
   }
 
-  /// Enviar comando de captura por Bluetooth
   Future<CaptureResult> _sendBluetoothCaptureCommand(Camera360Device camera) async {
     try {
-      // Buscar servicio de control de la cámara
       final services = await camera.device!.discoverServices();
-      
-      // UUID común para control de cámara (puede variar por marca)
-      // Este es un ejemplo genérico
       for (var service in services) {
-        if (kDebugMode) {
-          debugPrint('🔍 Servicio encontrado: ${service.uuid}');
-        }
-        
-        // Buscar característica de control
         for (var characteristic in service.characteristics) {
           if (characteristic.properties.write) {
-            // Intentar enviar comando de captura
-            // Comando genérico: 0x01 para disparar
             await characteristic.write([0x01]);
-            
-            if (kDebugMode) {
-              debugPrint('✅ Comando de captura enviado por BLE');
-            }
-            
             return CaptureResult(
               success: true,
               message: '✅ Foto capturada remotamente',
@@ -422,16 +554,11 @@ class Camera360Service {
           }
         }
       }
-      
       return CaptureResult(
         success: false,
         message: 'No se encontró servicio de control en la cámara',
       );
-      
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('❌ Error en comando BLE: $e');
-      }
       return CaptureResult(
         success: false,
         message: 'Error al enviar comando Bluetooth: $e',
@@ -439,26 +566,20 @@ class Camera360Service {
     }
   }
 
-  /// Enviar comando de captura por HTTP (WiFi)
   Future<CaptureResult> _sendHttpCaptureCommand(Camera360Device camera) async {
     try {
-      // Comando para Ricoh Theta (Open Spherical Camera API)
       if (camera.type.contains('Theta') || camera.type.contains('Ricoh')) {
-        // Este comando es estándar OSC
         return CaptureResult(
           success: true,
           message: '✅ Comando enviado a Ricoh Theta',
           httpCommand: {
             'url': 'http://192.168.1.1/osc/commands/execute',
             'method': 'POST',
-            'body': {
-              'name': 'camera.takePicture',
-            },
+            'body': {'name': 'camera.takePicture'},
           },
         );
       }
       
-      // Comando para Insta360
       if (camera.type.contains('Insta360')) {
         return CaptureResult(
           success: true,
@@ -470,7 +591,6 @@ class Camera360Service {
         );
       }
       
-      // Comando genérico
       return CaptureResult(
         success: false,
         message: 'Cámara no soporta captura remota HTTP',
@@ -485,83 +605,27 @@ class Camera360Service {
   }
 }
 
-/// Modelo de cámara 360° detectada
-class Camera360Device {
-  final String id;
-  final String name;
-  final String type;
-  final ConnectionType connectionType;
-  final BluetoothDevice? device;
-  final int? rssi; // Señal Bluetooth
-
-  Camera360Device({
-    required this.id,
-    required this.name,
-    required this.type,
-    required this.connectionType,
-    this.device,
-    this.rssi,
-  });
-}
-
-/// Tipo de conexión
-enum ConnectionType {
-  bluetooth,
-  wifi,
-  usb,
-}
-
-/// Resultado de captura
-class CaptureResult {
-  final bool success;
-  final String message;
-  final String? photoPath;
-  final bool requiresManualCapture;
-  final Map<String, dynamic>? httpCommand; // Comando HTTP para ejecutar
-
-  CaptureResult({
-    required this.success,
-    required this.message,
-    this.photoPath,
-    this.requiresManualCapture = false,
-    this.httpCommand,
-  });
-}
-
 /// Excepciones específicas para Bluetooth 360°
-
-/// Error de permisos denegados
 class PermissionException implements Exception {
   final String message;
   PermissionException(this.message);
-  
-  @override
-  String toString() => message;
+  @override String toString() => message;
 }
 
-/// Error de servicios de ubicación desactivados
 class LocationServiceException implements Exception {
   final String message;
   LocationServiceException(this.message);
-  
-  @override
-  String toString() => message;
+  @override String toString() => message;
 }
 
-/// Error de Bluetooth no soportado
 class BluetoothNotSupportedException implements Exception {
   final String message;
   BluetoothNotSupportedException(this.message);
-  
-  @override
-  String toString() => message;
+  @override String toString() => message;
 }
 
-/// Error de Bluetooth apagado
 class BluetoothOffException implements Exception {
   final String message;
   BluetoothOffException(this.message);
-  
-  @override
-  String toString() => message;
+  @override String toString() => message;
 }

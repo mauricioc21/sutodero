@@ -970,12 +970,16 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   Color _getTicketStatusColor(TicketStatus status) {
     switch (status) {
       case TicketStatus.nuevo:
+      case TicketStatus.asignado:
         return AppTheme.dorado;
       case TicketStatus.pendiente:
+      case TicketStatus.pendiente_repuestos:
         return const Color(0xFFFF9800);
-      case TicketStatus.enProgreso:
+      case TicketStatus.en_camino:
+      case TicketStatus.en_lugar:
+      case TicketStatus.en_ejecucion:
         return const Color(0xFF2196F3);
-      case TicketStatus.completado:
+      case TicketStatus.finalizado:
         return const Color(0xFF4CAF50);
       case TicketStatus.cancelado:
         return const Color(0xFF757575);

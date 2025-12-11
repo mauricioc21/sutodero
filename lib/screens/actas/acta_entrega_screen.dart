@@ -147,18 +147,23 @@ class _ActaEntregaScreenState extends State<ActaEntregaScreen> {
           .toList();
 
       // Crear acta
-      await _actaService.createActa(
+      final acta = ActaModel(
+        id: '',
         propertyId: widget.property.id,
         propertyAddress: widget.property.direccion,
-        type: 'entrega',
-        arrendatario: _arrendatarioController.text.trim(),
-        fecha: _selectedDate,
-        observaciones: observaciones,
-        firmaRecibe: firmaRecibeBase64,
+        propertyType: widget.property.tipo.displayName,
+        tipoActa: 'entrega',
+        arrendatarioNombre: _arrendatarioController.text.trim(),
+        arrendatarioCedula: _cedulaRecibeController.text.trim(),
+        fecha: '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+        novedades: observaciones,
+        firmaRecibido: firmaRecibeBase64,
         firmaEntrega: firmaEntregaBase64,
-        cedulaRecibe: _cedulaRecibeController.text.trim(),
-        cedulaEntrega: _cedulaEntregaController.text.trim(),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       );
+
+      await _actaService.guardarActa(acta);
 
       // Cerrar loading
       if (mounted) {
@@ -277,7 +282,7 @@ class _ActaEntregaScreenState extends State<ActaEntregaScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          const Text(
+                          Text(
                             'N° ${widget.property.id.substring(0, 4)}',
                             style: TextStyle(
                               fontSize: 16,
@@ -599,5 +604,4 @@ class _ActaEntregaScreenState extends State<ActaEntregaScreen> {
     );
   }
 }
- }
-}
+

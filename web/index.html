@@ -25,27 +25,7 @@
       padding: 0;
       background-color: #000000;
       overflow: hidden;
-    }
-    
-    /* Video splash screen */
-    #splash-video-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: #000000;
-      z-index: 10000;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-    }
-    
-    #splash-video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
     
     #loading {
@@ -60,6 +40,7 @@
       align-items: center;
       background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
       z-index: 9999;
+      transition: opacity 0.5s ease-out;
     }
     
     #loading-logo {
@@ -70,14 +51,8 @@
     }
     
     @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     
     #loading-spinner {
@@ -97,7 +72,6 @@
     
     #loading-title {
       color: #FAB334;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       font-size: 32px;
       font-weight: bold;
       letter-spacing: 2px;
@@ -107,22 +81,14 @@
     
     #loading-text {
       color: #999;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       font-size: 16px;
       animation: fadeInUp 0.8s ease-out 0.4s both;
     }
   </style>
 </head>
 <body>
-  <!-- Video Splash Screen - Tu video de Su Todero -->
-  <div id="splash-video-container">
-    <video id="splash-video" autoplay muted playsinline>
-      <source src="assets/assets/videos/splash_video.mp4" type="video/mp4">
-    </video>
-  </div>
-
-  <!-- Loading indicator (se muestra después del video) -->
-  <div id="loading" style="display: none;">
+  <!-- Loading indicator simplificado -->
+  <div id="loading">
     <svg id="loading-logo" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
       <circle cx="100" cy="100" r="90" fill="#FAB334" opacity="0.2"/>
       <path d="M70,80 L100,50 L130,80 L130,120 L100,150 L70,120 Z" 
@@ -135,77 +101,23 @@
   </div>
 
   <script>
-    // ✅ OPTIMIZACIÓN: Manejo mejorado del video splash
-    const splashVideoContainer = document.getElementById('splash-video-container');
-    const splashVideo = document.getElementById('splash-video');
-    const loadingDiv = document.getElementById('loading');
-    let videoEnded = false;
-    let videoStarted = false;
-    
-    // Cuando el video empieza a reproducirse
-    splashVideo.addEventListener('loadeddata', function() {
-      console.log('✅ Video splash cargado');
-      videoStarted = true;
-    });
-    
-    // Cuando el video termina normalmente
-    splashVideo.addEventListener('ended', function() {
-      console.log('✅ Video splash terminado');
-      videoEnded = true;
-      hideSplashVideo();
-    });
-    
-    // Error del video - ocultar inmediatamente y continuar
-    splashVideo.addEventListener('error', function(e) {
-      console.log('⚠️ Error cargando video splash - continuando sin video');
-      hideSplashVideo();
-    });
-    
-    // ✅ OPTIMIZACIÓN: Timeout reducido de 10s a 3s
-    // Si el video no carga en 3 segundos, continuar sin él
-    setTimeout(function() {
-      if (!videoStarted) {
-        console.log('⏱️ Video no cargó en 3s - continuando sin video');
-        hideSplashVideo();
-      }
-    }, 3000);
-    
-    // ✅ OPTIMIZACIÓN: Timeout máximo de 8s para videos largos
-    // Si el video es muy largo, forzar continuación
-    setTimeout(function() {
-      if (!videoEnded) {
-        console.log('⏱️ Timeout video splash (8s) - continuando');
-        hideSplashVideo();
-      }
-    }, 8000);
-    
-    function hideSplashVideo() {
-      splashVideoContainer.style.opacity = '0';
-      splashVideoContainer.style.transition = 'opacity 0.5s ease-out';
-      setTimeout(function() {
-        splashVideoContainer.remove();
-        loadingDiv.style.display = 'flex';
-      }, 500);
-    }
-    
     // Hide loading indicator when Flutter is ready
     window.addEventListener('flutter-first-frame', function() {
       const loading = document.getElementById('loading');
       if (loading) {
         loading.style.opacity = '0';
-        loading.style.transition = 'opacity 0.5s ease-out';
         setTimeout(() => loading.remove(), 500);
       }
     });
     
-    // ✅ Safety timeout - garantizar que Flutter siempre cargue
+    // Safety timeout - garantizar que si Flutter falla, al menos el loader se quite (para ver errores de consola)
     setTimeout(function() {
       const loading = document.getElementById('loading');
       if (loading) {
-        console.log('⏱️ Loading safety timeout - forzando carga de Flutter');
+        console.log('⏱️ Loading safety timeout');
         loading.remove();
       }
-    }, 5000);
+    }, 10000);
   </script>
 
   <script src="flutter_bootstrap.js" async></script>

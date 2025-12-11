@@ -406,10 +406,16 @@ class PdfService {
       case TicketStatus.pendiente:
         color = PdfColors.orange;
         break;
-      case TicketStatus.enProgreso:
+      case TicketStatus.asignado:
+      case TicketStatus.en_camino:
+      case TicketStatus.en_lugar:
+        color = PdfColors.blue;
+        break;
+      case TicketStatus.en_ejecucion:
+      case TicketStatus.pendiente_repuestos:
         color = PdfColors.purple;
         break;
-      case TicketStatus.completado:
+      case TicketStatus.finalizado:
         color = PdfColors.green;
         break;
       case TicketStatus.cancelado:

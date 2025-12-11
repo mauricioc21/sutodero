@@ -802,10 +802,6 @@ class _LoginScreenState extends State<LoginScreen> {
         icon = Icons.inventory;
         color = Colors.green;
         break;
-      case UserRole.duppla:
-        icon = Icons.real_estate_agent;
-        color = Colors.purple;
-        break;
     }
     
     return InkWell(

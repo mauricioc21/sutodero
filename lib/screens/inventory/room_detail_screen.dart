@@ -43,7 +43,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
   Future<void> _loadRoom() async {
     setState(() => _isLoading = true);
     try {
-      final room = await _inventoryService.getRoom(widget.room.id);
+      final room = await _inventoryService.getRoom(widget.room.propertyId, widget.room.id);
       if (mounted) {
         setState(() {
           _room = room;
@@ -230,7 +230,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
             photoPath = photo.path;
           }
           
-          await _inventoryService.addRoomPhoto(_room!.id, photoPath);
+          await _inventoryService.addRoomPhoto(_room!.propertyId, _room!.id, photoPath);
           await _loadRoom();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -261,7 +261,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
               photoPath = photo.path;
             }
             
-            await _inventoryService.addRoomPhoto(_room!.id, photoPath);
+            await _inventoryService.addRoomPhoto(_room!.propertyId, _room!.id, photoPath);
           }
           await _loadRoom();
           if (mounted) {
@@ -341,7 +341,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
           photoPath = photo.path;
         }
         
-        await _inventoryService.setRoom360Photo(_room!.id, photoPath);
+        await _inventoryService.setRoom360Photo(_room!.propertyId, _room!.id, photoPath);
         await _loadRoom();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -462,7 +462,7 @@ class _RoomDetailScreenState extends State<RoomDetailScreen> {
 
     if (confirmed == true && _room != null) {
       try {
-        await _inventoryService.deleteRoom(_room!.id);
+        await _inventoryService.deleteRoom(_room!.propertyId, _room!.id);
         if (mounted) {
           Navigator.pop(context, true);
         }

@@ -111,7 +111,13 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
   }
 
   Future<void> _navigateToRoom(String roomId, String? propertyId) async {
-    final room = await _inventoryService.getRoom(roomId);
+    if (propertyId == null) {
+      _showError('Código QR de espacio incompleto (falta propertyId)');
+      setState(() => isProcessing = false);
+      return;
+    }
+
+    final room = await _inventoryService.getRoom(propertyId, roomId);
     
     if (room == null) {
       _showError('Espacio no encontrado');

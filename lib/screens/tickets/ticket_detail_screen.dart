@@ -159,9 +159,14 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
         return AppTheme.dorado;
       case TicketStatus.pendiente:
         return const Color(0xFFFF9800);
-      case TicketStatus.enProgreso:
+      case TicketStatus.asignado:
+      case TicketStatus.en_camino:
+      case TicketStatus.en_lugar:
         return const Color(0xFF2196F3);
-      case TicketStatus.completado:
+      case TicketStatus.en_ejecucion:
+      case TicketStatus.pendiente_repuestos:
+        return const Color(0xFF2196F3);
+      case TicketStatus.finalizado:
         return const Color(0xFF4CAF50);
       case TicketStatus.cancelado:
         return const Color(0xFF757575);
@@ -411,8 +416,8 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
           ),
           
           // Botón de Firma Digital (solo si está completado o en progreso)
-          if (_ticket!.estado == TicketStatus.completado || 
-              _ticket!.estado == TicketStatus.enProgreso)
+          if (_ticket!.estado == TicketStatus.finalizado || 
+              _ticket!.estado == TicketStatus.en_ejecucion)
             PopupMenuButton<String>(
               icon: const Icon(Icons.draw),
               tooltip: 'Firma Digital',
@@ -560,11 +565,11 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                 child: Text('Marcar como Pendiente'),
               ),
               const PopupMenuItem(
-                value: TicketStatus.enProgreso,
+                value: TicketStatus.en_ejecucion,
                 child: Text('Marcar En Progreso'),
               ),
               const PopupMenuItem(
-                value: TicketStatus.completado,
+                value: TicketStatus.finalizado,
                 child: Text('Marcar como Completado'),
               ),
               const PopupMenuItem(

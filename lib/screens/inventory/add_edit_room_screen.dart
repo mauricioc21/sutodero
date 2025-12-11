@@ -664,7 +664,7 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
   Future<void> _syncElementPhotosToRoom(String roomId) async {
     try {
       // Obtener el room actualizado
-      final room = await _inventoryService.getRoom(roomId);
+      final room = await _inventoryService.getRoom(widget.propertyId, roomId);
       if (room == null) return;
       
       // Obtener todas las fotos de todos los elementos
@@ -681,7 +681,7 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
       
       // Agregar cada foto nueva al espacio
       for (final photo in photosToAdd) {
-        await _inventoryService.addRoomPhoto(roomId, photo);
+        await _inventoryService.addRoomPhoto(widget.propertyId, roomId, photo);
       }
     } catch (e) {
       // Silenciosamente fallar, no interrumpir el guardado del espacio
@@ -718,16 +718,23 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
           iluminacionNatural: _iluminacionNatural,
           items: _items,
         );
-        await _inventoryService.updateRoom(updated);
+        await _inventoryService.updateRoom(widget.propertyId, updated);
       } else {
         // Para crear necesitamos actualizar el modelo después de la creación
-        final room = await _inventoryService.createRoom(
+        final newRoom = PropertyRoom(
+          id: _uuid.v4(),
           propertyId: widget.propertyId,
           nombre: _nombreController.text,
           descripcion: _descripcionController.text.isEmpty ? null : _descripcionController.text,
           tipo: _selectedType,
           estado: _selectedCondition,
         );
+        await _inventoryService.createRoom(
+          widget.propertyId,
+          newRoom
+        );
+        final room = newRoom; // Asignamos para continuar con la logica
+        
         // Actualizar con los campos adicionales
         final updated = room.copyWith(
           ancho: ancho,
@@ -744,7 +751,7 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
           iluminacionNatural: _iluminacionNatural,
           items: _items,
         );
-        await _inventoryService.updateRoom(updated);
+        await _inventoryService.updateRoom(widget.propertyId, updated);
         
         // Agregar fotos de elementos a las fotos del espacio
         await _syncElementPhotosToRoom(updated.id);
