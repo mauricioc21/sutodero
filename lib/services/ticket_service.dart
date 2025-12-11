@@ -12,7 +12,63 @@ class TicketService {
   final Uuid _uuid = const Uuid();
   final TicketHistoryService _historyService = TicketHistoryService();
   final GeolocationService _geolocationService = GeolocationService();
-  
+
+  bool _isAdminRole(String? role) {
+    final value = role?.toLowerCase().trim();
+    return value == 'admin' ||
+        value == 'administrador' ||
+        value == 'coordinador' ||
+        value == 'super_admin';
+  }
+
+  bool _isMaestroRole(String? role) {
+    final value = role?.toLowerCase().trim();
+    return value == 'maestro' || value == 'tecnico';
+  }
+
+  List<TicketModel> _parseTicketsFromSnapshot(
+    QuerySnapshot<Map<String, dynamic>> snapshot,
+  ) {
+    return snapshot.docs
+        .map((doc) {
+          try {
+            return TicketModel.fromMap(doc.data(), doc.id);
+          } catch (e) {
+            debugPrint('⚠️ Error parseando ticket ${doc.id}: $e');
+            return null;
+          }
+        })
+        .whereType<TicketModel>()
+        .toList();
+  }
+
+  Future<List<TicketModel>> _fetchTicketsForQueries(
+    List<Query<Map<String, dynamic>>> queries,
+  ) async {
+    final Map<String, TicketModel> uniqueTickets = {};
+
+    for (final query in queries) {
+      try {
+        final snapshot = await query.get();
+        for (final doc in snapshot.docs) {
+          if (!uniqueTickets.containsKey(doc.id)) {
+            try {
+              uniqueTickets[doc.id] = TicketModel.fromMap(doc.data(), doc.id);
+            } catch (e) {
+              debugPrint('⚠️ Error parseando ticket ${doc.id}: $e');
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ Query parcial falló: $e');
+      }
+    }
+
+    final tickets = uniqueTickets.values.toList()
+      ..sort((a, b) => b.fechaCreacion.compareTo(a.fechaCreacion));
+    return tickets;
+  }
+
   static final TicketService _instance = TicketService._internal();
   factory TicketService() => _instance;
   TicketService._internal();
@@ -82,81 +138,89 @@ class TicketService {
         TicketHistoryItem(
           fecha: now,
           accion: 'Creación',
-          usuario: clienteNombre, // O 'Coordinador' si tuviéramos ese dato exacto
-          detalles: 'Ticket creado exitosamente. Estado: ${estadoInicial.displayName}',
-        )
+          usuario:
+              clienteNombre, // O 'Coordinador' si tuviéramos ese dato exacto
+          detalles:
+              'Ticket creado exitosamente. Estado: ${estadoInicial.displayName}',
+        ),
       ],
     );
 
     try {
       // Intento de escritura en Firestore
       // Usamos SetOptions(merge: true) por seguridad
-      await _firestore.collection('tickets').doc(ticket.id).set(ticket.toMap(), SetOptions(merge: true));
-      
+      await _firestore
+          .collection('tickets')
+          .doc(ticket.id)
+          .set(ticket.toMap(), SetOptions(merge: true));
+
       if (kDebugMode) {
         debugPrint('✅ Ticket creado exitosamente en Firebase: ${ticket.id}');
       }
-      return {'success': true, 'message': 'Ticket creado correctamente', 'data': ticket};
-
+      return {
+        'success': true,
+        'message': 'Ticket creado correctamente',
+        'data': ticket,
+      };
     } catch (e) {
       if (kDebugMode) {
         debugPrint('❌ Error CRÍTICO creando ticket en Firebase: $e');
       }
       // Retornamos el error para que la UI lo sepa
-      return {'success': false, 'message': 'Error al guardar en base de datos: $e', 'data': null};
+      return {
+        'success': false,
+        'message': 'Error al guardar en base de datos: $e',
+        'data': null,
+      };
     }
   }
 
   // Variable para diagnóstico de errores en UI
   String? lastError;
 
-  /// Obtener todos los tickets (Admin / Coordinador Dashboard)
-  /// Ahora soporta filtrado por rol para garantizar visibilidad
-  Future<List<TicketModel>> getAllTickets({String? userId, String? userRole}) async {
-    lastError = null; // Reset error
-    try {
-      QuerySnapshot querySnapshot;
-      
-      // Estrategia de Consulta:
-      // 1. Si es Admin, intentar traer TODO.
-      // 2. Si es Coordinador/Otro, intentar traer TODO (por si tiene permisos).
-      // 3. Si falla por permisos, hacer Fallback a "Mis Tickets Relacionados".
+  /// Obtener todos los tickets disponibles según permisos del usuario
+  Future<List<TicketModel>> getAllTickets({
+    String? userId,
+    String? userRole,
+  }) async {
+    lastError = null;
+    final ticketsCollection = _firestore.collection('tickets');
 
-      try {
-        // Intento 1: Traer todo ordenado
-        querySnapshot = await _firestore
-            .collection('tickets')
-            .orderBy('fechaCreacion', descending: true)
-            .get();
-      } catch (e) {
-        // Fallback A: Intentar sin orden (por índices)
+    try {
+      if (_isAdminRole(userRole)) {
         try {
-          debugPrint('⚠️ Falló query ordenada, intentando sin orden: $e');
-          querySnapshot = await _firestore.collection('tickets').get();
-        } catch (e2) {
-          // Fallback B: Permisos insuficientes -> Traer tickets relacionados
-          if (userId != null) {
-            debugPrint('⚠️ Falló lectura general (posible permiso), buscando tickets relacionados a: $userId');
-            return await _getRelatedTickets(userId);
-          }
-          rethrow; // Si no hay userId, no podemos hacer más
+          final snapshot = await ticketsCollection
+              .orderBy('fechaCreacion', descending: true)
+              .get();
+          final tickets = _parseTicketsFromSnapshot(snapshot)
+            ..sort((a, b) => b.fechaCreacion.compareTo(a.fechaCreacion));
+          return tickets;
+        } catch (e) {
+          debugPrint('⚠️ Lectura global falló: $e');
+          lastError =
+              'Permisos limitados para lectura global, mostrando tickets relacionados.';
+          // Continuar con consultas específicas según el usuario.
         }
       }
-      
-      final tickets = querySnapshot.docs.map((doc) {
-        try {
-          return TicketModel.fromMap(doc.data() as Map<String, dynamic>, doc.id);
-        } catch (e) {
-          debugPrint('⚠️ Error parseando ticket ${doc.id}: $e');
-          return null;
-        }
-      }).whereType<TicketModel>().toList();
 
-      // Ordenar en memoria
-      tickets.sort((a, b) => b.fechaCreacion.compareTo(a.fechaCreacion));
-      
-      return tickets;
+      if (userId == null || userId.isEmpty) {
+        lastError = 'Usuario no autenticado';
+        return [];
+      }
 
+      if (_isMaestroRole(userRole)) {
+        return await _fetchTicketsForQueries([
+          ticketsCollection.where('tecnicoId', isEqualTo: userId),
+          ticketsCollection.where('toderoId', isEqualTo: userId),
+          ticketsCollection.where('maestroAsignado.id', isEqualTo: userId),
+        ]);
+      }
+
+      return await _fetchTicketsForQueries([
+        ticketsCollection.where('userId', isEqualTo: userId),
+        ticketsCollection.where('clienteId', isEqualTo: userId),
+        ticketsCollection.where('cliente.id', isEqualTo: userId),
+      ]);
     } catch (e) {
       lastError = e.toString();
       debugPrint('❌ Error obteniendo tickets: $e');
@@ -164,57 +228,50 @@ class TicketService {
     }
   }
 
-  /// Método privado para buscar todos los tickets relacionados con un usuario
-  /// (Creados por él, Asignados a él, o donde es Cliente)
-  Future<List<TicketModel>> _getRelatedTickets(String userId) async {
-    try {
-      // Firestore no soporta OR nativo eficiente para múltiples campos diferentes,
-      // así que hacemos 3 queries paralelas y unimos resultados.
-      
-      final results = await Future.wait([
-        // 1. Creados por mí (userId)
-        _firestore.collection('tickets').where('userId', isEqualTo: userId).get(),
-        // 2. Yo soy el cliente (cliente.id)
-        _firestore.collection('tickets').where('cliente.id', isEqualTo: userId).get(),
-        // 3. Asignados a mí (maestroAsignado.id)
-        _firestore.collection('tickets').where('maestroAsignado.id', isEqualTo: userId).get(),
-      ]);
+  /// Escuchar tickets según permisos del usuario en tiempo real
+  Stream<List<TicketModel>> watchTickets({
+    required String userId,
+    required String userRole,
+  }) {
+    final ticketsCollection = _firestore.collection('tickets');
+    Query<Map<String, dynamic>> query;
 
-      final Map<String, TicketModel> uniqueTickets = {};
-
-      for (var snapshot in results) {
-        for (var doc in snapshot.docs) {
-          if (!uniqueTickets.containsKey(doc.id)) {
-            try {
-              uniqueTickets[doc.id] = TicketModel.fromMap(doc.data() as Map<String, dynamic>, doc.id);
-            } catch (e) {
-              debugPrint('Error parseando ticket relacionado: $e');
-            }
-          }
-        }
-      }
-
-      final tickets = uniqueTickets.values.toList();
-      tickets.sort((a, b) => b.fechaCreacion.compareTo(a.fechaCreacion));
-      
-      return tickets;
-      
-    } catch (e) {
-      debugPrint('❌ Error buscando tickets relacionados: $e');
-      lastError = 'Error buscando tickets personales: $e';
-      return [];
+    if (_isAdminRole(userRole)) {
+      query = ticketsCollection.orderBy('fechaCreacion', descending: true);
+    } else if (_isMaestroRole(userRole)) {
+      query = ticketsCollection.where(
+        Filter.or(
+          Filter('tecnicoId', isEqualTo: userId),
+          Filter('toderoId', isEqualTo: userId),
+          Filter('maestroAsignado.id', isEqualTo: userId),
+        ),
+      );
+    } else {
+      query = ticketsCollection.where('userId', isEqualTo: userId);
     }
+
+    return query.snapshots().map((snapshot) {
+      final tickets = _parseTicketsFromSnapshot(snapshot)
+        ..sort((a, b) => b.fechaCreacion.compareTo(a.fechaCreacion));
+      lastError = null;
+      return tickets;
+    }).handleError((error) {
+      lastError = error.toString();
+    });
   }
 
   /// Obtener tickets por usuario (cliente o maestro)
-  Future<List<TicketModel>> getTicketsByUser(String userId, {bool isCliente = true}) async {
+  Future<List<TicketModel>> getTicketsByUser(
+    String userId, {
+    bool isCliente = true,
+  }) async {
     try {
       final field = isCliente ? 'cliente.id' : 'maestroAsignado.id';
       // Fallback fields para compatibilidad con datos antiguos
       final legacyField = isCliente ? 'clienteId' : 'toderoId';
 
       QuerySnapshot querySnapshot;
-      
+
       try {
         // Intentar query principal (estructura nueva)
         try {
@@ -222,35 +279,44 @@ class TicketService {
               .collection('tickets')
               .where(field, isEqualTo: userId)
               .get();
-          
+
           if (querySnapshot.docs.isEmpty) {
-             throw Exception('Empty results, try legacy');
+            throw Exception('Empty results, try legacy');
           }
-        } catch(e) {
-           // Fallback a legacy o si falla por índice
-           debugPrint('⚠️ Falló query principal ticketsByUser, intentando legacy: $e');
-           querySnapshot = await _firestore
+        } catch (e) {
+          // Fallback a legacy o si falla por índice
+          debugPrint(
+            '⚠️ Falló query principal ticketsByUser, intentando legacy: $e',
+          );
+          querySnapshot = await _firestore
               .collection('tickets')
               .where(legacyField, isEqualTo: userId)
               .get();
         }
-      } catch(e) {
-         debugPrint('❌ Error obteniendo tickets por usuario (ambos métodos fallaron): $e');
-         return [];
+      } catch (e) {
+        debugPrint(
+          '❌ Error obteniendo tickets por usuario (ambos métodos fallaron): $e',
+        );
+        return [];
       }
-      
-      final tickets = querySnapshot.docs.map((doc) {
-        try {
-          return TicketModel.fromMap(doc.data() as Map<String, dynamic>, doc.id);
-        } catch (e) {
-          return null;
-        }
-      }).whereType<TicketModel>().toList();
-      
+
+      final tickets = querySnapshot.docs
+          .map((doc) {
+            try {
+              return TicketModel.fromMap(
+                doc.data() as Map<String, dynamic>,
+                doc.id,
+              );
+            } catch (e) {
+              return null;
+            }
+          })
+          .whereType<TicketModel>()
+          .toList();
+
       // Ordenamiento en memoria si el índice compuesto falla
       tickets.sort((a, b) => b.fechaCreacion.compareTo(a.fechaCreacion));
       return tickets;
-
     } catch (e) {
       debugPrint('⚠️ Error obteniendo tickets por usuario: $e');
       return [];
@@ -272,11 +338,17 @@ class TicketService {
   }
 
   /// Actualizar estado del ticket
-  Future<bool> updateTicketStatus(String ticketId, TicketStatus newStatus, {String? userId, String? userName, String? detalles}) async {
+  Future<bool> updateTicketStatus(
+    String ticketId,
+    TicketStatus newStatus, {
+    String? userId,
+    String? userName,
+    String? detalles,
+  }) async {
     try {
       final ticket = await getTicket(ticketId);
       if (ticket == null) return false;
-      
+
       final now = DateTime.now();
       final historyItem = TicketHistoryItem(
         fecha: now,
@@ -289,11 +361,20 @@ class TicketService {
         estado: newStatus,
         fechaActualizacion: now,
         historial: [...ticket.historial, historyItem],
-        fechaInicio: (newStatus == TicketStatus.en_ejecucion && ticket.fechaInicio == null) ? now : ticket.fechaInicio,
-        fechaCompletado: (newStatus == TicketStatus.finalizado) ? now : ticket.fechaCompletado,
+        fechaInicio:
+            (newStatus == TicketStatus.en_ejecucion &&
+                ticket.fechaInicio == null)
+            ? now
+            : ticket.fechaInicio,
+        fechaCompletado: (newStatus == TicketStatus.finalizado)
+            ? now
+            : ticket.fechaCompletado,
       );
-      
-      await _firestore.collection('tickets').doc(ticketId).update(updatedTicket.toMap());
+
+      await _firestore
+          .collection('tickets')
+          .doc(ticketId)
+          .update(updatedTicket.toMap());
       return true;
     } catch (e) {
       debugPrint('⚠️ Error actualizando estado: $e');
@@ -308,19 +389,33 @@ class TicketService {
   Future<Map<String, int>> getTicketStatistics() async {
     try {
       final tickets = await getAllTickets();
-      int nuevo = 0, pendiente = 0, enProgreso = 0, completado = 0, cancelado = 0;
+      int nuevo = 0,
+          pendiente = 0,
+          enProgreso = 0,
+          completado = 0,
+          cancelado = 0;
 
       for (var ticket in tickets) {
         switch (ticket.estado) {
           case TicketStatus.nuevo:
-          case TicketStatus.asignado: nuevo++; break;
-          case TicketStatus.pendiente: pendiente++; break;
+          case TicketStatus.asignado:
+            nuevo++;
+            break;
+          case TicketStatus.pendiente:
+            pendiente++;
+            break;
           case TicketStatus.en_camino:
           case TicketStatus.en_lugar:
           case TicketStatus.en_ejecucion:
-          case TicketStatus.pendiente_repuestos: enProgreso++; break;
-          case TicketStatus.finalizado: completado++; break;
-          case TicketStatus.cancelado: cancelado++; break;
+          case TicketStatus.pendiente_repuestos:
+            enProgreso++;
+            break;
+          case TicketStatus.finalizado:
+            completado++;
+            break;
+          case TicketStatus.cancelado:
+            cancelado++;
+            break;
         }
       }
       return {
@@ -338,9 +433,12 @@ class TicketService {
   /// Agregar una foto al ticket
   Future<void> addPhoto(String ticketId, String photoUrl, String tipo) async {
     try {
-      final field = tipo == 'antes' ? 'fotosAntes' :
-                    tipo == 'durante' ? 'fotosDurante' : 'fotosDespues';
-      
+      final field = tipo == 'antes'
+          ? 'fotosAntes'
+          : tipo == 'durante'
+          ? 'fotosDurante'
+          : 'fotosDespues';
+
       await _firestore.collection('tickets').doc(ticketId).update({
         field: FieldValue.arrayUnion([photoUrl]),
         'fechaActualizacion': FieldValue.serverTimestamp(),
@@ -376,8 +474,9 @@ class TicketService {
             fecha: DateTime.now(),
             accion: 'Check-in',
             usuario: 'Maestro', // Idealmente obtener nombre real
-            detalles: 'Llegada al sitio. Distancia: ${checkIn.distanciaDesdeUbicacion?.toStringAsFixed(0) ?? "?"}m',
-          ).toMap()
+            detalles:
+                'Llegada al sitio. Distancia: ${checkIn.distanciaDesdeUbicacion?.toStringAsFixed(0) ?? "?"}m',
+          ).toMap(),
         ]),
       });
     } catch (e) {
@@ -391,7 +490,9 @@ class TicketService {
     try {
       await _firestore.collection('tickets').doc(ticketId).update({
         'check.checkOut': checkOut.toMap(),
-        'estado': TicketStatus.en_ejecucion.value, // O el estado que corresponda post check-out
+        'estado': TicketStatus
+            .en_ejecucion
+            .value, // O el estado que corresponda post check-out
         'fechaActualizacion': FieldValue.serverTimestamp(),
         'historial': FieldValue.arrayUnion([
           TicketHistoryItem(
@@ -399,7 +500,7 @@ class TicketService {
             accion: 'Check-out',
             usuario: 'Maestro',
             detalles: 'Salida del sitio.',
-          ).toMap()
+          ).toMap(),
         ]),
       });
     } catch (e) {
@@ -425,14 +526,13 @@ class TicketService {
       };
 
       if (maestroId.isNotEmpty) {
-        updates['maestroAsignado'] = {
-          'id': maestroId,
-          'nombre': maestroNombre,
-        };
+        updates['maestroAsignado'] = {'id': maestroId, 'nombre': maestroNombre};
         updates['maestroId'] = maestroId; // Legacy
         updates['toderoId'] = maestroId; // Legacy
         updates['maestroNombre'] = maestroNombre; // Legacy
         updates['toderoNombre'] = maestroNombre; // Legacy
+        updates['tecnicoId'] = maestroId;
+        updates['tecnicoNombre'] = maestroNombre;
         updates['estado'] = TicketStatus.asignado.value;
       }
 
@@ -445,9 +545,11 @@ class TicketService {
             fecha: now,
             accion: 'Cotización Aprobada',
             usuario: userName ?? 'Usuario',
-            detalles: maestroId.isNotEmpty ? 'Maestro asignado: $maestroNombre' : 'Pendiente asignación',
-          ).toMap()
-        ])
+            detalles: maestroId.isNotEmpty
+                ? 'Maestro asignado: $maestroNombre'
+                : 'Pendiente asignación',
+          ).toMap(),
+        ]),
       });
 
       return true;
@@ -468,14 +570,13 @@ class TicketService {
     try {
       final now = DateTime.now();
       final updates = {
-        'maestroAsignado': {
-          'id': maestroId,
-          'nombre': maestroNombre,
-        },
+        'maestroAsignado': {'id': maestroId, 'nombre': maestroNombre},
         'maestroId': maestroId,
         'toderoId': maestroId,
         'maestroNombre': maestroNombre,
         'toderoNombre': maestroNombre,
+        'tecnicoId': maestroId,
+        'tecnicoNombre': maestroNombre,
         'estado': TicketStatus.asignado.value,
         'fechaActualizacion': FieldValue.serverTimestamp(),
       };
@@ -490,8 +591,8 @@ class TicketService {
             accion: 'Maestro Asignado',
             usuario: userName ?? 'Usuario',
             detalles: 'Se asignó a $maestroNombre',
-          ).toMap()
-        ])
+          ).toMap(),
+        ]),
       });
 
       return true;
@@ -513,14 +614,16 @@ class TicketService {
       final now = DateTime.now();
       final field = isCliente ? 'firmaCliente' : 'firmaMaestro';
       final dateField = isCliente ? 'fechaFirmaCliente' : 'fechaFirmaMaestro';
-      final legacyField = isCliente ? null : 'firmaTodero'; // Legacy for maestro
+      final legacyField = isCliente
+          ? null
+          : 'firmaTodero'; // Legacy for maestro
 
       final Map<String, dynamic> updates = {
         field: signatureBase64,
         dateField: FieldValue.serverTimestamp(),
         'fechaActualizacion': FieldValue.serverTimestamp(),
       };
-      
+
       if (legacyField != null) {
         updates[legacyField] = signatureBase64;
       }
@@ -535,8 +638,8 @@ class TicketService {
             accion: 'Firma Registrada',
             usuario: userName ?? 'Usuario',
             detalles: isCliente ? 'Firma del Cliente' : 'Firma del Maestro',
-          ).toMap()
-        ])
+          ).toMap(),
+        ]),
       });
 
       return true;

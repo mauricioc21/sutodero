@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/ticket_model.dart';
@@ -9,6 +11,7 @@ import '../../services/ticket_service.dart';
 import '../../services/maestro_profile_service.dart';
 import 'add_edit_ticket_screen.dart';
 import 'ticket_detail_screen.dart';
+import 'my_assigned_tickets_screen.dart';
 import '../../config/app_theme.dart';
 
 class TicketsScreen extends StatefulWidget {
@@ -25,11 +28,16 @@ class _TicketsScreenState extends State<TicketsScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<TicketModel> _tickets = [];
   List<UserModel> _maestros = [];
+  StreamSubscription<List<TicketModel>>? _ticketsSubscription;
+  UserModel? _currentUser;
   bool _isLoading = true;
   String _filterStatus = 'todos';
   String? _filterMaestro; // null = todos, id del maestro para filtrar
   String _searchQuery = '';
   String _sortBy = 'fecha_desc'; // fecha_desc, fecha_asc, prioridad, estado
+
+  bool get _isCoordinatorView => _currentUser?.hasAdminAccess ?? false;
+  bool get _isMaestroView => _currentUser?.roleEnum == UserRole.maestro;
 
   @override
   void initState() {
@@ -43,10 +51,10 @@ class _TicketsScreenState extends State<TicketsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authService = Provider.of<AuthService>(context, listen: false);
       authService.addListener(_onAuthChanged);
-      _loadTickets(); // Carga inicial
+      _currentUser = authService.currentUser;
+      _subscribeToTickets();
     });
-    
-    _loadMaestros();
+
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text.toLowerCase();
@@ -59,47 +67,58 @@ class _TicketsScreenState extends State<TicketsScreen> {
     // Limpiar listener
     final authService = Provider.of<AuthService>(context, listen: false);
     authService.removeListener(_onAuthChanged);
-    
+
+    _ticketsSubscription?.cancel();
     _searchController.dispose();
     super.dispose();
   }
 
   void _onAuthChanged() {
-    // Si el usuario cambia (login/logout), recargar tickets
-    if (mounted) {
-      _loadTickets();
-    }
+    if (!mounted) return;
+    _subscribeToTickets();
   }
 
-  Future<void> _loadTickets() async {
-    // Evitar recargas innecesarias si no está montado
+  void _subscribeToTickets() {
     if (!mounted) return;
 
-    setState(() => _isLoading = true);
-    
     final authService = Provider.of<AuthService>(context, listen: false);
     final user = authService.currentUser;
-    
-    // Si no hay usuario cargado aún, esperar un momento o mostrar estado de carga
-    if (user == null && authService.isLoading) {
-      // El listener _onAuthChanged volverá a llamar esto cuando termine de cargar
-      return; 
-    }
-    
-    debugPrint('🔄 Cargando tickets para usuario: ${user?.uid} (${user?.rol})');
 
-    final tickets = await _ticketService.getAllTickets(
-      userId: user?.uid,
-      userRole: user?.rol,
-    );
-    
-    if (mounted) {
+    _ticketsSubscription?.cancel();
+
+    if (user == null) {
+      if (authService.isLoading) {
+        setState(() {
+          _currentUser = null;
+          _isLoading = true;
+        });
+      } else {
+        setState(() {
+          _currentUser = null;
+          _tickets = [];
+          _isLoading = false;
+        });
+      }
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _currentUser = user;
+    });
+
+    debugPrint('🔄 Suscribiendo tickets para usuario: ${user.uid} (${user.rol})');
+
+    _ticketsSubscription = _ticketService
+        .watchTickets(userId: user.uid, userRole: user.rol)
+        .listen((tickets) {
+      if (!mounted) return;
       setState(() {
         _tickets = tickets;
         _isLoading = false;
       });
-      
-      if (tickets.isEmpty && _ticketService.lastError != null) {
+
+      if (_ticketService.lastError != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error cargando tickets: ${_ticketService.lastError}'),
@@ -108,12 +127,39 @@ class _TicketsScreenState extends State<TicketsScreen> {
             action: SnackBarAction(
               label: 'Reintentar',
               textColor: Colors.white,
-              onPressed: _loadTickets,
+              onPressed: _refreshTickets,
             ),
           ),
         );
       }
-    }
+
+      if (_isCoordinatorView) {
+        _loadMaestros();
+      }
+    }, onError: (error) {
+      if (!mounted) return;
+      setState(() {
+        _tickets = [];
+        _isLoading = false;
+      });
+      _ticketService.lastError = error.toString();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error cargando tickets: ${_ticketService.lastError}'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'Reintentar',
+            textColor: Colors.white,
+            onPressed: _refreshTickets,
+          ),
+        ),
+      );
+    });
+  }
+
+  Future<void> _refreshTickets() async {
+    _subscribeToTickets();
   }
 
   Future<void> _loadMaestros() async {
@@ -451,7 +497,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _loadTickets,
+            onPressed: _refreshTickets,
           ),
         ],
       ),

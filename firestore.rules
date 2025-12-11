@@ -7,15 +7,53 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    // Función auxiliar para verificar si el usuario es administrador
+    // Función auxiliar para obtener el rol del usuario autenticado
+    function getUserRole() {
+      return isAuthenticated()
+          ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol
+          : null;
+    }
+    
+    // Función auxiliar para verificar si el usuario es administrador o coordinador
     function isAdmin() {
-      return isAuthenticated() && 
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.rol == 'admin';
+      let role = getUserRole();
+      let roleLower = role == null ? '' : role.lower().trim();
+      return roleLower == 'admin' ||
+             roleLower == 'administrador' ||
+             roleLower == 'coordinador' ||
+             roleLower == 'coordinator' ||
+             roleLower == 'super_admin';
     }
     
     // Función auxiliar para verificar si es el propietario del recurso
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Función auxiliar para saber si el usuario está asociado al ticket como cliente
+    function isTicketClient(ticketData) {
+      return isAuthenticated() && (
+        ticketData.clienteId == request.auth.uid ||
+        (ticketData.cliente != null && ticketData.cliente.id == request.auth.uid)
+      );
+    }
+    
+    // Función auxiliar para verificar si el usuario es el técnico/maestro asignado al ticket
+    function isTicketTechnician(ticketData) {
+      return isAuthenticated() && (
+        ticketData.tecnicoId == request.auth.uid ||
+        ticketData.toderoId == request.auth.uid ||
+        ticketData.maestroId == request.auth.uid ||
+        (ticketData.maestroAsignado != null && ticketData.maestroAsignado.id == request.auth.uid)
+      );
+    }
+    
+    // Función auxiliar para saber si el usuario puede leer un ticket
+    function canReadTicket(ticketData) {
+      return isAdmin() ||
+             isOwner(ticketData.userId) ||
+             isTicketClient(ticketData) ||
+             isTicketTechnician(ticketData);
     }
     
     // Reglas para colección de usuarios
@@ -68,21 +106,23 @@ service cloud.firestore {
       // Los admins pueden ver todos los tickets
       // Los técnicos pueden ver los tickets asignados
       // Los clientes solo pueden ver sus propios tickets
-      allow read: if isAdmin() || 
-                     (isAuthenticated() && resource.data.userId == request.auth.uid) ||
-                     (isAuthenticated() && resource.data.tecnicoId == request.auth.uid);
+      allow read: if canReadTicket(resource.data);
       
-      // Solo el cliente puede crear tickets
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Permitir creación al propietario (cliente) o a roles administrativos (coordinador/admin)
+      allow create: if isAuthenticated() && (
+        isAdmin() ||
+        isOwner(request.resource.data.userId) ||
+        isTicketClient(request.resource.data)
+      );
       
-      // El propietario, técnico asignado o admin pueden actualizar
-      allow update: if isAdmin() || 
-                      (isAuthenticated() && resource.data.userId == request.auth.uid) ||
-                      (isAuthenticated() && resource.data.tecnicoId == request.auth.uid);
+      // El propietario, cliente, técnico asignado o admin pueden actualizar
+      allow update: if isAdmin() ||
+                      isOwner(resource.data.userId) ||
+                      isTicketClient(resource.data) ||
+                      isTicketTechnician(resource.data);
       
       // Solo admin o propietario pueden eliminar
-      allow delete: if isAdmin() || 
-                      (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin() || isOwner(resource.data.userId);
     }
     
     // Reglas para captaciones de inmuebles (property_listings)

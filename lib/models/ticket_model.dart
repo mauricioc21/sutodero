@@ -62,17 +62,28 @@ enum ServiceType {
 extension ServiceTypeExtension on ServiceType {
   String get displayName {
     switch (this) {
-      case ServiceType.plomeria: return 'Plomería';
-      case ServiceType.electricidad: return 'Electricidad';
-      case ServiceType.pintura: return 'Pintura';
-      case ServiceType.carpinteria: return 'Carpintería';
-      case ServiceType.albanileria: return 'Albañilería';
-      case ServiceType.climatizacion: return 'Climatización';
-      case ServiceType.limpieza: return 'Limpieza';
-      case ServiceType.jardineria: return 'Jardinería';
-      case ServiceType.cerrajeria: return 'Cerrajería';
-      case ServiceType.electrodomesticos: return 'Electrodomésticos';
-      case ServiceType.otro: return 'Otro';
+      case ServiceType.plomeria:
+        return 'Plomería';
+      case ServiceType.electricidad:
+        return 'Electricidad';
+      case ServiceType.pintura:
+        return 'Pintura';
+      case ServiceType.carpinteria:
+        return 'Carpintería';
+      case ServiceType.albanileria:
+        return 'Albañilería';
+      case ServiceType.climatizacion:
+        return 'Climatización';
+      case ServiceType.limpieza:
+        return 'Limpieza';
+      case ServiceType.jardineria:
+        return 'Jardinería';
+      case ServiceType.cerrajeria:
+        return 'Cerrajería';
+      case ServiceType.electrodomesticos:
+        return 'Electrodomésticos';
+      case ServiceType.otro:
+        return 'Otro';
     }
   }
 
@@ -80,20 +91,19 @@ extension ServiceTypeExtension on ServiceType {
 }
 
 /// Niveles de prioridad
-enum TicketPriority {
-  baja,
-  media,
-  alta,
-  urgente,
-}
+enum TicketPriority { baja, media, alta, urgente }
 
 extension TicketPriorityExtension on TicketPriority {
   String get displayName {
     switch (this) {
-      case TicketPriority.baja: return 'Baja';
-      case TicketPriority.media: return 'Media';
-      case TicketPriority.alta: return 'Alta';
-      case TicketPriority.urgente: return 'Urgente';
+      case TicketPriority.baja:
+        return 'Baja';
+      case TicketPriority.media:
+        return 'Media';
+      case TicketPriority.alta:
+        return 'Alta';
+      case TicketPriority.urgente:
+        return 'Urgente';
     }
   }
 
@@ -261,22 +271,18 @@ class TicketCheck {
   final CheckIn? checkIn;
   final CheckOut? checkOut;
 
-  TicketCheck({
-    this.checkIn,
-    this.checkOut,
-  });
+  TicketCheck({this.checkIn, this.checkOut});
 
   Map<String, dynamic> toMap() {
-    return {
-      'checkIn': checkIn?.toMap(),
-      'checkOut': checkOut?.toMap(),
-    };
+    return {'checkIn': checkIn?.toMap(), 'checkOut': checkOut?.toMap()};
   }
 
   factory TicketCheck.fromMap(Map<String, dynamic> map) {
     return TicketCheck(
       checkIn: map['checkIn'] != null ? CheckIn.fromMap(map['checkIn']) : null,
-      checkOut: map['checkOut'] != null ? CheckOut.fromMap(map['checkOut']) : null,
+      checkOut: map['checkOut'] != null
+          ? CheckOut.fromMap(map['checkOut'])
+          : null,
     );
   }
 }
@@ -291,12 +297,12 @@ class TicketModel {
   final TicketPriority prioridad;
   final DateTime fechaCreacion;
   final DateTime? fechaProgramada;
-  
+
   // Ubicación anidada
   final String ubicacionDireccion;
   final double? ubicacionLat;
   final double? ubicacionLng;
-  
+
   // Propiedad y espacio asociados (Compatibilidad)
   final String? propiedadId;
   final String? espacioId;
@@ -336,13 +342,13 @@ class TicketModel {
   final DateTime fechaActualizacion;
   final DateTime? fechaInicio;
   final DateTime? fechaCompletado;
-  
+
   // Firma
   final String? firmaCliente;
   final String? firmaMaestro; // Antes firmaTodero
   final DateTime? fechaFirmaCliente;
   final DateTime? fechaFirmaMaestro;
-  
+
   // Cotización (Restored)
   final bool cotizacionAprobada;
   final DateTime? fechaCotizacionAprobada;
@@ -401,8 +407,10 @@ class TicketModel {
       'estado': estado.value,
       'prioridad': prioridad.value,
       'fechaCreacion': Timestamp.fromDate(fechaCreacion),
-      'fechaProgramada': fechaProgramada != null ? Timestamp.fromDate(fechaProgramada!) : null,
-      
+      'fechaProgramada': fechaProgramada != null
+          ? Timestamp.fromDate(fechaProgramada!)
+          : null,
+
       // Estructura anidada ubicacion
       'ubicacion': {
         'direccion': ubicacionDireccion,
@@ -418,7 +426,7 @@ class TicketModel {
       'fotosDespues': fotosDespues,
 
       'materialesUsados': materialesUsados.map((m) => m.toMap()).toList(),
-      
+
       'historial': historial.map((h) => h.toMap()).toList(),
 
       'check': check?.toMap(),
@@ -429,12 +437,19 @@ class TicketModel {
         'telefono': clienteTelefono,
         'email': clienteEmail,
       },
+      'clienteId': clienteId,
+      'clienteNombre': clienteNombre,
+      'clienteTelefono': clienteTelefono,
+      'clienteEmail': clienteEmail,
 
-      'maestroAsignado': {
-        'id': maestroId,
-        'nombre': maestroNombre,
-      },
-      
+      'maestroAsignado': {'id': maestroId, 'nombre': maestroNombre},
+      'maestroId': maestroId,
+      'maestroNombre': maestroNombre,
+      'tecnicoId': maestroId,
+      'tecnicoNombre': maestroNombre,
+      'toderoId': maestroId,
+      'toderoNombre': maestroNombre,
+
       'notasMaestro': notasMaestro,
       'notasCliente': notasCliente,
 
@@ -445,14 +460,24 @@ class TicketModel {
       'presupuestoEstimado': presupuestoEstimado,
       'costoFinal': costoFinal,
       'fechaActualizacion': Timestamp.fromDate(fechaActualizacion),
-      'fechaInicio': fechaInicio != null ? Timestamp.fromDate(fechaInicio!) : null,
-      'fechaCompletado': fechaCompletado != null ? Timestamp.fromDate(fechaCompletado!) : null,
+      'fechaInicio': fechaInicio != null
+          ? Timestamp.fromDate(fechaInicio!)
+          : null,
+      'fechaCompletado': fechaCompletado != null
+          ? Timestamp.fromDate(fechaCompletado!)
+          : null,
       'firmaCliente': firmaCliente,
       'firmaMaestro': firmaMaestro,
-      'fechaFirmaCliente': fechaFirmaCliente != null ? Timestamp.fromDate(fechaFirmaCliente!) : null,
-      'fechaFirmaMaestro': fechaFirmaMaestro != null ? Timestamp.fromDate(fechaFirmaMaestro!) : null,
+      'fechaFirmaCliente': fechaFirmaCliente != null
+          ? Timestamp.fromDate(fechaFirmaCliente!)
+          : null,
+      'fechaFirmaMaestro': fechaFirmaMaestro != null
+          ? Timestamp.fromDate(fechaFirmaMaestro!)
+          : null,
       'cotizacionAprobada': cotizacionAprobada,
-      'fechaCotizacionAprobada': fechaCotizacionAprobada != null ? Timestamp.fromDate(fechaCotizacionAprobada!) : null,
+      'fechaCotizacionAprobada': fechaCotizacionAprobada != null
+          ? Timestamp.fromDate(fechaCotizacionAprobada!)
+          : null,
     };
   }
 
@@ -460,7 +485,8 @@ class TicketModel {
   static DateTime _parseDate(dynamic value, {DateTime? fallback}) {
     if (value == null) return fallback ?? DateTime.now();
     if (value is Timestamp) return value.toDate();
-    if (value is String) return DateTime.tryParse(value) ?? fallback ?? DateTime.now();
+    if (value is String)
+      return DateTime.tryParse(value) ?? fallback ?? DateTime.now();
     return fallback ?? DateTime.now();
   }
 
@@ -475,17 +501,25 @@ class TicketModel {
 
   factory TicketModel.fromMap(Map<String, dynamic> map, String id) {
     // Manejo seguro de mapas anidados
-    final ubicacion = map['ubicacion'] is Map ? map['ubicacion'] as Map<String, dynamic> : <String, dynamic>{};
-    final cliente = map['cliente'] is Map ? map['cliente'] as Map<String, dynamic> : <String, dynamic>{};
-    final maestro = map['maestroAsignado'] is Map ? map['maestroAsignado'] as Map<String, dynamic> : <String, dynamic>{};
-    final checkMap = map['check'] is Map ? map['check'] as Map<String, dynamic> : null;
+    final ubicacion = map['ubicacion'] is Map
+        ? map['ubicacion'] as Map<String, dynamic>
+        : <String, dynamic>{};
+    final cliente = map['cliente'] is Map
+        ? map['cliente'] as Map<String, dynamic>
+        : <String, dynamic>{};
+    final maestro = map['maestroAsignado'] is Map
+        ? map['maestroAsignado'] as Map<String, dynamic>
+        : <String, dynamic>{};
+    final checkMap = map['check'] is Map
+        ? map['check'] as Map<String, dynamic>
+        : null;
 
     return TicketModel(
       id: id,
       codigo: map['codigo']?.toString() ?? '',
       titulo: map['titulo']?.toString() ?? 'Sin Título',
       descripcion: map['descripcion']?.toString() ?? '',
-      
+
       // Enum parsing seguro
       estado: TicketStatus.values.firstWhere(
         (e) => e.value == map['estado']?.toString(),
@@ -495,68 +529,107 @@ class TicketModel {
         (e) => e.value == map['prioridad']?.toString(),
         orElse: () => TicketPriority.media,
       ),
-      
+
       // Fechas BLINDADAS
       fechaCreacion: _parseDate(map['fechaCreacion']),
-      fechaProgramada: map['fechaProgramada'] != null ? _parseDate(map['fechaProgramada']) : null,
-      
+      fechaProgramada: map['fechaProgramada'] != null
+          ? _parseDate(map['fechaProgramada'])
+          : null,
+
       // Ubicación segura
-      ubicacionDireccion: ubicacion['direccion']?.toString() ?? map['propiedadDireccion']?.toString() ?? '',
+      ubicacionDireccion:
+          ubicacion['direccion']?.toString() ??
+          map['propiedadDireccion']?.toString() ??
+          '',
       ubicacionLat: _parseDouble(ubicacion['lat']),
       ubicacionLng: _parseDouble(ubicacion['lng']),
-      
+
       propiedadId: map['propiedadId']?.toString(),
       espacioId: map['espacioId']?.toString(),
       espacioNombre: map['espacioNombre']?.toString(),
 
       // Listas seguras
-      fotosAntes: (map['fotosAntes'] as List?)?.map((e) => e.toString()).toList() ?? [],
-      fotosDurante: (map['fotosDurante'] as List?)?.map((e) => e.toString()).toList() ?? [],
-      fotosDespues: (map['fotosDespues'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      fotosAntes:
+          (map['fotosAntes'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      fotosDurante:
+          (map['fotosDurante'] as List?)?.map((e) => e.toString()).toList() ??
+          [],
+      fotosDespues:
+          (map['fotosDespues'] as List?)?.map((e) => e.toString()).toList() ??
+          [],
 
       // Sub-modelos seguros
-      materialesUsados: (map['materialesUsados'] as List?)
-          ?.map((e) => TicketMaterial.fromMap(e as Map<String, dynamic>))
-          .toList() ?? [],
+      materialesUsados:
+          (map['materialesUsados'] as List?)
+              ?.map((e) => TicketMaterial.fromMap(e as Map<String, dynamic>))
+              .toList() ??
+          [],
 
-      historial: (map['historial'] as List?)
-          ?.map((e) => TicketHistoryItem.fromMap(e as Map<String, dynamic>))
-          .toList() ?? [],
+      historial:
+          (map['historial'] as List?)
+              ?.map((e) => TicketHistoryItem.fromMap(e as Map<String, dynamic>))
+              .toList() ??
+          [],
 
       check: checkMap != null ? TicketCheck.fromMap(checkMap) : null,
 
-      clienteId: cliente['id']?.toString() ?? map['clienteId']?.toString() ?? '',
-      clienteNombre: cliente['nombre']?.toString() ?? map['clienteNombre']?.toString() ?? 'Cliente',
-      clienteTelefono: cliente['telefono']?.toString() ?? map['clienteTelefono']?.toString(),
-      clienteEmail: cliente['email']?.toString() ?? map['clienteEmail']?.toString(),
+      clienteId:
+          cliente['id']?.toString() ?? map['clienteId']?.toString() ?? '',
+      clienteNombre:
+          cliente['nombre']?.toString() ??
+          map['clienteNombre']?.toString() ??
+          'Cliente',
+      clienteTelefono:
+          cliente['telefono']?.toString() ?? map['clienteTelefono']?.toString(),
+      clienteEmail:
+          cliente['email']?.toString() ?? map['clienteEmail']?.toString(),
 
-      maestroId: maestro['id']?.toString() ?? map['toderoId']?.toString() ?? map['maestroId']?.toString(),
-      maestroNombre: maestro['nombre']?.toString() ?? map['toderoNombre']?.toString() ?? map['maestroNombre']?.toString(),
-      notasMaestro: map['notasMaestro']?.toString() ?? map['notasTodero']?.toString(),
+      maestroId:
+          maestro['id']?.toString() ??
+          map['tecnicoId']?.toString() ??
+          map['toderoId']?.toString() ??
+          map['maestroId']?.toString(),
+      maestroNombre:
+          maestro['nombre']?.toString() ??
+          map['tecnicoNombre']?.toString() ??
+          map['toderoNombre']?.toString() ??
+          map['maestroNombre']?.toString(),
+      notasMaestro:
+          map['notasMaestro']?.toString() ?? map['notasTodero']?.toString(),
       notasCliente: map['notasCliente']?.toString(),
 
       userId: map['userId']?.toString() ?? '',
-      
+
       tipoServicio: ServiceType.values.firstWhere(
         (e) => e.value == map['tipoServicio']?.toString(),
         orElse: () => ServiceType.otro,
       ),
-      
+
       presupuestoEstimado: _parseDouble(map['presupuestoEstimado']),
       costoFinal: _parseDouble(map['costoFinal']),
-      
+
       fechaActualizacion: _parseDate(map['fechaActualizacion']),
-      fechaInicio: map['fechaInicio'] != null ? _parseDate(map['fechaInicio']) : null,
-      fechaCompletado: map['fechaCompletado'] != null ? _parseDate(map['fechaCompletado']) : null,
-      
+      fechaInicio: map['fechaInicio'] != null
+          ? _parseDate(map['fechaInicio'])
+          : null,
+      fechaCompletado: map['fechaCompletado'] != null
+          ? _parseDate(map['fechaCompletado'])
+          : null,
+
       firmaCliente: map['firmaCliente']?.toString(),
       firmaMaestro: map['firmaMaestro']?.toString(),
-      
-      fechaFirmaCliente: map['fechaFirmaCliente'] != null ? _parseDate(map['fechaFirmaCliente']) : null,
-      fechaFirmaMaestro: map['fechaFirmaMaestro'] != null ? _parseDate(map['fechaFirmaMaestro']) : null,
-      
+
+      fechaFirmaCliente: map['fechaFirmaCliente'] != null
+          ? _parseDate(map['fechaFirmaCliente'])
+          : null,
+      fechaFirmaMaestro: map['fechaFirmaMaestro'] != null
+          ? _parseDate(map['fechaFirmaMaestro'])
+          : null,
+
       cotizacionAprobada: map['cotizacionAprobada'] == true,
-      fechaCotizacionAprobada: map['fechaCotizacionAprobada'] != null ? _parseDate(map['fechaCotizacionAprobada']) : null,
+      fechaCotizacionAprobada: map['fechaCotizacionAprobada'] != null
+          ? _parseDate(map['fechaCotizacionAprobada'])
+          : null,
     );
   }
 
@@ -633,7 +706,8 @@ class TicketModel {
       fechaFirmaCliente: fechaFirmaCliente ?? this.fechaFirmaCliente,
       fechaFirmaMaestro: fechaFirmaMaestro ?? this.fechaFirmaMaestro,
       cotizacionAprobada: cotizacionAprobada ?? this.cotizacionAprobada,
-      fechaCotizacionAprobada: fechaCotizacionAprobada ?? this.fechaCotizacionAprobada,
+      fechaCotizacionAprobada:
+          fechaCotizacionAprobada ?? this.fechaCotizacionAprobada,
     );
   }
 

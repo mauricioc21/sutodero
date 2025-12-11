@@ -40,15 +40,12 @@ class MyAssignedTicketsScreen extends StatelessWidget {
         body: StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection('tickets')
-              // Intentar buscar por maestroAsignado.id (nuevo) o toderoId (legacy)
-              // Nota: Como no podemos hacer OR queries complejas en stream fácilmente sin index,
-              // aquí usamos una query amplia o dependemos de que el servicio de autenticación
-              // nos haya dado el ID correcto.
-              // Para simplicidad en este ejemplo, usamos un stream general y filtramos en memoria
-              // O podríamos usar dos streams y unirlos.
-              // Dado que es "Mis Tickets", asumimos que toderoId se usa para asignar.
-              .where('toderoId', isEqualTo: user.uid) 
-              .orderBy('fechaActualizacion', descending: true)
+              .where(
+                Filter.or(
+                  Filter('tecnicoId', isEqualTo: user.uid),
+                  Filter('toderoId', isEqualTo: user.uid),
+                ),
+              )
               .snapshots(),
           builder: (context, snapshot) {
             if (snapshot.hasError) {
@@ -56,35 +53,58 @@ class MyAssignedTicketsScreen extends StatelessWidget {
             }
 
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: AppTheme.dorado));
+              return const Center(
+                child: CircularProgressIndicator(color: AppTheme.dorado),
+              );
             }
 
-            final allTickets = snapshot.data!.docs
-                .map((doc) => TicketModel.fromMap(
-                      doc.data() as Map<String, dynamic>,
-                      doc.id,
-                    ))
-                .toList();
+            final allTickets =
+                snapshot.data!.docs
+                    .map(
+                      (doc) => TicketModel.fromMap(
+                        doc.data() as Map<String, dynamic>,
+                        doc.id,
+                      ),
+                    )
+                    .toList()
+                  ..sort(
+                    (a, b) =>
+                        b.fechaActualizacion.compareTo(a.fechaActualizacion),
+                  );
 
             // Filtrar tickets Activos (Incluye nuevos estados de Maestro)
-            final activeTickets = allTickets.where((t) => 
-              t.estado == TicketStatus.asignado || 
-              t.estado == TicketStatus.en_camino || 
-              t.estado == TicketStatus.en_lugar || 
-              t.estado == TicketStatus.en_ejecucion || 
-              t.estado == TicketStatus.pendiente_repuestos
-            ).toList();
+            final activeTickets = allTickets
+                .where(
+                  (t) =>
+                      t.estado == TicketStatus.asignado ||
+                      t.estado == TicketStatus.en_camino ||
+                      t.estado == TicketStatus.en_lugar ||
+                      t.estado == TicketStatus.en_ejecucion ||
+                      t.estado == TicketStatus.pendiente_repuestos,
+                )
+                .toList();
 
             // Filtrar tickets Finalizados
-            final finishedTickets = allTickets.where((t) => 
-              t.estado == TicketStatus.finalizado || 
-              t.estado == TicketStatus.cancelado
-            ).toList();
+            final finishedTickets = allTickets
+                .where(
+                  (t) =>
+                      t.estado == TicketStatus.finalizado ||
+                      t.estado == TicketStatus.cancelado,
+                )
+                .toList();
 
             return TabBarView(
               children: [
-                _buildTicketList(context, activeTickets, 'No tienes órdenes activas'),
-                _buildTicketList(context, finishedTickets, 'No tienes órdenes finalizadas'),
+                _buildTicketList(
+                  context,
+                  activeTickets,
+                  'No tienes órdenes activas',
+                ),
+                _buildTicketList(
+                  context,
+                  finishedTickets,
+                  'No tienes órdenes finalizadas',
+                ),
               ],
             );
           },
@@ -93,15 +113,26 @@ class MyAssignedTicketsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTicketList(BuildContext context, List<TicketModel> tickets, String emptyMessage) {
+  Widget _buildTicketList(
+    BuildContext context,
+    List<TicketModel> tickets,
+    String emptyMessage,
+  ) {
     if (tickets.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.assignment_outlined, size: 80, color: AppTheme.grisClaro.withOpacity(0.5)),
+            Icon(
+              Icons.assignment_outlined,
+              size: 80,
+              color: AppTheme.grisClaro.withOpacity(0.5),
+            ),
             const SizedBox(height: 16),
-            Text(emptyMessage, style: const TextStyle(fontSize: 18, color: AppTheme.blanco)),
+            Text(
+              emptyMessage,
+              style: const TextStyle(fontSize: 18, color: AppTheme.blanco),
+            ),
           ],
         ),
       );
@@ -123,15 +154,30 @@ class MyAssignedTicketsScreen extends StatelessWidget {
     Color statusColor;
     switch (ticket.estado) {
       case TicketStatus.asignado:
-      case TicketStatus.nuevo: statusColor = Colors.blue; break;
-      case TicketStatus.en_camino: statusColor = Colors.orange; break;
-      case TicketStatus.en_lugar: statusColor = Colors.purple; break;
-      case TicketStatus.en_ejecucion: statusColor = Colors.green; break;
-      case TicketStatus.pendiente_repuestos: 
-      case TicketStatus.pendiente: statusColor = Colors.amber; break;
-      case TicketStatus.finalizado: statusColor = Colors.grey; break;
-      case TicketStatus.cancelado: statusColor = Colors.red; break;
-      default: statusColor = Colors.grey;
+      case TicketStatus.nuevo:
+        statusColor = Colors.blue;
+        break;
+      case TicketStatus.en_camino:
+        statusColor = Colors.orange;
+        break;
+      case TicketStatus.en_lugar:
+        statusColor = Colors.purple;
+        break;
+      case TicketStatus.en_ejecucion:
+        statusColor = Colors.green;
+        break;
+      case TicketStatus.pendiente_repuestos:
+      case TicketStatus.pendiente:
+        statusColor = Colors.amber;
+        break;
+      case TicketStatus.finalizado:
+        statusColor = Colors.grey;
+        break;
+      case TicketStatus.cancelado:
+        statusColor = Colors.red;
+        break;
+      default:
+        statusColor = Colors.grey;
     }
 
     return Card(
@@ -158,7 +204,10 @@ class MyAssignedTicketsScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: statusColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
@@ -166,7 +215,11 @@ class MyAssignedTicketsScreen extends StatelessWidget {
                     ),
                     child: Text(
                       ticket.estado.displayName.toUpperCase(),
-                      style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: statusColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   Text(
@@ -178,7 +231,11 @@ class MyAssignedTicketsScreen extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 ticket.titulo,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
@@ -191,11 +248,17 @@ class MyAssignedTicketsScreen extends StatelessWidget {
               const Divider(color: Colors.grey),
               Row(
                 children: [
-                  const Icon(Icons.location_on, size: 14, color: AppTheme.dorado),
+                  const Icon(
+                    Icons.location_on,
+                    size: 14,
+                    color: AppTheme.dorado,
+                  ),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      ticket.ubicacionDireccion.isNotEmpty ? ticket.ubicacionDireccion : 'Sin dirección',
+                      ticket.ubicacionDireccion.isNotEmpty
+                          ? ticket.ubicacionDireccion
+                          : 'Sin dirección',
                       style: const TextStyle(color: Colors.grey, fontSize: 12),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
