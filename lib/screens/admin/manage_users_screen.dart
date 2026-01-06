@@ -388,6 +388,8 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
         return Colors.blue;
       case UserRole.inventarios:
         return Colors.green;
+      case UserRole.cliente:
+        return Colors.grey; // Color para clientes
     }
   }
 }

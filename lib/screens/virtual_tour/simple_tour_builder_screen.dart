@@ -5,6 +5,7 @@ import '../../services/virtual_tour_service.dart';
 import '../../config/app_theme.dart';
 import 'virtual_tour_op1_viewer_screen.dart';
 import '../../models/virtual_tour_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 /// Constructor Simple de Tour 360° - Sin WebView
 /// Permite seleccionar fotos 360° y crear tours de manera nativa
@@ -112,6 +113,7 @@ class _SimpleTourBuilderScreenState extends State<SimpleTourBuilderScreen> {
 
       // Crear el tour en Firebase
       final tour = await _virtualTourService.createTour(
+          userId: FirebaseAuth.instance.currentUser?.uid ?? "",
         propertyId: widget.property.id,
         propertyName: widget.property.tipo.displayName,
         propertyAddress: widget.property.direccion,

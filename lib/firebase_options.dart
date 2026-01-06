@@ -37,32 +37,32 @@ class DefaultFirebaseOptions {
   }
 
   // Firebase project credentials configured
-  // Project: su-todero
+  // Project: sutoderoapp-ee318 (SuToderoApp)
   
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDltBp3tPYtsgw9WJo68mRuKIFnFZqMmP8',
-    appId: '1:292635586927:web:bad9207d28dc0c9e29789a',
-    messagingSenderId: '292635586927',
-    projectId: 'su-todero',
-    authDomain: 'su-todero.firebaseapp.com',
-    storageBucket: 'su-todero.firebasestorage.app',
-    measurementId: 'G-HZLJ1WZTRP',
+    apiKey: 'AIzaSyAFw7Vf-gOs9-Ca1kkg97P1iQC_PJxE0Hk',
+    appId: '1:268982041852:web:0b3aed72a818ea5a1e2b79',
+    messagingSenderId: '268982041852',
+    projectId: 'sutoderoapp-ee318',
+    authDomain: 'sutoderoapp-ee318.firebaseapp.com',
+    storageBucket: 'sutoderoapp-ee318.firebasestorage.app',
+    measurementId: 'G-CZHRFYC635',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDltBp3tPYtsgw9WJo68mRuKIFnFZqMmP8',
-    appId: '1:292635586927:android:c9c2fda0230fbacc29789a',
-    messagingSenderId: '292635586927',
-    projectId: 'su-todero',
-    storageBucket: 'su-todero.firebasestorage.app',
+    apiKey: 'AIzaSyCP0lZ6IGMIBGi-e3Pu1cTDVZqqxSjpTp0',
+    appId: '1:268982041852:android:fc23e41e400db83a1e2b79',
+    messagingSenderId: '268982041852',
+    projectId: 'sutoderoapp-ee318',
+    storageBucket: 'sutoderoapp-ee318.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'YOUR_IOS_API_KEY',
-    appId: '1:YOUR_APP_ID:ios:YOUR_IOS_APP_ID',
-    messagingSenderId: 'YOUR_SENDER_ID',
-    projectId: 'sutodero-app',
-    storageBucket: 'sutodero-app.appspot.com',
-    iosBundleId: 'com.sutodero.app',
+    apiKey: 'AIzaSyCgFu2YdI0BbEPkX0gk3N_HhFZkWAb3JJY',
+    appId: '1:268982041852:ios:b87d0645965446461e2b79',
+    messagingSenderId: '268982041852',
+    projectId: 'sutoderoapp-ee318',
+    storageBucket: 'sutoderoapp-ee318.firebasestorage.app',
+    iosBundleId: 'sutodero.app',
   );
 }

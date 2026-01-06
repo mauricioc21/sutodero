@@ -1,22 +1,19 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode, debugPrint;
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/camera_360_service.dart';
-import '../../services/storage_service.dart';
 import '../../services/virtual_tour_service.dart';
-import '../../services/saved_photos_360_service.dart';
-import '../../services/auth_service.dart';
 import '../../models/inventory_property.dart';
+import '../../models/virtual_tour_model.dart';
 import '../../config/app_theme.dart';
 import '../../widgets/camera_360_live_preview.dart';
 import '../gallery/gallery_360_screen.dart';
 import '../virtual_tour/tour_editor_pro_screen.dart';
+import '../virtual_tour/tours_list_screen.dart';
 
 /// Pantalla universal de captura de fotos 360°
 /// Implementa persistencia local de fotos y creación de tours virtuales.
@@ -40,7 +37,6 @@ class Camera360CaptureScreen extends StatefulWidget {
 
 class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
   final Camera360Service _camera360Service = Camera360Service();
-  final StorageService _storageService = StorageService();
   final VirtualTourService _virtualTourService = VirtualTourService();
   
   List<Camera360Device> _detectedCameras = [];
@@ -154,7 +150,12 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
               // ✅ REQUERIMIENTO 2: Botón CREAR TOUR funcional
               if (_capturedPhotos.isNotEmpty) ...[
                 _buildCreateTourButton(),
+                SizedBox(height: AppTheme.spacingMD),
               ],
+              
+              // Botón para ver tours creados
+              _buildViewToursButton(),
+              
               SizedBox(height: 80), // Espacio extra al final
             ],
           ),
@@ -463,6 +464,32 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
     );
   }
 
+  Widget _buildViewToursButton() {
+    return SizedBox(
+      height: 56,
+      child: OutlinedButton.icon(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ToursListScreen(),
+            ),
+          );
+        },
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppTheme.dorado,
+          side: const BorderSide(color: AppTheme.dorado, width: 2),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radiusMD)),
+        ),
+        icon: const Icon(Icons.list_alt, size: 28),
+        label: const Text(
+          'VER MIS TOURS',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+        ),
+      ),
+    );
+  }
+
   // Lógica de métodos de captura
   Future<void> _pickFromGallery() async {
     final photo = await _camera360Service.pickFrom360Gallery();
@@ -718,64 +745,82 @@ class _Camera360CaptureScreenState extends State<Camera360CaptureScreen> {
       // 1. Validar (aunque ya se validó antes)
       if (photos.isEmpty) return;
 
-      // 2. Crear Objeto Tour (Estructura solicitada)
-      final tourId = 'tour-${DateTime.now().millisecondsSinceEpoch}';
-      
-      final Map<String, dynamic> tourObject = {
-        "tourId": tourId,
-        "propertyId": widget.property.id,
-        "createdAt": DateTime.now().toIso8601String(),
-        "scenes": photos.asMap().entries.map((entry) {
-          int index = entry.key;
-          CapturedPhoto photo = entry.value;
-          
-          return {
-            "id": "scene-${index + 1}",
-            "title": "Escena ${index + 1}",
-            "imageUri": photo.uri,
-            "originalPhotoId": photo.id,
-            "filename": photo.filename,
-            "timestamp": photo.timestamp,
-            "hotspots": [] // Array vacío para hotspots
-          };
-        }).toList(),
-      };
+      // 2. Obtener usuario actual
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('Usuario no autenticado');
+      }
 
-      // 3. Guardar Tour (Persistencia local/storage)
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('tour_draft_$tourId', jsonEncode(tourObject));
+      // 3. Crear escenas a partir de las fotos
+      final scenes = photos.asMap().entries.map((entry) {
+        int index = entry.key;
+        CapturedPhoto photo = entry.value;
+        
+        return TourScene(
+          id: 'scene_${index + 1}',
+          photoUrl: photo.uri,
+          title: 'Escena ${index + 1}',
+          description: 'Foto capturada el ${_formatTimestamp(photo.timestamp)}',
+          hotspots: [], // Array vacío - se agregarán en el editor
+          order: index,
+        );
+      }).toList();
+
+      // 4. Crear tour en Firestore con el nuevo modelo
+      final tour = await _virtualTourService.createTourWithScenes(
+        propertyId: widget.property.id,
+        propertyName: widget.property.direccion,
+        propertyAddress: widget.property.direccion,
+        userId: user.uid,
+        scenes: scenes,
+        description: 'Tour virtual de ${widget.property.direccion}',
+        tourOption: 1, // Pannellum
+      );
       
-      debugPrint('✅ Tour guardado localmente: $tourId');
+      debugPrint('✅ Tour guardado en Firestore: ${tour.id}');
 
       if (mounted) {
-        // 4. Redireccionar al Editor
+        // 5. Mostrar mensaje de éxito
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ Tour creado exitosamente')),
+          const SnackBar(
+            content: Text('✅ Tour creado exitosamente'),
+            backgroundColor: Colors.green,
+          ),
         );
 
-        // Opcional: Limpiar las fotos "capturadas" ya que se convirtieron en tour
-        // o mantenerlas si el usuario quiere hacer otro tour.
-        // Por ahora las mantenemos según solicitud de "no borrar fotos".
-
+        // 6. Redireccionar al editor para agregar hotspots
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => TourEditorProScreen(
-              tourData: tourObject,
-            ),
+            builder: (context) => TourEditorProScreen(tour: tour),
           ),
-        );
+        ).then((_) {
+          // Opcional: recargar fotos al volver
+          _loadPersistedPhotos();
+        });
       }
 
     } catch (e) {
-      debugPrint('Error creando tour: $e');
+      debugPrint('❌ Error creando tour: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {
       if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  String _formatTimestamp(int timestamp) {
+    try {
+      final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+      return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
+    } catch (_) {
+      return timestamp.toString();
     }
   }
 }

@@ -139,7 +139,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Future<void> _verifyAdminCode() async {
-    const adminCode = 'SuToderoAdmon2025';
+    const adminCode = 'SuToderoAdmon2026';
     final enteredCode = _adminCodeController.text.trim();
     
     if (enteredCode.isEmpty) {

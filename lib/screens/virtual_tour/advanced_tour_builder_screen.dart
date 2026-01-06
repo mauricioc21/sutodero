@@ -9,6 +9,7 @@ import '../../services/virtual_tour_service.dart';
 import '../../services/storage_service.dart';
 import '../../config/app_theme.dart';
 import 'virtual_tour_op1_viewer_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 /// Constructor Avanzado de Tours 360° - Opción 1
 /// Incluye editor de escenas, hotspots y vista previa en tiempo real
@@ -318,6 +319,7 @@ class _AdvancedTourBuilderScreenState extends State<AdvancedTourBuilderScreen> {
       final List<String> photo360Urls = _scenes.map((s) => s.imageUrl).toList();
 
       final tour = await _virtualTourService.createTour(
+          userId: FirebaseAuth.instance.currentUser?.uid ?? "",
         propertyId: widget.property.id,
         propertyName: widget.property.tipo.displayName,
         propertyAddress: widget.property.direccion,

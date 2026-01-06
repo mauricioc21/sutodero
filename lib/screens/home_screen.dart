@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
 import '../services/auth_service.dart';
@@ -8,7 +9,6 @@ import 'tickets/tickets_screen.dart';
 import 'tickets/my_assigned_tickets_screen.dart';
 import 'tickets/dashboard_screen.dart';
 import 'auth/login_screen.dart';
-import 'qr/qr_scanner_screen.dart';
 import 'property_listing/property_listings_screen.dart';
 import 'profile/user_profile_screen.dart';
 import 'admin/role_requests_screen.dart';
@@ -211,13 +211,23 @@ class _HomeScreenState extends State<HomeScreen> {
     return Consumer<AuthService>(
       builder: (context, authService, child) {
         final user = authService.currentUser;
+        
+        // DEBUG: Verificar usuario
+        if (kDebugMode) {
+          debugPrint('🏠 HomeScreen - Usuario: ${user?.nombre}');
+          debugPrint('🏠 Rol: ${user?.rol}');
+          debugPrint('🏠 isCliente: ${user?.isCliente}');
+          debugPrint('🏠 isMaestro: ${user?.isMaestro}');
+          debugPrint('🏠 hasAdminAccess: ${user?.hasAdminAccess}');
+        }
+        
         final isMaestro = user?.isMaestro ?? false;
         
         // Lista de opciones disponibles según el rol
         final List<Widget> features = [];
         
-        // Dashboard - Solo para administradores y coordinadores
-        if (user?.hasAdminAccess == true) {
+        // ❌ Dashboard - SOLO para administradores y coordinadores (NO para clientes)
+        if (user?.hasAdminAccess == true && !user!.isCliente) {
           features.add(_buildWideFeatureCard(
             context,
             icon: Icons.dashboard,
@@ -231,7 +241,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ));
           features.add(const SizedBox(height: AppTheme.spacingMedium));
           
-          // Gestión de Perfiles de Maestros - Solo administradores
+          // ❌ Gestión de Perfiles de Maestros - SOLO administradores (NO para clientes)
           features.add(_buildWideFeatureCard(
             context,
             icon: Icons.engineering,
@@ -249,13 +259,21 @@ class _HomeScreenState extends State<HomeScreen> {
         // Grid de opciones
         final List<Widget> gridItems = [];
         
-        // Tickets - DISPONIBLE PARA ADMINS Y COORDINADORES (NO MAESTROS)
-        if (user?.canManageTickets == true && !isMaestro) {
+        // ✅ TICKETS - DISPONIBLE PARA TODOS (clientes, coordinadores, administradores)
+        // Los clientes pueden crear y ver sus tickets
+        // Los administradores pueden gestionar todos los tickets
+        if (user != null && !isMaestro) {
+          if (kDebugMode) {
+            debugPrint('✅ Agregando Tickets para: ${user.nombre}');
+          }
+          
           gridItems.add(_buildFeatureCard(
             context,
             icon: Icons.build_circle,
             title: 'Tickets',
-            description: 'Solicitudes de reparación',
+            description: user.hasAdminAccess 
+                ? 'Gestiona todas las solicitudes'
+                : 'Crea y consulta tus solicitudes',
             iconColor: const Color(0xFFFF6B00),
             onTap: () => Navigator.push(
               context,
@@ -264,23 +282,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ));
         }
         
-        // Inventarios - NO para maestros
-        if (!isMaestro && user?.canManageInventories == true) {
-          gridItems.add(_buildFeatureCard(
-            context,
-            icon: Icons.inventory_2,
-            title: 'Inventarios',
-            description: 'Gestiona propiedades y espacios',
-            iconColor: AppTheme.dorado,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const InventoriesScreen()),
-            ),
-          ));
-        }
-        
-        // Captura 360° - NO para maestros
-        if (!isMaestro) {
+        // ✅ CAPTURA 360° - DISPONIBLE PARA USUARIOS REGISTRADOS (clientes, coordinadores, administradores)
+        if (user != null && !isMaestro) {
+          if (kDebugMode) {
+            debugPrint('✅ Agregando Captura 360° para: ${user.nombre}');
+          }
+          
           gridItems.add(_buildFeatureCard(
             context,
             icon: Icons.panorama_photosphere,
@@ -298,10 +305,23 @@ class _HomeScreenState extends State<HomeScreen> {
           ));
         }
         
-        // Planos - ELIMINADA esta opción del menú
+        // ❌ Inventarios - SOLO para administradores e inventarios (NO para clientes)
+        if (!isMaestro && user != null && !user.isCliente && user.canManageInventories) {
+          gridItems.add(_buildFeatureCard(
+            context,
+            icon: Icons.inventory_2,
+            title: 'Inventarios',
+            description: 'Gestiona propiedades y espacios',
+            iconColor: AppTheme.dorado,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const InventoriesScreen()),
+            ),
+          ));
+        }
         
-        // Captaciones - NO para maestros
-        if (!isMaestro && user?.canManageCaptaciones == true) {
+        // ❌ Captaciones - SOLO para administradores (NO para clientes)
+        if (!isMaestro && user != null && !user.isCliente && user.canManageCaptaciones) {
           gridItems.add(_buildFeatureCard(
             context,
             icon: Icons.home_work,
@@ -332,23 +352,12 @@ class _HomeScreenState extends State<HomeScreen> {
           features.add(const SizedBox(height: AppTheme.spacingMedium));
         }
         
-        // Escanear QR - NO para maestros, NO para coordinadores y NO para inventarios
-        if (!isMaestro && user?.isCoordinador != true && user?.isInventarios != true && user != null) {
-          gridItems.add(_buildFeatureCard(
-            context,
-            icon: Icons.qr_code_scanner,
-            title: 'Escanear QR',
-            description: 'Escanea códigos QR',
-            iconColor: const Color(0xFF9C27B0),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const QRScannerScreen()),
-            ),
-          ));
-        }
-        
         // Agregar grid si hay opciones
         if (gridItems.isNotEmpty) {
+          if (kDebugMode) {
+            debugPrint('📊 Mostrando grid con ${gridItems.length} elementos');
+          }
+          
           features.add(GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -358,6 +367,15 @@ class _HomeScreenState extends State<HomeScreen> {
             childAspectRatio: 0.95,
             children: gridItems,
           ));
+        } else {
+          if (kDebugMode) {
+            debugPrint('⚠️ Grid items está vacío!');
+          }
+        }
+        
+        // DEBUG: Mostrar total de features
+        if (kDebugMode) {
+          debugPrint('📋 Total features: ${features.length}');
         }
         
         return Column(children: features);

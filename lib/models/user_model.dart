@@ -3,7 +3,8 @@ enum UserRole {
   administrador('Administrador'),
   coordinador('Coordinador'),
   maestro('Maestro'),
-  inventarios('Inventarios');
+  inventarios('Inventarios'),
+  cliente('Cliente'); // ✅ FIX: Agregar rol de cliente
 
   final String displayName;
   const UserRole(this.displayName);
@@ -20,8 +21,10 @@ enum UserRole {
         return UserRole.maestro;
       case 'inventarios':
         return UserRole.inventarios;
+      case 'cliente':
+      case 'usuario':
       default:
-        return UserRole.maestro; // Por defecto
+        return UserRole.cliente; // ✅ FIX: Por defecto cliente, no maestro
     }
   }
 
@@ -154,6 +157,9 @@ class UserModel {
   
   /// Verifica si el usuario es de inventarios
   bool get isInventarios => roleEnum == UserRole.inventarios;
+  
+  /// Verifica si el usuario es cliente (usuario regular)
+  bool get isCliente => roleEnum == UserRole.cliente;
   
   /// Verifica si el usuario tiene acceso administrativo
   bool get hasAdminAccess => isAdministrador || isCoordinador;

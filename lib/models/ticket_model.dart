@@ -438,12 +438,14 @@ class TicketModel {
         'email': clienteEmail,
       },
       'clienteId': clienteId,
+      'cliente_id': clienteId, // ✅ CRÍTICO: Campo para reglas de Firestore
       'clienteNombre': clienteNombre,
       'clienteTelefono': clienteTelefono,
       'clienteEmail': clienteEmail,
 
       'maestroAsignado': {'id': maestroId, 'nombre': maestroNombre},
       'maestroId': maestroId,
+      'maestro_id': maestroId, // ✅ CRÍTICO: Campo para reglas de Firestore
       'maestroNombre': maestroNombre,
       'tecnicoId': maestroId,
       'tecnicoNombre': maestroNombre,

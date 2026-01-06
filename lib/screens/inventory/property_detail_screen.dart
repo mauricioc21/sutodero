@@ -32,6 +32,7 @@ import '../../models/virtual_tour_model.dart';
 import '../../config/app_theme.dart';
 import '../actas/acta_entrega_form_screen.dart';
 import '../actas/acta_recibido_form_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class PropertyDetailScreen extends StatefulWidget {
   final InventoryProperty property;
@@ -1673,6 +1674,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
             : '$tourPrefix Tour Virtual de ${widget.property.direccion}';
 
         final tour = await _virtualTourService.createTour(
+          userId: FirebaseAuth.instance.currentUser?.uid ?? "",
           propertyId: widget.property.id,
           propertyName: widget.property.tipo.displayName,
           propertyAddress: widget.property.direccion,

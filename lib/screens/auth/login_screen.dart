@@ -802,6 +802,10 @@ class _LoginScreenState extends State<LoginScreen> {
         icon = Icons.inventory;
         color = Colors.green;
         break;
+      case UserRole.cliente:
+        icon = Icons.person;
+        color = Colors.grey;
+        break;
     }
     
     return InkWell(

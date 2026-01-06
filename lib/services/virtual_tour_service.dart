@@ -13,6 +13,7 @@ class VirtualTourService {
     required String propertyId,
     required String propertyName,
     required String propertyAddress,
+    required String userId,
     required List<String> photo360Urls,
     String description = '',
     int tourOption = 1, // 1 = Pannellum, 2 = PanoramaViewer
@@ -23,6 +24,7 @@ class VirtualTourService {
         propertyId: propertyId,
         propertyName: propertyName,
         propertyAddress: propertyAddress,
+        userId: userId,
         photo360Urls: photo360Urls,
         description: description,
         createdAt: DateTime.now(),
@@ -159,5 +161,141 @@ class VirtualTourService {
         .map((snapshot) => snapshot.docs
             .map((doc) => VirtualTourModel.fromFirestore(doc.data(), doc.id))
             .toList());
+  }
+
+  /// Obtener tours de un usuario
+  Future<List<VirtualTourModel>> getUserTours(String userId) async {
+    try {
+      final querySnapshot = await _firestore
+          .collection(_collection)
+          .where('user_id', isEqualTo: userId)
+          .orderBy('created_at', descending: true)
+          .get();
+
+      return querySnapshot.docs
+          .map((doc) => VirtualTourModel.fromFirestore(doc.data(), doc.id))
+          .toList();
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error al obtener tours del usuario: $e');
+      }
+      return [];
+    }
+  }
+
+  /// Actualizar tour completo
+  Future<void> updateTour(VirtualTourModel tour) async {
+    try {
+      await _firestore.collection(_collection).doc(tour.id).update(tour.toMap());
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error al actualizar tour: $e');
+      }
+      rethrow;
+    }
+  }
+
+  /// Crear tour con escenas (nuevo modelo)
+  Future<VirtualTourModel> createTourWithScenes({
+    required String propertyId,
+    required String propertyName,
+    required String propertyAddress,
+    required String userId,
+    required List<TourScene> scenes,
+    String description = '',
+    int tourOption = 1,
+    String? firstSceneId,
+  }) async {
+    try {
+      final tour = VirtualTourModel(
+        id: '',
+        propertyId: propertyId,
+        propertyName: propertyName,
+        propertyAddress: propertyAddress,
+        userId: userId,
+        description: description,
+        createdAt: DateTime.now(),
+        tourOption: tourOption,
+        firstSceneId: firstSceneId ?? (scenes.isNotEmpty ? scenes.first.id : null),
+        scenes: scenes,
+        photo360Urls: scenes.map((s) => s.photoUrl).toList(), // Legacy
+      );
+
+      final docRef = await _firestore.collection(_collection).add(tour.toMap());
+      
+      return tour.copyWith(id: docRef.id);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error al crear tour con escenas: $e');
+      }
+      rethrow;
+    }
+  }
+
+  /// Actualizar una escena específica del tour
+  Future<void> updateScene(String tourId, TourScene scene) async {
+    try {
+      await _firestore.collection(_collection).doc(tourId).update({
+        'scenes.${scene.id}': scene.toMap(),
+        'updated_at': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error al actualizar escena: $e');
+      }
+      rethrow;
+    }
+  }
+
+  /// Agregar hotspot a una escena
+  Future<void> addHotspotToScene(
+    String tourId,
+    String sceneId,
+    TourHotspot hotspot,
+  ) async {
+    try {
+      final tour = await getTourById(tourId);
+      if (tour == null) throw Exception('Tour no encontrado');
+
+      final scene = tour.getSceneById(sceneId);
+      if (scene == null) throw Exception('Escena no encontrada');
+
+      final updatedHotspots = [...scene.hotspots, hotspot];
+      final updatedScene = scene.copyWith(hotspots: updatedHotspots);
+
+      await updateScene(tourId, updatedScene);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error al agregar hotspot: $e');
+      }
+      rethrow;
+    }
+  }
+
+  /// Eliminar hotspot de una escena
+  Future<void> removeHotspotFromScene(
+    String tourId,
+    String sceneId,
+    String hotspotId,
+  ) async {
+    try {
+      final tour = await getTourById(tourId);
+      if (tour == null) throw Exception('Tour no encontrado');
+
+      final scene = tour.getSceneById(sceneId);
+      if (scene == null) throw Exception('Escena no encontrada');
+
+      final updatedHotspots = scene.hotspots
+          .where((h) => h.id != hotspotId)
+          .toList();
+      final updatedScene = scene.copyWith(hotspots: updatedHotspots);
+
+      await updateScene(tourId, updatedScene);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Error al eliminar hotspot: $e');
+      }
+      rethrow;
+    }
   }
 }

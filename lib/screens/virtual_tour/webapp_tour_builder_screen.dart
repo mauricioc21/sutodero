@@ -6,6 +6,7 @@ import '../../models/virtual_tour_model.dart';
 import '../../services/virtual_tour_service.dart';
 import '../../config/app_theme.dart';
 import 'virtual_tour_op1_viewer_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 /// Pantalla WebApp de Tour 360° - Opción 2
 /// Integra el webapp completo de construcción de tours 360°
@@ -120,6 +121,7 @@ class _WebAppTourBuilderScreenState extends State<WebAppTourBuilderScreen> {
 
       // Guardar en Firestore
       final tour = await _virtualTourService.createTour(
+          userId: FirebaseAuth.instance.currentUser?.uid ?? "",
         propertyId: widget.property.id,
         propertyName: widget.property.tipo.displayName,
         propertyAddress: widget.property.direccion,

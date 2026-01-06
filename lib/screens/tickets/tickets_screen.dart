@@ -449,7 +449,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                       if (mounted) {
                         Navigator.pop(context); // Close dialog
                         if (result['success'] == true) {
-                          _loadTickets(); // Refresh list
+                          _refreshTickets(); // Refresh list
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('⚡ Ticket rápido creado exitosamente'),
@@ -491,7 +491,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
     return Scaffold(
       backgroundColor: AppTheme.negro,
       appBar: AppBar(
-        title: const Text('Tickets de Trabajo'),
+        title: Text(_isCoordinatorView ? 'Todos los Tickets' : 'Mis Tickets'),
         backgroundColor: AppTheme.grisOscuro,
         foregroundColor: AppTheme.dorado,
         actions: [
@@ -789,7 +789,9 @@ class _TicketsScreenState extends State<TicketsScreen> {
                             Icon(Icons.assignment, size: 64, color: Colors.grey[700]),
                             SizedBox(height: AppTheme.spacingMD),
                             Text(
-                              'No hay tickets',
+                              _isCoordinatorView 
+                                  ? 'No hay tickets en el sistema'
+                                  : 'No tienes tickets creados',
                               style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                             ),
                             SizedBox(height: AppTheme.spacingSM),
@@ -804,14 +806,52 @@ class _TicketsScreenState extends State<TicketsScreen> {
                                 ),
                               ),
                             Text(
-                              'Crea tu primer ticket de trabajo',
+                              _isCoordinatorView
+                                  ? 'Los tickets aparecerán aquí cuando se creen'
+                                  : 'Crea tu primer ticket usando el botón de abajo',
                               style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                             ),
+                            if (!_isCoordinatorView) ...[
+                              SizedBox(height: AppTheme.spacingMD),
+                              Container(
+                                padding: EdgeInsets.all(AppTheme.paddingMD),
+                                margin: EdgeInsets.symmetric(horizontal: AppTheme.paddingLG),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.shade50,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.blue.shade200),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Icon(Icons.info_outline, color: Colors.blue.shade700, size: 24),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      'Solo verás tus propios tickets aquí',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.blue.shade900,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      'Nuestro equipo los revisará y atenderá',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.blue.shade800,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       )
                     : RefreshIndicator(
-                        onRefresh: _loadTickets,
+                        onRefresh: _refreshTickets,
                         color: AppTheme.dorado,
                         child: ListView.builder(
                           padding: EdgeInsets.all(AppTheme.paddingMD),
@@ -845,7 +885,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
                 context,
                 MaterialPageRoute(builder: (_) => const AddEditTicketScreen()),
               );
-              _loadTickets();
+              _refreshTickets();
             },
             backgroundColor: AppTheme.dorado,
             foregroundColor: AppTheme.grisOscuro,
@@ -991,7 +1031,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
               builder: (_) => TicketDetailScreen(ticketId: ticket.id),
             ),
           );
-          _loadTickets();
+          _refreshTickets();
         },
         borderRadius: BorderRadius.circular(AppTheme.radiusLG),
         child: Padding(

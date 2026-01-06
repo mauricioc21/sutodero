@@ -66,6 +66,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
     
     try {
       List<UserModel> maestros = [];
+      Set<String> maestrosIds = {}; // ✅ FIX: Usar Set para evitar duplicados
       
       // 1. Cargar perfiles de maestros predefinidos (Rodrigo y Alexander) - PRIORIDAD
       try {
@@ -76,24 +77,53 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
         
         // Convertir perfiles a UserModel para compatibilidad
         for (var profile in profiles) {
-          maestros.add(UserModel(
-            uid: profile.id,
-            nombre: profile.nombre,
-            email: profile.email ?? '${profile.id}@sutodero.com',
-            rol: 'maestro',
-            telefono: profile.telefono,
-            fechaCreacion: profile.fechaCreacion,
-            activo: profile.activo,
-          ));
+          if (!maestrosIds.contains(profile.id)) { // ✅ FIX: Verificar duplicados
+            maestros.add(UserModel(
+              uid: profile.id,
+              nombre: profile.nombre,
+              email: profile.email ?? '${profile.id}@sutodero.com',
+              rol: 'maestro',
+              telefono: profile.telefono,
+              fechaCreacion: profile.fechaCreacion,
+              activo: profile.activo,
+            ));
+            maestrosIds.add(profile.id);
+          }
         }
       } catch (e) {
-        // Si no se pueden cargar los perfiles, crear los predeterminados en memoria
+        // Si no se pueden cargar los perfiles, NO crear predeterminados
+        // (evita duplicados si ya existen en maestro_profiles)
+        debugPrint('⚠️ No se pudieron cargar maestro_profiles: $e');
+      }
+      
+      // 2. Cargar usuarios adicionales con rol de maestro
+      try {
+        final querySnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('rol', isEqualTo: 'Maestro') // ✅ FIX: 'Maestro' con mayúscula
+            .where('activo', isEqualTo: true)
+            .get()
+            .timeout(const Duration(seconds: 3));
+        
+        for (var doc in querySnapshot.docs) {
+          final userMaestro = UserModel.fromMap(doc.data(), doc.id);
+          if (!maestrosIds.contains(userMaestro.uid)) { // ✅ FIX: Verificar duplicados
+            maestros.add(userMaestro);
+            maestrosIds.add(userMaestro.uid);
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ No se pudieron cargar users con rol Maestro: $e');
+      }
+      
+      // ✅ FIX: Si no se cargaron maestros, usar predeterminados
+      if (maestros.isEmpty) {
         maestros.addAll([
           UserModel(
             uid: 'rodrigo',
             nombre: 'Rodrigo',
             email: 'rodrigo@sutodero.com',
-            rol: 'maestro',
+            rol: 'Maestro',
             telefono: '3001234567',
             fechaCreacion: DateTime.now(),
             activo: true,
@@ -102,35 +132,12 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
             uid: 'alexander',
             nombre: 'Alexander',
             email: 'alexander@sutodero.com',
-            rol: 'maestro',
+            rol: 'Maestro',
             telefono: '3007654321',
             fechaCreacion: DateTime.now(),
             activo: true,
           ),
         ]);
-      }
-      
-      // 2. Cargar usuarios adicionales con rol de maestro
-      try {
-        final querySnapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .where('rol', isEqualTo: 'maestro')
-            .where('activo', isEqualTo: true)
-            .get()
-            .timeout(const Duration(seconds: 3));
-        
-        final userMaestros = querySnapshot.docs
-            .map((doc) => UserModel.fromMap(doc.data(), doc.id))
-            .toList();
-        
-        // Agregar solo si no están duplicados
-        for (var userMaestro in userMaestros) {
-          if (!maestros.any((m) => m.uid == userMaestro.uid)) {
-            maestros.add(userMaestro);
-          }
-        }
-      } catch (e) {
-        // Si falla la carga de users, continuar con los perfiles predefinidos
       }
       
       // Ordenar alfabéticamente

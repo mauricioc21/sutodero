@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "292635586927",
-    "project_id": "su-todero",
-    "storage_bucket": "su-todero.firebasestorage.app"
+    "project_number": "268982041852",
+    "project_id": "sutoderoapp-ee318",
+    "storage_bucket": "sutoderoapp-ee318.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:292635586927:android:c9c2fda0230fbacc29789a",
+        "mobilesdk_app_id": "1:268982041852:android:fc23e41e400db83a1e2b79",
         "android_client_info": {
           "package_name": "sutodero.app"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBVYy6qGJvV1Kizim3KnTEZfHRC9EYOjmg"
+          "current_key": "AIzaSyCP0lZ6IGMIBGi-e3Pu1cTDVZqqxSjpTp0"
         }
       ],
       "services": {

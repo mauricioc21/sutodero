@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/inventory_property.dart';
 import '../../models/virtual_tour_model.dart';
 import '../../services/virtual_tour_service.dart';
@@ -177,6 +178,7 @@ class _TourBuilderScreenState extends State<TourBuilderScreen> {
           : '[OP1] Tour Virtual de ${widget.property.direccion}';
 
       final tour = await _virtualTourService.createTour(
+          userId: FirebaseAuth.instance.currentUser?.uid ?? "",
         propertyId: widget.property.id,
         propertyName: widget.property.tipo.displayName,
         propertyAddress: widget.property.direccion,
@@ -230,11 +232,13 @@ class _TourBuilderScreenState extends State<TourBuilderScreen> {
     }
 
     // Crear tour temporal para previsualizar
+    final user = FirebaseAuth.instance.currentUser;
     final tempTour = VirtualTourModel(
       id: 'preview',
       propertyId: widget.property.id,
       propertyName: widget.property.tipo.displayName,
       propertyAddress: widget.property.direccion,
+      userId: user?.uid ?? 'preview_user',
       photo360Urls: _photo360Urls,
       description: 'Vista Previa',
       createdAt: DateTime.now(),

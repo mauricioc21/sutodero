@@ -133,7 +133,8 @@ class InventoryService {
           unidad: item.unidad,
           notas: comentario ?? 'Reportado desde inventario',
         );
-        await _ticketService.addMaterial(ticketId, ticketMaterial);
+        // TODO: Migrar a backend API - Los materiales ahora se agregan via updateTicket()
+        // await _ticketService.addMaterial(ticketId, ticketMaterial);
       }
       
       // Notificar si es daño o pérdida

@@ -82,7 +82,12 @@ class SuToderoApp extends StatelessWidget {
         Locale('es', 'ES'),
       ],
       theme: AppTheme.theme,
-      home: const LoginScreen(), // Login directo - el video se reproduce en HTML
+      // Iniciar con video splash screen
+      home: const VideoSplashScreen(),
+      // Definir rutas
+      routes: {
+        '/home': (context) => const LoginScreen(),
+      },
     );
   }
 }
