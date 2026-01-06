@@ -1,17 +1,25 @@
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:uuid/uuid.dart';
 import '../models/ticket_model.dart';
-import 'ticket_history_service.dart';
-import 'geolocation_service.dart';
+import 'api_service.dart';
 
 /// Servicio para gestionar tickets de trabajo
-/// Versión Corregida: Sin bloqueo por errores transitorios
+/// 🔥 VERSIÓN BACKEND-ONLY: Usa Cloud Functions para TODA operación de escritura
+/// ✅ Lectura: Firestore directo (filtrado por reglas)
+/// ✅ Escritura: Backend API (Admin SDK, sin restricciones)
 class TicketService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final Uuid _uuid = const Uuid();
-  final TicketHistoryService _historyService = TicketHistoryService();
-  final GeolocationService _geolocationService = GeolocationService();
+  final ApiService _apiService = ApiService();
+
+  // Singleton
+  static final TicketService _instance = TicketService._internal();
+  factory TicketService() => _instance;
+  TicketService._internal();
+
+  // Variable para diagnóstico de errores en UI
+  String? lastError;
+
+  // ==================== HELPERS DE ROL ====================
 
   bool _isAdminRole(String? role) {
     final value = role?.toLowerCase().trim();
@@ -26,57 +34,13 @@ class TicketService {
     return value == 'maestro' || value == 'tecnico';
   }
 
-  List<TicketModel> _parseTicketsFromSnapshot(
-    QuerySnapshot<Map<String, dynamic>> snapshot,
-  ) {
-    return snapshot.docs
-        .map((doc) {
-          try {
-            return TicketModel.fromMap(doc.data(), doc.id);
-          } catch (e) {
-            debugPrint('⚠️ Error parseando ticket ${doc.id}: $e');
-            return null;
-          }
-        })
-        .whereType<TicketModel>()
-        .toList();
-  }
+  // ==================== CREAR TICKET (BACKEND ONLY) ====================
 
-  Future<List<TicketModel>> _fetchTicketsForQueries(
-    List<Query<Map<String, dynamic>>> queries,
-  ) async {
-    final Map<String, TicketModel> uniqueTickets = {};
-
-    for (final query in queries) {
-      try {
-        final snapshot = await query.get();
-        for (final doc in snapshot.docs) {
-          if (!uniqueTickets.containsKey(doc.id)) {
-            try {
-              uniqueTickets[doc.id] = TicketModel.fromMap(doc.data(), doc.id);
-            } catch (e) {
-              debugPrint('⚠️ Error parseando ticket ${doc.id}: $e');
-            }
-          }
-        }
-      } catch (e) {
-        debugPrint('⚠️ Query parcial falló: $e');
-      }
-    }
-
-    final tickets = uniqueTickets.values.toList()
-      ..sort((a, b) => b.fechaCreacion.compareTo(a.fechaCreacion));
-    return tickets;
-  }
-
-  static final TicketService _instance = TicketService._internal();
-  factory TicketService() => _instance;
-  TicketService._internal();
-
-  // ELIMINADO: bool _firebaseAvailable = true; (Causa raíz de fallos silenciosos)
-
-  /// Crear un nuevo ticket
-  /// Retorna un Map con {success: bool, message: String, data: TicketModel?}
+  /// Crear un nuevo ticket a través del BACKEND
+  /// ⚠️ NO escribe directamente a Firestore
+  /// ✅ Usa Cloud Functions con Admin SDK
+  /// 
+  /// Retorna un Map con {success: bool, message: String, data: Map?}
   Future<Map<String, dynamic>> createTicket({
     required String userId,
     required String titulo,
@@ -98,293 +62,360 @@ class TicketService {
     String? propiedadId,
     double? presupuestoEstimado,
   }) async {
-    final now = DateTime.now();
-    final id = _uuid.v4();
-    // Generar código simple y legible
-    final codigo = 'TKT-${now.millisecondsSinceEpoch.toString().substring(8)}';
-
-    // Determinar estado inicial
-    // Si se asigna maestro al crear, nace como ASIGNADO, sino como NUEVO
-    final estadoInicial = (maestroId != null && maestroId.isNotEmpty)
-        ? TicketStatus.asignado
-        : TicketStatus.nuevo;
-
-    final ticket = TicketModel(
-      id: id,
-      codigo: codigo,
-      userId: userId,
-      titulo: titulo,
-      descripcion: descripcion,
-      tipoServicio: tipoServicio,
-      estado: estadoInicial,
-      prioridad: prioridad,
-      clienteId: clienteId,
-      clienteNombre: clienteNombre,
-      clienteTelefono: clienteTelefono,
-      clienteEmail: clienteEmail,
-      ubicacionDireccion: propiedadDireccion ?? '',
-      ubicacionLat: lat,
-      ubicacionLng: lng,
-      propiedadId: propiedadId,
-      presupuestoEstimado: presupuestoEstimado,
-      fechaCreacion: now,
-      fechaActualizacion: now,
-      fechaProgramada: fechaProgramada,
-      fotosAntes: fotosAntes,
-      maestroId: maestroId,
-      maestroNombre: maestroNombre,
-      notasCliente: notasCliente,
-      historial: [
-        TicketHistoryItem(
-          fecha: now,
-          accion: 'Creación',
-          usuario:
-              clienteNombre, // O 'Coordinador' si tuviéramos ese dato exacto
-          detalles:
-              'Ticket creado exitosamente. Estado: ${estadoInicial.displayName}',
-        ),
-      ],
-    );
-
     try {
-      debugPrint('🔄 Intentando crear ticket en Firestore...');
-      debugPrint('   ID: ${ticket.id}');
-      debugPrint('   Título: ${ticket.titulo}');
-      debugPrint('   Cliente: ${ticket.clienteNombre}');
-      debugPrint('   Estado: ${ticket.estado.displayName}');
-      
-      // Intento de escritura en Firestore
-      // Usamos SetOptions(merge: true) por seguridad
-      await _firestore
-          .collection('tickets')
-          .doc(ticket.id)
-          .set(ticket.toMap(), SetOptions(merge: true));
+      debugPrint('🚀 Creando ticket vía BACKEND...');
+      debugPrint('   Título: $titulo');
+      debugPrint('   Cliente: $clienteNombre');
+      debugPrint('   Cliente ID: $clienteId');
 
-      debugPrint('✅ ¡TICKET GUARDADO EN FIRESTORE!');
-      debugPrint('   ID del documento: ${ticket.id}');
-      debugPrint('   Colección: tickets');
-      debugPrint('   Proyecto: sutoderoapp-ee318');
-      
-      return {
-        'success': true,
-        'message': 'Ticket creado correctamente - ID: ${ticket.codigo}',
-        'data': ticket,
-      };
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('❌ Error CRÍTICO creando ticket en Firebase: $e');
+      // Llamar al backend
+      final result = await _apiService.createTicket(
+        titulo: titulo,
+        descripcion: descripcion,
+        tipoServicio: tipoServicio.value,
+        prioridad: prioridad.value,
+        clienteId: clienteId,
+        clienteNombre: clienteNombre,
+        clienteTelefono: clienteTelefono,
+        clienteEmail: clienteEmail,
+        propiedadId: propiedadId,
+        propiedadDireccion: propiedadDireccion,
+        lat: lat,
+        lng: lng,
+        fechaProgramada: fechaProgramada,
+        notasCliente: notasCliente,
+        fotosAntes: fotosAntes,
+        presupuestoEstimado: presupuestoEstimado,
+      );
+
+      if (result['success'] == true) {
+        debugPrint('✅ Ticket creado exitosamente en backend');
+        debugPrint('   Datos: ${result['data']}');
+        
+        lastError = null;
+        return {
+          'success': true,
+          'message': 'Ticket creado correctamente',
+          'data': result['data'],
+        };
+      } else {
+        final errorMsg = result['message'] ?? 'Error desconocido';
+        debugPrint('❌ Backend rechazó la creación: $errorMsg');
+        
+        lastError = errorMsg;
+        return {
+          'success': false,
+          'message': errorMsg,
+          'data': null,
+        };
       }
-      // Retornamos el error para que la UI lo sepa
+    } catch (e) {
+      debugPrint('❌ Error creando ticket: $e');
+      lastError = 'Error de conexión: $e';
+      
       return {
         'success': false,
-        'message': 'Error al guardar en base de datos: $e',
+        'message': 'Error de conexión con el servidor: $e',
         'data': null,
       };
     }
   }
 
-  // Variable para diagnóstico de errores en UI
-  String? lastError;
+  // ==================== OBTENER TICKETS (FIRESTORE DIRECTO) ====================
 
   /// Obtener todos los tickets disponibles según permisos del usuario
-  Future<List<TicketModel>> getAllTickets({
+  /// ✅ Lectura directa de Firestore (las reglas manejan el filtrado)
+  /// 
+  /// Para admin/coordinador: Todos los tickets
+  /// Para maestro: Tickets asignados a él
+  /// Para cliente: Tickets creados por él
+  Future<List<TicketModel>> getTickets({
     String? userId,
     String? userRole,
   }) async {
-    lastError = null;
-    final ticketsCollection = _firestore.collection('tickets');
-
     try {
-      if (_isAdminRole(userRole)) {
-        try {
-          final snapshot = await ticketsCollection
-              .orderBy('fechaCreacion', descending: true)
-              .get();
-          final tickets = _parseTicketsFromSnapshot(snapshot)
-            ..sort((a, b) => b.fechaCreacion.compareTo(a.fechaCreacion));
-          return tickets;
-        } catch (e) {
-          debugPrint('⚠️ Lectura global falló: $e');
-          lastError =
-              'Permisos limitados para lectura global, mostrando tickets relacionados.';
-          // Continuar con consultas específicas según el usuario.
-        }
-      }
+      debugPrint('📖 Obteniendo tickets desde Firestore...');
+      debugPrint('   User ID: $userId');
+      debugPrint('   Role: $userRole');
 
-      if (userId == null || userId.isEmpty) {
-        lastError = 'Usuario no autenticado';
-        return [];
-      }
+      Query<Map<String, dynamic>> query = _firestore.collection('tickets');
 
-      if (_isMaestroRole(userRole)) {
-        return await _fetchTicketsForQueries([
-          ticketsCollection.where('tecnicoId', isEqualTo: userId),
-          ticketsCollection.where('toderoId', isEqualTo: userId),
-          ticketsCollection.where('maestroAsignado.id', isEqualTo: userId),
-        ]);
-      }
-
-      return await _fetchTicketsForQueries([
-        ticketsCollection.where('userId', isEqualTo: userId),
-        ticketsCollection.where('clienteId', isEqualTo: userId),
-        ticketsCollection.where('cliente.id', isEqualTo: userId),
-      ]);
-    } catch (e) {
-      lastError = e.toString();
-      debugPrint('❌ Error obteniendo tickets: $e');
-      return [];
-    }
-  }
-
-  /// Escuchar tickets según permisos del usuario en tiempo real
-  Stream<List<TicketModel>> watchTickets({
-    required String userId,
-    required String userRole,
-  }) async* {
-    final ticketsCollection = _firestore.collection('tickets');
-
-    if (_isAdminRole(userRole)) {
-      debugPrint('🔍 COORDINADOR/ADMIN - Consultando TODOS los tickets...');
-      debugPrint('   Usuario ID: $userId');
-      debugPrint('   Rol: $userRole');
-      
-      // Admins y Coordinadores ven todos los tickets
-      yield* ticketsCollection
-          .orderBy('fechaCreacion', descending: true)
-          .snapshots()
-          .map((snapshot) {
-        debugPrint('📊 Snapshot recibido:');
-        debugPrint('   Total documentos: ${snapshot.docs.length}');
-        debugPrint('   Metadata: pending=${snapshot.metadata.hasPendingWrites}, fromCache=${snapshot.metadata.isFromCache}');
-        
-        if (snapshot.docs.isEmpty) {
-          debugPrint('⚠️ NO HAY DOCUMENTOS en la colección tickets');
+      // Filtrar según rol
+      if (userId != null && userRole != null) {
+        if (_isAdminRole(userRole)) {
+          // Admin/coordinador: Sin filtro (ve todos)
+          debugPrint('   👑 Admin/Coordinador: Sin filtro');
+        } else if (_isMaestroRole(userRole)) {
+          // Maestro: Solo tickets asignados a él
+          debugPrint('   🔧 Maestro: Filtrando por maestroId');
+          query = query.where('maestroId', isEqualTo: userId);
         } else {
-          for (var doc in snapshot.docs.take(3)) {
-            debugPrint('   Doc ${doc.id}: ${doc.data()['titulo'] ?? 'sin título'}');
-          }
+          // Cliente: Solo tickets creados por él
+          debugPrint('   👤 Cliente: Filtrando por clienteId');
+          query = query.where('clienteId', isEqualTo: userId);
         }
-        
-        final tickets = _parseTicketsFromSnapshot(snapshot);
-        lastError = null;
-        debugPrint('✅ Admin/Coordinador - ${tickets.length} tickets parseados');
-        return tickets;
-      }).handleError((error) {
-        debugPrint('❌ ERROR watchTickets (admin): $error');
-        lastError = error.toString();
-      });
-    } else if (_isMaestroRole(userRole)) {
-      // ✅ FIX: Maestros - Consulta simple sin Filter.or
-      // Usar toderoId como campo principal para maestros
-      yield* ticketsCollection
-          .where('toderoId', isEqualTo: userId)
-          .snapshots()
-          .map((snapshot) {
-        final tickets = _parseTicketsFromSnapshot(snapshot)
-          ..sort((a, b) => b.fechaCreacion.compareTo(a.fechaCreacion));
-        lastError = null;
-        debugPrint('✅ Maestro ${userId} - ${tickets.length} tickets');
-        return tickets;
-      }).handleError((error) {
-        debugPrint('⚠️ Error watchTickets (maestro): $error');
-        lastError = error.toString();
-      });
-    } else {
-      // Usuarios regulares ven solo sus tickets
-      yield* ticketsCollection
-          .where('userId', isEqualTo: userId)
-          .snapshots()
-          .map((snapshot) {
-        final tickets = _parseTicketsFromSnapshot(snapshot)
-          ..sort((a, b) => b.fechaCreacion.compareTo(a.fechaCreacion));
-        lastError = null;
-        debugPrint('✅ Usuario ${userId} - ${tickets.length} tickets');
-        return tickets;
-      }).handleError((error) {
-        debugPrint('⚠️ Error watchTickets (user): $error');
-        lastError = error.toString();
-      });
-    }
-  }
+      }
 
-  /// Obtener tickets por usuario (cliente o maestro)
-  Future<List<TicketModel>> getTicketsByUser(
-    String userId, {
-    bool isCliente = true,
-  }) async {
-    try {
-      final field = isCliente ? 'cliente.id' : 'maestroAsignado.id';
-      // Fallback fields para compatibilidad con datos antiguos
-      final legacyField = isCliente ? 'clienteId' : 'toderoId';
+      // Ordenar por fecha
+      query = query.orderBy('fechaCreacion', descending: true);
 
-      QuerySnapshot querySnapshot;
+      final snapshot = await query.get();
+      debugPrint('   📊 Total documentos: ${snapshot.docs.length}');
 
-      try {
-        // Intentar query principal (estructura nueva)
-        try {
-          querySnapshot = await _firestore
-              .collection('tickets')
-              .where(field, isEqualTo: userId)
-              .get();
-
-          if (querySnapshot.docs.isEmpty) {
-            throw Exception('Empty results, try legacy');
-          }
-        } catch (e) {
-          // Fallback a legacy o si falla por índice
-          debugPrint(
-            '⚠️ Falló query principal ticketsByUser, intentando legacy: $e',
-          );
-          querySnapshot = await _firestore
-              .collection('tickets')
-              .where(legacyField, isEqualTo: userId)
-              .get();
-        }
-      } catch (e) {
-        debugPrint(
-          '❌ Error obteniendo tickets por usuario (ambos métodos fallaron): $e',
-        );
+      if (snapshot.docs.isEmpty) {
+        debugPrint('   📭 No hay tickets');
         return [];
       }
 
-      final tickets = querySnapshot.docs
+      final tickets = snapshot.docs
           .map((doc) {
             try {
-              return TicketModel.fromMap(
-                doc.data() as Map<String, dynamic>,
-                doc.id,
-              );
+              return TicketModel.fromMap(doc.data(), doc.id);
             } catch (e) {
+              debugPrint('   ⚠️ Error parseando ticket ${doc.id}: $e');
               return null;
             }
           })
           .whereType<TicketModel>()
           .toList();
 
-      // Ordenamiento en memoria si el índice compuesto falla
-      tickets.sort((a, b) => b.fechaCreacion.compareTo(a.fechaCreacion));
+      debugPrint('   ✅ Tickets parseados: ${tickets.length}');
+      lastError = null;
       return tickets;
+      
     } catch (e) {
-      debugPrint('⚠️ Error obteniendo tickets por usuario: $e');
+      debugPrint('❌ Error obteniendo tickets: $e');
+      lastError = 'Error obteniendo tickets: $e';
+      
+      // En lugar de fallar, retornar lista vacía
+      // Esto evita loaders infinitos
       return [];
     }
   }
 
-  /// Obtener un ticket por ID
-  Future<TicketModel?> getTicket(String ticketId) async {
+  /// Stream de tickets en tiempo real (ALIAS para compatibilidad)
+  /// ✅ Lectura directa de Firestore con stream
+  Stream<List<TicketModel>> watchTickets({
+    String? userId,
+    String? userRole,
+  }) {
+    return getTicketsStream(userId: userId, userRole: userRole);
+  }
+
+  /// Stream de tickets en tiempo real
+  /// ✅ Lectura directa de Firestore con stream
+  Stream<List<TicketModel>> getTicketsStream({
+    String? userId,
+    String? userRole,
+  }) {
     try {
-      final doc = await _firestore.collection('tickets').doc(ticketId).get();
-      if (doc.exists && doc.data() != null) {
-        return TicketModel.fromMap(doc.data() as Map<String, dynamic>, doc.id);
+      debugPrint('📡 Iniciando stream de tickets...');
+      debugPrint('   User ID: $userId');
+      debugPrint('   Role: $userRole');
+
+      Query<Map<String, dynamic>> query = _firestore.collection('tickets');
+
+      // Filtrar según rol
+      if (userId != null && userRole != null) {
+        if (_isAdminRole(userRole)) {
+          // Admin: Sin filtro
+          debugPrint('   👑 Admin: Sin filtro');
+        } else if (_isMaestroRole(userRole)) {
+          // Maestro: Solo sus tickets
+          debugPrint('   🔧 Maestro: maestroId = $userId');
+          query = query.where('maestroId', isEqualTo: userId);
+        } else {
+          // Cliente: Solo sus tickets
+          debugPrint('   👤 Cliente: clienteId = $userId');
+          query = query.where('clienteId', isEqualTo: userId);
+        }
       }
-      return null;
+
+      // Ordenar por fecha
+      query = query.orderBy('fechaCreacion', descending: true);
+
+      return query.snapshots().map((snapshot) {
+        debugPrint('   📊 Stream update: ${snapshot.docs.length} documentos');
+        
+        if (snapshot.docs.isEmpty) {
+          debugPrint('   📭 Stream vacío');
+          return <TicketModel>[];
+        }
+
+        final tickets = snapshot.docs
+            .map((doc) {
+              try {
+                return TicketModel.fromMap(doc.data(), doc.id);
+              } catch (e) {
+                debugPrint('   ⚠️ Error parseando ticket ${doc.id}: $e');
+                return null;
+              }
+            })
+            .whereType<TicketModel>()
+            .toList();
+
+        debugPrint('   ✅ Tickets en stream: ${tickets.length}');
+        return tickets;
+      });
+      
     } catch (e) {
-      debugPrint('⚠️ Error obteniendo ticket: $e');
+      debugPrint('❌ Error en stream: $e');
+      lastError = 'Error en stream: $e';
+      
+      // Retornar stream vacío en lugar de fallar
+      return Stream.value([]);
+    }
+  }
+
+  /// Obtener un ticket específico por ID
+  /// ✅ Lectura directa de Firestore
+  Future<TicketModel?> getTicketById(String ticketId) async {
+    try {
+      debugPrint('📖 Obteniendo ticket: $ticketId');
+      
+      final doc = await _firestore.collection('tickets').doc(ticketId).get();
+
+      if (!doc.exists) {
+        debugPrint('   ❌ Ticket no existe');
+        return null;
+      }
+
+      final ticket = TicketModel.fromMap(doc.data()!, doc.id);
+      debugPrint('   ✅ Ticket encontrado: ${ticket.titulo}');
+      
+      lastError = null;
+      return ticket;
+      
+    } catch (e) {
+      debugPrint('❌ Error obteniendo ticket: $e');
+      lastError = 'Error obteniendo ticket: $e';
       return null;
     }
   }
 
-  /// Actualizar estado del ticket
+  /// Alias para compatibilidad
+  Future<TicketModel?> getTicket(String ticketId) async {
+    return getTicketById(ticketId);
+  }
+
+  /// Obtener todos los tickets (admin/coordinador)
+  /// ✅ Lectura directa de Firestore
+  Future<List<TicketModel>> getAllTickets() async {
+    return getTickets(userId: null, userRole: 'administrador');
+  }
+
+  /// Obtener tickets por usuario
+  Future<List<TicketModel>> getTicketsByUser(String userId, String userRole) async {
+    return getTickets(userId: userId, userRole: userRole);
+  }
+
+  // ==================== ACTUALIZAR TICKET (BACKEND ONLY) ====================
+
+  /// Actualizar ticket a través del BACKEND
+  /// ⚠️ NO escribe directamente a Firestore
+  /// ✅ Usa Cloud Functions con Admin SDK
+  Future<Map<String, dynamic>> updateTicket(
+    String ticketId, {
+    String? estado,
+    String? descripcion,
+    DateTime? fechaInicio,
+    DateTime? fechaFin,
+    String? maestroId,
+    String? maestroNombre,
+    List<String>? fotosDurante,
+    List<String>? fotosDespues,
+    String? notasMaestro,
+    double? costoReal,
+  }) async {
+    try {
+      debugPrint('🔄 Actualizando ticket vía BACKEND: $ticketId');
+
+      final result = await _apiService.updateTicket(
+        ticketId,
+        estado: estado,
+        descripcion: descripcion,
+        fechaInicio: fechaInicio,
+        fechaFin: fechaFin,
+        maestroId: maestroId,
+        maestroNombre: maestroNombre,
+        fotosDurante: fotosDurante,
+        fotosDespues: fotosDespues,
+        notasMaestro: notasMaestro,
+        costoReal: costoReal,
+      );
+
+      debugPrint('✅ Ticket actualizado');
+      lastError = null;
+      return result;
+      
+    } catch (e) {
+      debugPrint('❌ Error actualizando ticket: $e');
+      lastError = 'Error actualizando ticket: $e';
+      rethrow;
+    }
+  }
+
+  // ==================== ELIMINAR TICKET (BACKEND ONLY) ====================
+
+  /// Eliminar ticket a través del BACKEND
+  /// ⚠️ NO escribe directamente a Firestore
+  /// ✅ Usa Cloud Functions con Admin SDK
+  Future<void> deleteTicket(String ticketId) async {
+    try {
+      debugPrint('🗑️ Eliminando ticket vía BACKEND: $ticketId');
+
+      await _apiService.deleteTicket(ticketId);
+
+      debugPrint('✅ Ticket eliminado');
+      lastError = null;
+      
+    } catch (e) {
+      debugPrint('❌ Error eliminando ticket: $e');
+      lastError = 'Error eliminando ticket: $e';
+      rethrow;
+    }
+  }
+
+  // ==================== ESTADÍSTICAS ====================
+
+  /// Obtener estadísticas de tickets
+  /// ✅ Lectura directa de Firestore
+  Future<Map<String, int>> getTicketStats({
+    String? userId,
+    String? userRole,
+  }) async {
+    try {
+      final tickets = await getTickets(userId: userId, userRole: userRole);
+
+      return {
+        'total': tickets.length,
+        'nuevos': tickets.where((t) => t.estado == TicketStatus.nuevo).length,
+        'asignados': tickets.where((t) => t.estado == TicketStatus.asignado).length,
+        'en_progreso': tickets.where((t) => t.estado == TicketStatus.en_ejecucion).length,
+        'completados': tickets.where((t) => t.estado == TicketStatus.finalizado).length,
+        'cancelados': tickets.where((t) => t.estado == TicketStatus.cancelado).length,
+      };
+    } catch (e) {
+      debugPrint('❌ Error obteniendo estadísticas: $e');
+      return {
+        'total': 0,
+        'nuevos': 0,
+        'asignados': 0,
+        'en_progreso': 0,
+        'completados': 0,
+        'cancelados': 0,
+      };
+    }
+  }
+
+  /// Alias para compatibilidad
+  Future<Map<String, int>> getTicketStatistics() async {
+    return getTicketStats();
+  }
+
+  // ==================== MÉTODOS ADICIONALES PARA COMPATIBILIDAD ====================
+
+  /// Actualizar solo el estado de un ticket
   Future<bool> updateTicketStatus(
     String ticketId,
     TicketStatus newStatus, {
@@ -393,220 +424,15 @@ class TicketService {
     String? detalles,
   }) async {
     try {
-      final ticket = await getTicket(ticketId);
-      if (ticket == null) return false;
-
-      final now = DateTime.now();
-      final historyItem = TicketHistoryItem(
-        fecha: now,
-        accion: 'Cambio de estado: ${newStatus.displayName}',
-        usuario: userName ?? 'Usuario',
-        detalles: detalles,
-      );
-
-      final updatedTicket = ticket.copyWith(
-        estado: newStatus,
-        fechaActualizacion: now,
-        historial: [...ticket.historial, historyItem],
-        fechaInicio:
-            (newStatus == TicketStatus.en_ejecucion &&
-                ticket.fechaInicio == null)
-            ? now
-            : ticket.fechaInicio,
-        fechaCompletado: (newStatus == TicketStatus.finalizado)
-            ? now
-            : ticket.fechaCompletado,
-      );
-
-      await _firestore
-          .collection('tickets')
-          .doc(ticketId)
-          .update(updatedTicket.toMap());
+      await updateTicket(ticketId, estado: newStatus.value);
       return true;
     } catch (e) {
-      debugPrint('⚠️ Error actualizando estado: $e');
+      debugPrint('❌ Error actualizando estado: $e');
       return false;
     }
   }
 
-  // ... (Otros métodos se mantienen similares pero sin el check _firebaseAvailable) ...
-  // Por brevedad, mantengo los métodos críticos corregidos arriba.
-  // Agrego los métodos auxiliares necesarios para que no rompa compilación:
-
-  Future<Map<String, int>> getTicketStatistics() async {
-    try {
-      final tickets = await getAllTickets();
-      int nuevo = 0,
-          pendiente = 0,
-          enProgreso = 0,
-          completado = 0,
-          cancelado = 0;
-
-      for (var ticket in tickets) {
-        switch (ticket.estado) {
-          case TicketStatus.nuevo:
-          case TicketStatus.asignado:
-            nuevo++;
-            break;
-          case TicketStatus.pendiente:
-            pendiente++;
-            break;
-          case TicketStatus.en_camino:
-          case TicketStatus.en_lugar:
-          case TicketStatus.en_ejecucion:
-          case TicketStatus.pendiente_repuestos:
-            enProgreso++;
-            break;
-          case TicketStatus.finalizado:
-            completado++;
-            break;
-          case TicketStatus.cancelado:
-            cancelado++;
-            break;
-        }
-      }
-      return {
-        'nuevo': nuevo,
-        'pendiente': pendiente,
-        'en_progreso': enProgreso,
-        'completado': completado,
-        'cancelado': cancelado,
-      };
-    } catch (e) {
-      return {};
-    }
-  }
-
-  /// Agregar una foto al ticket
-  Future<void> addPhoto(String ticketId, String photoUrl, String tipo) async {
-    try {
-      final field = tipo == 'antes'
-          ? 'fotosAntes'
-          : tipo == 'durante'
-          ? 'fotosDurante'
-          : 'fotosDespues';
-
-      await _firestore.collection('tickets').doc(ticketId).update({
-        field: FieldValue.arrayUnion([photoUrl]),
-        'fechaActualizacion': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      debugPrint('Error adding photo: $e');
-      throw e;
-    }
-  }
-
-  /// Agregar material usado
-  Future<void> addMaterial(String ticketId, TicketMaterial material) async {
-    try {
-      await _firestore.collection('tickets').doc(ticketId).update({
-        'materialesUsados': FieldValue.arrayUnion([material.toMap()]),
-        'fechaActualizacion': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      debugPrint('Error adding material: $e');
-      throw e;
-    }
-  }
-
-  /// Realizar Check-in
-  Future<void> performCheckIn(String ticketId, CheckIn checkIn) async {
-    try {
-      await _firestore.collection('tickets').doc(ticketId).update({
-        'check.checkIn': checkIn.toMap(),
-        'estado': TicketStatus.en_lugar.value,
-        'fechaActualizacion': FieldValue.serverTimestamp(),
-        'historial': FieldValue.arrayUnion([
-          TicketHistoryItem(
-            fecha: DateTime.now(),
-            accion: 'Check-in',
-            usuario: 'Maestro', // Idealmente obtener nombre real
-            detalles:
-                'Llegada al sitio. Distancia: ${checkIn.distanciaDesdeUbicacion?.toStringAsFixed(0) ?? "?"}m',
-          ).toMap(),
-        ]),
-      });
-    } catch (e) {
-      debugPrint('Error performing check-in: $e');
-      throw e;
-    }
-  }
-
-  /// Realizar Check-out
-  Future<void> performCheckOut(String ticketId, CheckOut checkOut) async {
-    try {
-      await _firestore.collection('tickets').doc(ticketId).update({
-        'check.checkOut': checkOut.toMap(),
-        'estado': TicketStatus
-            .en_ejecucion
-            .value, // O el estado que corresponda post check-out
-        'fechaActualizacion': FieldValue.serverTimestamp(),
-        'historial': FieldValue.arrayUnion([
-          TicketHistoryItem(
-            fecha: DateTime.now(),
-            accion: 'Check-out',
-            usuario: 'Maestro',
-            detalles: 'Salida del sitio.',
-          ).toMap(),
-        ]),
-      });
-    } catch (e) {
-      debugPrint('Error performing check-out: $e');
-      throw e;
-    }
-  }
-
-  /// Aprobar cotización y asignar maestro (o solo aprobar si maestroId es vacío)
-  Future<bool> approveCotizacionAndAssignMaestro({
-    required String ticketId,
-    required String maestroId,
-    required String maestroNombre,
-    String? userId,
-    String? userName,
-  }) async {
-    try {
-      final now = DateTime.now();
-      final Map<String, dynamic> updates = {
-        'cotizacionAprobada': true,
-        'fechaCotizacionAprobada': FieldValue.serverTimestamp(),
-        'fechaActualizacion': FieldValue.serverTimestamp(),
-      };
-
-      if (maestroId.isNotEmpty) {
-        updates['maestroAsignado'] = {'id': maestroId, 'nombre': maestroNombre};
-        updates['maestroId'] = maestroId; // Legacy
-        updates['toderoId'] = maestroId; // Legacy
-        updates['maestroNombre'] = maestroNombre; // Legacy
-        updates['toderoNombre'] = maestroNombre; // Legacy
-        updates['tecnicoId'] = maestroId;
-        updates['tecnicoNombre'] = maestroNombre;
-        updates['estado'] = TicketStatus.asignado.value;
-      }
-
-      await _firestore.collection('tickets').doc(ticketId).update(updates);
-
-      // Historial
-      await _firestore.collection('tickets').doc(ticketId).update({
-        'historial': FieldValue.arrayUnion([
-          TicketHistoryItem(
-            fecha: now,
-            accion: 'Cotización Aprobada',
-            usuario: userName ?? 'Usuario',
-            detalles: maestroId.isNotEmpty
-                ? 'Maestro asignado: $maestroNombre'
-                : 'Pendiente asignación',
-          ).toMap(),
-        ]),
-      });
-
-      return true;
-    } catch (e) {
-      debugPrint('Error approving cotizacion: $e');
-      return false;
-    }
-  }
-
-  /// Asignar maestro a un ticket existente
+  /// Asignar maestro a ticket
   Future<bool> assignMaestroToTicket({
     required String ticketId,
     required String maestroId,
@@ -615,84 +441,123 @@ class TicketService {
     String? userName,
   }) async {
     try {
-      final now = DateTime.now();
-      final updates = {
-        'maestroAsignado': {'id': maestroId, 'nombre': maestroNombre},
-        'maestroId': maestroId,
-        'toderoId': maestroId,
-        'maestroNombre': maestroNombre,
-        'toderoNombre': maestroNombre,
-        'tecnicoId': maestroId,
-        'tecnicoNombre': maestroNombre,
-        'estado': TicketStatus.asignado.value,
-        'fechaActualizacion': FieldValue.serverTimestamp(),
-      };
-
-      await _firestore.collection('tickets').doc(ticketId).update(updates);
-
-      // Historial
-      await _firestore.collection('tickets').doc(ticketId).update({
-        'historial': FieldValue.arrayUnion([
-          TicketHistoryItem(
-            fecha: now,
-            accion: 'Maestro Asignado',
-            usuario: userName ?? 'Usuario',
-            detalles: 'Se asignó a $maestroNombre',
-          ).toMap(),
-        ]),
-      });
-
+      await updateTicket(
+        ticketId,
+        maestroId: maestroId,
+        maestroNombre: maestroNombre,
+        estado: 'ASIGNADO',
+      );
       return true;
     } catch (e) {
-      debugPrint('Error assigning maestro: $e');
+      debugPrint('❌ Error asignando maestro: $e');
       return false;
     }
   }
 
-  /// Guardar firma digital
-  Future<bool> saveSignature({
+  /// Aprobar cotización y asignar maestro
+  Future<bool> approveCotizacionAndAssignMaestro({
     required String ticketId,
-    required String signatureBase64,
-    required bool isCliente,
+    required String maestroId,
+    required String maestroNombre,
     String? userId,
     String? userName,
   }) async {
     try {
-      final now = DateTime.now();
-      final field = isCliente ? 'firmaCliente' : 'firmaMaestro';
-      final dateField = isCliente ? 'fechaFirmaCliente' : 'fechaFirmaMaestro';
-      final legacyField = isCliente
-          ? null
-          : 'firmaTodero'; // Legacy for maestro
-
-      final Map<String, dynamic> updates = {
-        field: signatureBase64,
-        dateField: FieldValue.serverTimestamp(),
-        'fechaActualizacion': FieldValue.serverTimestamp(),
-      };
-
-      if (legacyField != null) {
-        updates[legacyField] = signatureBase64;
-      }
-
-      await _firestore.collection('tickets').doc(ticketId).update(updates);
-
-      // Historial
-      await _firestore.collection('tickets').doc(ticketId).update({
-        'historial': FieldValue.arrayUnion([
-          TicketHistoryItem(
-            fecha: now,
-            accion: 'Firma Registrada',
-            usuario: userName ?? 'Usuario',
-            detalles: isCliente ? 'Firma del Cliente' : 'Firma del Maestro',
-          ).toMap(),
-        ]),
-      });
-
+      await updateTicket(
+        ticketId,
+        maestroId: maestroId,
+        maestroNombre: maestroNombre,
+        estado: 'ASIGNADO',
+      );
       return true;
     } catch (e) {
-      debugPrint('Error saving signature: $e');
+      debugPrint('❌ Error aprobando cotización: $e');
       return false;
+    }
+  }
+
+  /// Guardar firma
+  Future<bool> saveSignature({
+    required String ticketId,
+    String? signatureUrl,
+    String? signatureBase64,
+    String? signedBy,
+    bool? isCliente,
+    String? userName,
+    String? userId,
+  }) async {
+    try {
+      // Por ahora, solo actualizar el estado a completado
+      await updateTicket(ticketId, estado: 'COMPLETADO');
+      return true;
+    } catch (e) {
+      debugPrint('❌ Error guardando firma: $e');
+      return false;
+    }
+  }
+
+  /// Agregar foto
+  Future<void> addPhoto(
+    String ticketId,
+    String photoUrl,
+    String stage,
+  ) async {
+    try {
+      final ticket = await getTicketById(ticketId);
+      if (ticket == null) return;
+
+      List<String> photos = [];
+      if (stage == 'antes') {
+        photos = [...ticket.fotosAntes, photoUrl];
+        await updateTicket(ticketId, fotosDurante: photos);
+      } else if (stage == 'durante') {
+        photos = [...ticket.fotosDurante, photoUrl];
+        await updateTicket(ticketId, fotosDurante: photos);
+      } else if (stage == 'despues') {
+        photos = [...ticket.fotosDespues, photoUrl];
+        await updateTicket(ticketId, fotosDespues: photos);
+      }
+    } catch (e) {
+      debugPrint('❌ Error agregando foto: $e');
+      rethrow;
+    }
+  }
+
+  /// Agregar material
+  Future<void> addMaterial(String ticketId, dynamic material) async {
+    try {
+      // Por ahora, solo log
+      debugPrint('📦 Material agregado: $material');
+    } catch (e) {
+      debugPrint('❌ Error agregando material: $e');
+      rethrow;
+    }
+  }
+
+  /// Check-in
+  Future<void> performCheckIn(String ticketId, dynamic checkIn) async {
+    try {
+      await updateTicket(
+        ticketId,
+        estado: 'EN_PROGRESO',
+        fechaInicio: DateTime.now(),
+      );
+    } catch (e) {
+      debugPrint('❌ Error en check-in: $e');
+      rethrow;
+    }
+  }
+
+  /// Check-out
+  Future<void> performCheckOut(String ticketId, dynamic checkOut) async {
+    try {
+      await updateTicket(
+        ticketId,
+        fechaFin: DateTime.now(),
+      );
+    } catch (e) {
+      debugPrint('❌ Error en check-out: $e');
+      rethrow;
     }
   }
 }

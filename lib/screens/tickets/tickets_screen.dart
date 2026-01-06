@@ -13,6 +13,7 @@ import 'add_edit_ticket_screen.dart';
 import 'ticket_detail_screen.dart';
 import 'my_assigned_tickets_screen.dart';
 import '../../config/app_theme.dart';
+import '../../debug/test_firestore_direct.dart';
 
 class TicketsScreen extends StatefulWidget {
   final String? initialFilter; // Filtro inicial: 'todos', 'nuevo', 'completado', etc.
@@ -869,15 +870,31 @@ class _TicketsScreenState extends State<TicketsScreen> {
         mainAxisAlignment: MainAxisAlignment.end,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          // 🔧 BOTÓN DE DIAGNÓSTICO
           FloatingActionButton.extended(
-            heroTag: 'btn_rapido',
-            onPressed: _showQuickCreateDialog,
-            backgroundColor: const Color(0xFFE65100),
+            heroTag: 'btn_diagnostico',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TestFirestoreDirect()),
+              );
+            },
+            backgroundColor: Colors.red,
             foregroundColor: Colors.white,
-            icon: const Icon(Icons.flash_on),
-            label: const Text('Rápido'),
+            icon: const Icon(Icons.bug_report),
+            label: const Text('TEST'),
           ),
           const SizedBox(height: 16),
+          // ⚠️ BOTÓN RÁPIDO TEMPORALMENTE DESHABILITADO PARA DIAGNÓSTICO
+          // FloatingActionButton.extended(
+          //   heroTag: 'btn_rapido',
+          //   onPressed: _showQuickCreateDialog,
+          //   backgroundColor: const Color(0xFFE65100),
+          //   foregroundColor: Colors.white,
+          //   icon: const Icon(Icons.flash_on),
+          //   label: const Text('Rápido'),
+          // ),
+          // const SizedBox(height: 16),
           FloatingActionButton.extended(
             heroTag: 'btn_nuevo',
             onPressed: () async {
